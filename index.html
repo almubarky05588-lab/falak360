@@ -122,6 +122,19 @@
   .hoursBar i.pk{background:var(--acc)}
   .hoursLbl{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-top:5px}
   .disc{font-size:11.5px;color:var(--mut);background:#0d1b2a;border:1px solid var(--line);border-radius:9px;padding:10px;margin-top:16px;line-height:1.6}
+  .indCard{background:#0d1b2a;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;border-right:3px solid var(--line)}
+  .indCard.good{border-right-color:#2ecc71}
+  .indCard.warn{border-right-color:#f4a261}
+  .indCard.neutral{border-right-color:#4a7fb5}
+  .indHead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .indTitle{font-size:14.5px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .indVal{font-size:16px;font-weight:800;white-space:nowrap}
+  .indCard.good .indVal{color:#2ecc71}
+  .indCard.warn .indVal{color:#f4a261}
+  .indCard.neutral .indVal{color:#7fb3e8}
+  .indWhat{font-size:12px;color:var(--mut);margin-top:7px;line-height:1.6;font-style:italic}
+  .indMeans{font-size:13.5px;line-height:1.75;margin-top:9px;background:#152b40;border-radius:8px;padding:10px}
+  .indMeans b{color:var(--acc)}
   .gap{padding:10px 12px;background:#2b2416;border:1px solid #5c4a1f;border-radius:9px;margin-bottom:7px;font-size:13.5px;color:#f4d35e;line-height:1.6}
   .chosen{background:#123a33;border:1px solid var(--acc);border-radius:10px;padding:12px;margin-top:12px}
 </style>
@@ -355,6 +368,12 @@
           <div class="hoursBar" id="hoursBar"></div>
           <div class="hoursLbl"><span>12ص</span><span>6ص</span><span>12م</span><span>6م</span><span>11م</span></div>
           <div class="hint" id="peakTxt"></div>
+        </div>
+
+        <div id="indBox" class="hide">
+          <h2 style="margin-top:22px">مؤشرات السوق</h2>
+          <div class="hint" style="margin-bottom:10px">كل مؤشر مع شرح لمعناه وما يعنيه لموقعك تحديداً.</div>
+          <div id="indList"></div>
         </div>
 
         <div id="gapBox" class="hide">
@@ -1065,6 +1084,38 @@ $("locBtn").onclick = async () => {
         : "";
       $("hoursBox").className = "";
     } else $("hoursBox").className = "hide";
+
+    // مؤشرات السوق مع التفسير
+    const inds = data.indicators || m.indicators || [];
+    if (inds.length) {
+      const el = $("indList"); el.innerHTML = "";
+      const icon = st => st === "good" ? "✅" : st === "warn" ? "⚠️" : "📊";
+      inds.forEach(x => {
+        const d = document.createElement("div");
+        d.className = "indCard " + (x.status || "neutral");
+        let extra = "";
+        if (x.key === "rising" && (x.items || []).length) {
+          extra = `<div style="margin-top:9px">${x.items.map(r =>
+            `<div class="compRow"><span>${r.name}</span><span>★${r.rating} · ${r.reviews} مراجعة · ${r.distance_m}م</span></div>`
+          ).join("")}</div>`;
+        }
+        if (x.key === "complements" && (x.items || []).length) {
+          extra = `<div style="margin-top:9px">${x.items.map(c =>
+            `<span class="brandChip">${c.type}: ${c.count} · أقربها ${c.nearest_distance_m}م</span>`
+          ).join("")}</div>`;
+        }
+        d.innerHTML = `
+          <div class="indHead">
+            <div class="indTitle">${icon(x.status)} ${x.title}</div>
+            <div class="indVal">${x.value}</div>
+          </div>
+          <div class="indWhat">${x.what}</div>
+          <div class="indMeans">${x.means}</div>
+          ${extra}`;
+        el.appendChild(d);
+      });
+      $("indBox").className = "";
+    } else $("indBox").className = "hide";
 
     const fillList = (boxId, listId, arr, cls) => {
       if (!(arr || []).length) { $(boxId).className = "hide"; return; }
