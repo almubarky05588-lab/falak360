@@ -2,1180 +2,397 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>فلك ٣٦٠ — ترتيبك على قوقل ماب</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#263A63">
+<title>فلك ٣٦٠ — موقعك في نتائج قوقل ماب</title>
+<meta name="description" content="اعرف ترتيب محلك في قوقل ماب من كل حي حولك، وحلّل مراجعاتك ومنافسيك، وادرس مواقع مشاريعك الجديدة.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>
-  :root{--bg:#0d1b2a;--card:#152b40;--line:#24405c;--txt:#e8f0f7;--mut:#8fa6bd;--acc:#00c2a8}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--txt);line-height:1.6}
-  .wrap{max-width:1000px;margin:0 auto;padding:16px}
-  header{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);margin-bottom:20px}
-  .logo{font-size:22px;font-weight:700}
-  .logo span{color:var(--acc)}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
-  h2{font-size:17px;margin-bottom:14px;color:var(--acc)}
-  label{display:block;font-size:13px;color:var(--mut);margin:10px 0 5px}
-  input,select{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:#0d1b2a;color:var(--txt);font-size:15px;font-family:inherit}
-  button{padding:12px 18px;border:0;border-radius:9px;background:var(--acc);color:#04211d;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;margin-top:12px}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  button.ghost{background:transparent;color:var(--mut);border:1px solid var(--line)}
-  .row{display:flex;gap:10px;flex-wrap:wrap}
-  .row>*{flex:1;min-width:140px}
-  #map{height:420px;border-radius:12px;margin-top:14px;border:1px solid var(--line)}
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:14px}
-  .stat{background:#0d1b2a;border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center}
-  .stat b{display:block;font-size:22px;color:var(--acc)}
-  .stat small{color:var(--mut);font-size:12px}
-  .msg{padding:11px;border-radius:9px;margin-top:12px;font-size:14px;display:none}
-  .msg.err{background:#3d1f26;color:#ff9d9d;display:block}
-  .msg.ok{background:#123a33;color:#7fe6d0;display:block}
-  .hide{display:none}
-  .list{margin-top:12px}
-  .item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;background:#0d1b2a;border:1px solid var(--line);border-radius:9px;margin-bottom:8px;font-size:14px}
-  .res{padding:12px;background:#0d1b2a;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer}
-  .res:active{border-color:var(--acc)}
-  .res b{display:block;font-size:15px;margin-bottom:2px}
-  .res small{color:var(--mut);font-size:12.5px;display:block}
-  .res .meta{color:#f4d35e;font-size:13px;margin-top:4px}
-  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--mut)}
-  .legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-left:6px}
-  .hint{font-size:12px;color:var(--mut);margin-top:6px}
-  .rankPin{display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid #fff;font-weight:800;font-size:14px;color:#08221c;box-shadow:0 1px 4px rgba(0,0,0,.4)}
-  .myPin{background:#1d4ed8;color:#fff;border:3px solid #fff;border-radius:50%;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px rgba(0,0,0,.5)}
-  .pop{font-family:system-ui,Tahoma,sans-serif;direction:rtl;text-align:right;font-size:13px;min-width:190px}
-  .pop h4{margin:0 0 6px;font-size:14px}
-  .pop .r{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-top:1px solid #eee}
-  .pop .me{font-weight:800;color:#0b6b57}
-  .scoreWrap{display:flex;align-items:center;gap:16px;margin-top:6px;flex-wrap:wrap}
-  .scoreRing{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-  .scoreRing b{background:var(--card);width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px}
-  .scoreTxt{flex:1;min-width:160px;font-size:13.5px;color:var(--mut)}
-  .chk{display:flex;gap:10px;padding:11px;background:#0d1b2a;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
-  .chk .ico{font-size:16px;flex:0 0 auto;line-height:1.4}
-  .chk .body{flex:1}
-  .chk .t{font-weight:700;font-size:14px}
-  .chk .d{font-size:12.5px;color:var(--mut);margin-top:2px}
-  .chk .a{font-size:12.5px;color:#f4d35e;margin-top:6px;line-height:1.5}
-  .chk .w{font-size:11px;color:var(--mut);opacity:.8}
-  .fail{border-color:#5c2b33}
-  .compRow{display:flex;justify-content:space-between;gap:8px;padding:9px 11px;background:#0d1b2a;border:1px solid var(--line);border-radius:9px;margin-bottom:7px;font-size:13.5px}
-  .compRow.mine{border-color:var(--acc);background:#123a33}
-  .revStats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:9px;margin-top:14px}
-  .revStat{background:#0d1b2a;border:1px solid var(--line);border-radius:10px;padding:11px;text-align:center}
-  .revStat b{display:block;font-size:20px}
-  .revStat small{color:var(--mut);font-size:11.5px}
-  .bar{height:10px;border-radius:6px;overflow:hidden;display:flex;margin:12px 0 4px}
-  .bar i{display:block;height:100%}
-  .barLbl{display:flex;justify-content:space-between;font-size:12px;color:var(--mut)}
-  .sumBox{background:#0d1b2a;border:1px solid var(--line);border-right:3px solid var(--acc);border-radius:10px;padding:13px;margin-top:14px;font-size:14px;line-height:1.7}
-  .topic{padding:11px;background:#0d1b2a;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
-  .topic .h{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:700}
-  .topic .pct{font-size:13px;font-weight:800}
-  .topic .d{font-size:12.5px;color:var(--mut);margin-top:4px}
-  .topic .pbar{height:5px;background:#24405c;border-radius:4px;margin-top:8px;overflow:hidden}
-  .topic .pbar i{display:block;height:100%;border-radius:4px}
-  .rec{padding:10px 12px;background:#0d1b2a;border:1px solid var(--line);border-radius:9px;margin-bottom:7px;font-size:13.5px;color:#f4d35e}
-  .revCard{padding:11px;background:#0d1b2a;border:1px solid #5c2b33;border-radius:10px;margin-bottom:8px}
-  .revCard .m{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-bottom:5px}
-  .revCard .tx{font-size:13.5px;line-height:1.6}
-  .tag{font-size:11px;padding:2px 8px;border-radius:20px;background:#3d1f26;color:#ff9d9d}
-  .cCard{background:#0d1b2a;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
-  .cHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-  .cName{font-size:15.5px;font-weight:800}
-  .threat{font-size:11px;padding:3px 9px;border-radius:20px;white-space:nowrap;font-weight:700}
-  .t-high{background:#3d1f26;color:#ff9d9d}
-  .t-mid{background:#3d3320;color:#f4d35e}
-  .t-low{background:#123a33;color:#7fe6d0}
-  .cMeta{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
-  .pill{font-size:11.5px;padding:3px 9px;border-radius:20px;background:#152b40;border:1px solid var(--line);color:var(--mut)}
-  .cWhy{font-size:13px;color:var(--txt);background:#152b40;border-radius:8px;padding:9px;margin-top:10px;line-height:1.6}
-  .cCols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:11px}
-  @media(max-width:520px){.cCols{grid-template-columns:1fr}}
-  .cCol h5{font-size:12.5px;margin-bottom:5px;color:var(--mut)}
-  .cCol li{font-size:12.5px;line-height:1.65;margin-right:14px}
-  .cCol.good li{color:#8ce9c2}
-  .cCol.bad li{color:#ffb3b3}
-  .plan{display:flex;gap:11px;padding:12px;background:#0d1b2a;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
-  .plan .num{width:26px;height:26px;border-radius:50%;background:var(--acc);color:#04211d;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:13px}
-  .plan .t{font-size:14px;font-weight:700}
-  .plan .r{font-size:12.5px;color:var(--mut);margin-top:3px}
-  .oppo{padding:10px 12px;border-radius:9px;margin-bottom:7px;font-size:13.5px;line-height:1.6}
-  .oppo.o{background:#123a33;border:1px solid #1c6b58;color:#8ce9c2}
-  .oppo.t{background:#2b1a20;border:1px solid #5c2b33;color:#ffb3b3}
-  #locMap{height:340px;border-radius:12px;margin-top:12px;border:1px solid var(--line)}
-  .bigScore{display:flex;align-items:center;gap:16px;margin-top:14px;flex-wrap:wrap}
-  .bigRing{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-  .bigRing b{background:var(--card);width:96px;height:96px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center}
-  .bigRing .n{font-size:30px;line-height:1}
-  .bigRing .o{font-size:11px;color:var(--mut)}
-  .verdict{flex:1;min-width:170px}
-  .verdict .v{font-size:19px;font-weight:800}
-  .verdict .s{font-size:13px;color:var(--mut);margin-top:4px;line-height:1.6}
-  .anchor{display:flex;align-items:center;gap:10px;padding:10px;background:#0d1b2a;border:1px solid var(--line);border-radius:10px;margin-bottom:7px}
-  .anchor .ic{font-size:19px}
-  .anchor .nm{flex:1;font-size:13.5px}
-  .anchor .ds{font-size:12.5px;color:var(--acc);font-weight:700;white-space:nowrap}
-  .brandChip{display:inline-block;font-size:12px;padding:5px 11px;border-radius:20px;background:#123a33;border:1px solid #1c6b58;color:#8ce9c2;margin:0 0 6px 6px}
-  .hoursBar{display:flex;align-items:flex-end;gap:2px;height:70px;margin-top:12px}
-  .hoursBar i{flex:1;background:#24405c;border-radius:2px 2px 0 0;min-height:2px}
-  .hoursBar i.pk{background:var(--acc)}
-  .hoursLbl{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-top:5px}
-  .disc{font-size:11.5px;color:var(--mut);background:#0d1b2a;border:1px solid var(--line);border-radius:9px;padding:10px;margin-top:16px;line-height:1.6}
-  .indCard{background:#0d1b2a;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;border-right:3px solid var(--line)}
-  .indCard.good{border-right-color:#2ecc71}
-  .indCard.warn{border-right-color:#f4a261}
-  .indCard.neutral{border-right-color:#4a7fb5}
-  .indHead{display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .indTitle{font-size:14.5px;font-weight:800;display:flex;align-items:center;gap:7px}
-  .indVal{font-size:16px;font-weight:800;white-space:nowrap}
-  .indCard.good .indVal{color:#2ecc71}
-  .indCard.warn .indVal{color:#f4a261}
-  .indCard.neutral .indVal{color:#7fb3e8}
-  .indWhat{font-size:12px;color:var(--mut);margin-top:7px;line-height:1.6;font-style:italic}
-  .indMeans{font-size:13.5px;line-height:1.75;margin-top:9px;background:#152b40;border-radius:8px;padding:10px}
-  .indMeans b{color:var(--acc)}
-  .gap{padding:10px 12px;background:#2b2416;border:1px solid #5c4a1f;border-radius:9px;margin-bottom:7px;font-size:13.5px;color:#f4d35e;line-height:1.6}
-  .chosen{background:#123a33;border:1px solid var(--acc);border-radius:10px;padding:12px;margin-top:12px}
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="wrap">
 
-  <header>
-    <div class="logo">فلك <span>٣٦٠</span></div>
-    <button id="logoutBtn" class="ghost hide" style="margin:0">خروج</button>
-  </header>
-
-  <div id="authCard" class="card">
-    <h2>الدخول للمنصة</h2>
-    <label>البريد الإلكتروني</label>
-    <input id="email" type="email" placeholder="you@example.com">
-    <label>كلمة المرور</label>
-    <input id="password" type="password" placeholder="6 أحرف على الأقل">
-    <div class="row">
-      <button id="loginBtn">دخول</button>
-      <button id="signupBtn" class="ghost">حساب جديد</button>
+<!-- ===================== الدخول ===================== -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div id="authLogo"></div>
+      <h1>فلك ٣٦٠</h1>
+      <p>اعرف موقعك في نتائج قوقل ماب، وما الذي يرفعه.</p>
     </div>
+
+    <div class="field">
+      <label for="email">البريد الإلكتروني</label>
+      <input id="email" class="input" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label for="password">كلمة المرور</label>
+      <input id="password" class="input" type="password" autocomplete="current-password" placeholder="6 أحرف على الأقل">
+    </div>
+
+    <button id="loginBtn" class="btn block">دخول</button>
+    <button id="signupBtn" class="btn ghost block sp-t">إنشاء حساب جديد</button>
     <div id="authMsg" class="msg"></div>
-  </div>
-
-  <div id="app" class="hide">
-
-    <div class="card">
-      <h2>١ · المحل</h2>
-      <select id="bizSelect"><option value="">— اختر محلاً محفوظاً أو ابحث عن جديد —</option></select>
-
-      <div id="newBiz" style="margin-top:16px">
-        <label>ابحث عن محلك في قوقل ماب</label>
-        <div class="row">
-          <input id="searchQ" placeholder="اكتب اسم المحل… مثال: مطعم البيك">
-          <button id="searchBtn" style="flex:0 0 auto;margin-top:0">بحث</button>
-        </div>
-        <div class="hint">النتائج تظهر حسب موقعك الحالي — اضغط على محلك لإضافته بكل بياناته.</div>
-        <div id="searchMsg" class="msg"></div>
-        <div id="searchResults" class="list"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>٢ · الكلمات المفتاحية</h2>
-      <div class="row">
-        <input id="kwTerm" placeholder="مثال: مطعم برقر">
-        <button id="addKw" style="flex:0 0 auto;margin-top:0">إضافة</button>
-      </div>
-      <div id="kwList" class="list"></div>
-    </div>
-
-    <div class="card">
-      <h2>٣ · الفحص</h2>
-      <div class="row">
-        <div>
-          <label>حجم الشبكة</label>
-          <select id="gridSize">
-            <option value="3">3×3 — 9 نقاط (سريع)</option>
-            <option value="5" selected>5×5 — 25 نقطة</option>
-            <option value="7">7×7 — 49 نقطة (تفصيلي)</option>
-          </select>
-        </div>
-        <div>
-          <label>المسافة بين النقاط</label>
-          <select id="spacing">
-            <option value="500">500 متر</option>
-            <option value="800" selected>800 متر</option>
-            <option value="1500">1.5 كم</option>
-          </select>
-        </div>
-      </div>
-      <button id="scanBtn" disabled>ابدأ الفحص</button>
-      <div id="scanMsg" class="msg"></div>
-
-      <div id="stats" class="stats hide">
-        <div class="stat"><b id="stAvg">—</b><small>متوسط الترتيب</small></div>
-        <div class="stat"><b id="stBest">—</b><small>أفضل ترتيب</small></div>
-        <div class="stat"><b id="stWorst">—</b><small>أسوأ ترتيب</small></div>
-        <div class="stat"><b id="stVis">—</b><small>نسبة الظهور</small></div>
-        <div class="stat"><b id="stCost">—</b><small>تكلفة الفحص $</small></div>
-      </div>
-
-      <div id="map"></div>
-      <div class="legend">
-        <span><i style="background:#2ecc71"></i>1–3</span>
-        <span><i style="background:#f4d35e"></i>4–10</span>
-        <span><i style="background:#f4a261"></i>11–20</span>
-        <span><i style="background:#e63946"></i>غير ظاهر</span>
-        <span><i style="background:#1d4ed8"></i>★ محلك</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>٤ · تدقيق الملف التجاري</h2>
-      <div class="hint">نفحص ملفك في قوقل ماب ونقارنه بمنافسيك من آخر فحص، ونعطيك خطوات التحسين مرتبة بالأثر.</div>
-      <button id="auditBtn" disabled>افحص ملفي</button>
-      <div id="auditMsg" class="msg"></div>
-
-      <div id="auditBox" class="hide">
-        <div class="scoreWrap">
-          <div id="scoreRing" class="scoreRing"><b id="scoreNum">—</b></div>
-          <div id="scoreTxt" class="scoreTxt"></div>
-        </div>
-        <div id="checks" class="list"></div>
-        <div id="compBox" class="hide">
-          <h2 style="margin-top:18px">مقارنة بأقوى منافسيك</h2>
-          <div id="compList"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>٥ · تحليل المراجعات</h2>
-      <div class="hint">نسحب مراجعاتك من قوقل، نفرز السلبي عن الإيجابي، ونستخرج المشاكل المتكررة بالذكاء الاصطناعي.</div>
-      <button id="revBtn" disabled>حلّل مراجعاتي</button>
-      <div id="revMsg" class="msg"></div>
-
-      <div id="revBox" class="hide">
-        <div class="revStats">
-          <div class="revStat"><b id="rvTotal" style="color:var(--acc)">—</b><small>مراجعة محللة</small></div>
-          <div class="revStat"><b id="rvPos" style="color:#2ecc71">—</b><small>إيجابية</small></div>
-          <div class="revStat"><b id="rvNeg" style="color:#e63946">—</b><small>سلبية</small></div>
-          <div class="revStat"><b id="rvNoRep" style="color:#f4a261">—</b><small>سلبية بلا رد</small></div>
-        </div>
-
-        <div class="bar" id="revBar"></div>
-        <div class="barLbl"><span id="barPos"></span><span id="barNeg"></span></div>
-
-        <div id="sumBox" class="sumBox"></div>
-
-        <h2 style="margin-top:20px">ما يمدحه عملاؤك</h2>
-        <div id="strengths"></div>
-
-        <h2 style="margin-top:18px">أبرز الشكاوى المتكررة</h2>
-        <div id="weaknesses"></div>
-
-        <h2 style="margin-top:18px">خطوات مقترحة</h2>
-        <div id="recs"></div>
-
-        <div id="negBox" class="hide">
-          <h2 style="margin-top:18px">عينة من المراجعات السلبية</h2>
-          <div id="negList"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>٦ · تحليل المنافسين</h2>
-      <div class="hint">نحدد منافسيك الحقيقيين من آخر فحص، نقرأ مراجعاتهم، ونستخرج نقاط قوتهم وضعفهم وخطة مواجهتهم.</div>
-      <button id="compBtn" disabled>حلّل منافسيّ</button>
-      <div id="compMsg" class="msg"></div>
-
-      <div id="cmpBox" class="hide">
-        <div id="posBox" class="sumBox"></div>
-
-        <h2 style="margin-top:20px">خطة المواجهة</h2>
-        <div id="planList"></div>
-
-        <h2 style="margin-top:18px">المنافسون</h2>
-        <div id="cmpList"></div>
-
-        <div id="oppBox" class="hide">
-          <h2 style="margin-top:18px">فرصك</h2>
-          <div id="oppList"></div>
-        </div>
-        <div id="thrBox" class="hide">
-          <h2 style="margin-top:18px">تهديدات تستحق الانتباه</h2>
-          <div id="thrList"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="border-color:var(--acc)">
-      <h2>٧ · تحليل موقع لمشروع جديد</h2>
-      <div class="hint">منتج مستقل: حدد موقعاً ونشاطاً، ونعطيك تحليل المنافسة والمحيط ودرجة جاذبية الموقع.</div>
-
-      <div class="row" style="margin-top:12px">
-        <div><label>نوع النشاط</label><input id="locAct" placeholder="مثال: مطعم برقر"></div>
-        <div><label>اسم الحي (اختياري)</label><input id="locArea" placeholder="مثال: حي النهضة"></div>
-      </div>
-      <label>نطاق التحليل</label>
-      <select id="locRadius">
-        <option value="1000">1 كم — حي واحد</option>
-        <option value="1500" selected>1.5 كم — الحي وما حوله</option>
-        <option value="3000">3 كم — نطاق واسع</option>
-      </select>
-      <div class="hint">اضغط على الخريطة لتحديد موقع المشروع المقترح.</div>
-      <div id="locMap"></div>
-
-      <button id="locBtn" disabled>حلّل هذا الموقع</button>
-      <div id="locMsg" class="msg"></div>
-
-      <div id="locBox" class="hide">
-        <div class="bigScore">
-          <div id="locRing" class="bigRing"><b><span class="n" id="locScore">—</span><span class="o">من 100</span></b></div>
-          <div class="verdict">
-            <div class="v" id="locVerdict">—</div>
-            <div class="s" id="locSub"></div>
-          </div>
-        </div>
-
-        <div class="revStats">
-          <div class="revStat"><b id="lcComp" style="color:var(--acc)">—</b><small>منافس في النطاق</small></div>
-          <div class="revStat"><b id="lcRating" style="color:#f4d35e">—</b><small>متوسط تقييمهم</small></div>
-          <div class="revStat"><b id="lcWeak" style="color:#2ecc71">—</b><small>منهم ضعيف</small></div>
-          <div class="revStat"><b id="lcVital" style="color:#8b9dff">—</b><small>حيوية المحيط</small></div>
-        </div>
-
-        <div id="locSum" class="sumBox"></div>
-        <div id="areaChar" class="sumBox"></div>
-
-        <div id="anchBox" class="hide">
-          <h2 style="margin-top:20px">محيط الموقع</h2>
-          <div id="anchList"></div>
-        </div>
-
-        <div id="brandBox" class="hide">
-          <h2 style="margin-top:18px">علامات كبرى قريبة</h2>
-          <div class="hint" style="margin-bottom:8px">وجودها إشارة إلى أن شركات كبيرة اختارت هذا المحيط بعد دراسة.</div>
-          <div id="brandList"></div>
-        </div>
-
-        <div id="magBox" class="hide">
-          <h2 style="margin-top:18px">نقاط الزخم في المحيط</h2>
-          <div id="magList"></div>
-        </div>
-
-        <div id="hoursBox" class="hide">
-          <h2 style="margin-top:18px">أوقات نشاط المنطقة</h2>
-          <div class="hoursBar" id="hoursBar"></div>
-          <div class="hoursLbl"><span>12ص</span><span>6ص</span><span>12م</span><span>6م</span><span>11م</span></div>
-          <div class="hint" id="peakTxt"></div>
-        </div>
-
-        <div id="indBox" class="hide">
-          <h2 style="margin-top:22px">مؤشرات السوق</h2>
-          <div class="hint" style="margin-bottom:10px">كل مؤشر مع شرح لمعناه وما يعنيه لموقعك تحديداً.</div>
-          <div id="indList"></div>
-        </div>
-
-        <div id="gapBox" class="hide">
-          <h2 style="margin-top:20px">ثغرات السوق</h2>
-          <div class="hint" style="margin-bottom:8px">شكاوى متكررة على المنافسين — هذه فرصتك.</div>
-          <div id="gapList"></div>
-        </div>
-
-        <div id="lOppBox" class="hide">
-          <h2 style="margin-top:18px">الفرص</h2>
-          <div id="lOppList"></div>
-        </div>
-
-        <div id="lRiskBox" class="hide">
-          <h2 style="margin-top:18px">المخاطر</h2>
-          <div id="lRiskList"></div>
-        </div>
-
-        <div id="succBox" class="hide">
-          <h2 style="margin-top:18px">عوامل النجاح هنا</h2>
-          <div id="succList"></div>
-        </div>
-
-        <div id="lcCompBox" class="hide">
-          <h2 style="margin-top:18px">المنافسون في المنطقة</h2>
-          <div id="lcCompList"></div>
-        </div>
-
-        <div class="disc" id="locDisc"></div>
-      </div>
-    </div>
-
   </div>
 </div>
 
+<!-- ===================== التطبيق ===================== -->
+<div id="app" class="hidden">
+
+  <header class="app-header">
+    <div class="brand">
+      <div id="headerLogo" class="brand-mark"></div>
+      <div class="brand-name">فلك <span>٣٦٠</span></div>
+    </div>
+    <button id="logoutBtn" class="btn ghost sm">خروج</button>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-screen="overview" data-icon="compass">نظرة عامة</button>
+    <button class="tab" data-screen="rank" data-icon="map-pin">الترتيب</button>
+    <button class="tab" data-screen="profile" data-icon="clipboard-check">الملف التجاري</button>
+    <button class="tab" data-screen="reviews" data-icon="message-square">المراجعات</button>
+    <button class="tab" data-screen="rivals" data-icon="users">المنافسون</button>
+    <button class="tab" data-screen="site" data-icon="telescope">موقع مشروع</button>
+  </nav>
+
+  <main class="page">
+
+    <!-- ---------- نظرة عامة ---------- -->
+    <section id="screen-overview" class="screen active">
+      <h1 class="page-title">نظرة عامة</h1>
+      <p class="page-sub">اختر محلك، ثم تنقّل بين الأقسام لفحص كل جانب.</p>
+
+      <div class="card">
+        <div class="field" style="margin:0">
+          <label for="bizSelect">المحل</label>
+          <select id="bizSelect" class="select"></select>
+        </div>
+
+        <div id="addBizWrap" class="sp-t">
+          <div class="field">
+            <label for="searchQ">ابحث عن محلك في قوقل ماب</label>
+            <div class="row">
+              <input id="searchQ" class="input" placeholder="اكتب اسم المحل كما هو في قوقل">
+              <button id="searchBtn" class="btn" style="flex:0 0 auto">بحث</button>
+            </div>
+            <div class="hint">نبحث حول موقعك الحالي. اضغط على محلك من النتائج لإضافته ببياناته كاملة.</div>
+          </div>
+          <div id="searchMsg" class="msg"></div>
+          <div id="searchResults"></div>
+        </div>
+      </div>
+
+      <div id="bizSummary" class="hidden">
+        <div class="card">
+          <div class="verdict-row">
+            <div id="ovRing"></div>
+            <div class="verdict-text">
+              <div class="verdict-title" id="ovName">—</div>
+              <div class="verdict-note" id="ovMeta">—</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat"><div class="stat-val num" id="ovRating">—</div><div class="stat-lbl">التقييم</div></div>
+            <div class="stat"><div class="stat-val num" id="ovReviews">—</div><div class="stat-lbl">مراجعة</div></div>
+            <div class="stat"><div class="stat-val num" id="ovKeywords">—</div><div class="stat-lbl">كلمة متابَعة</div></div>
+            <div class="stat"><div class="stat-val num" id="ovScans">—</div><div class="stat-lbl">فحص سابق</div></div>
+          </div>
+        </div>
+
+        <div class="section-head"><h2>ابدأ من هنا</h2></div>
+        <div id="quickActions"></div>
+      </div>
+    </section>
+
+    <!-- ---------- الترتيب ---------- -->
+    <section id="screen-rank" class="screen">
+      <h1 class="page-title">الترتيب على الخريطة</h1>
+      <p class="page-sub">نفحص ترتيبك من نقاط موزّعة حول محلك، فتعرف أين تظهر وأين تختفي.</p>
+
+      <div id="rankGate"></div>
+
+      <div id="rankBody" class="hidden">
+        <div class="card">
+          <div class="field">
+            <label for="kwTerm">الكلمات المفتاحية</label>
+            <div class="row">
+              <input id="kwTerm" class="input" placeholder="ما الذي يبحث عنه عملاؤك؟">
+              <button id="addKw" class="btn ghost" style="flex:0 0 auto">إضافة</button>
+            </div>
+            <div class="hint">اكتب ما يبحث عنه الناس فعلاً، لا اسم محلك.</div>
+          </div>
+          <div id="kwList"></div>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <div class="field" style="margin:0">
+              <label for="gridSize">حجم الشبكة</label>
+              <select id="gridSize" class="select">
+                <option value="3">‏3×3 — 9 نقاط</option>
+                <option value="5" selected>‏5×5 — 25 نقطة</option>
+                <option value="7">‏7×7 — 49 نقطة</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0">
+              <label for="spacing">المسافة بين النقاط</label>
+              <select id="spacing" class="select">
+                <option value="500">500 متر</option>
+                <option value="800" selected>800 متر</option>
+                <option value="1500">1.5 كيلومتر</option>
+              </select>
+            </div>
+          </div>
+          <button id="scanBtn" class="btn block sp-t" disabled>ابدأ الفحص</button>
+          <div id="scanMsg" class="msg"></div>
+        </div>
+
+        <div id="scanResult" class="hidden">
+          <div class="card">
+            <div class="verdict-row">
+              <div id="scanRing"></div>
+              <div class="verdict-text">
+                <div class="verdict-title" id="scanVerdict">—</div>
+                <div class="verdict-note" id="scanNote">—</div>
+              </div>
+            </div>
+            <div class="stats">
+              <div class="stat"><div class="stat-val num" id="stAvg">—</div><div class="stat-lbl">متوسط الترتيب</div></div>
+              <div class="stat"><div class="stat-val num" id="stBest">—</div><div class="stat-lbl">أفضل ترتيب</div></div>
+              <div class="stat"><div class="stat-val num" id="stWorst">—</div><div class="stat-lbl">أسوأ ترتيب</div></div>
+              <div class="stat"><div class="stat-val num" id="stVis">—</div><div class="stat-lbl">نسبة الظهور</div></div>
+            </div>
+          </div>
+
+          <div id="map" class="map"></div>
+          <div class="legend">
+            <span><i style="background:var(--ok)"></i>‏1–3</span>
+            <span><i style="background:var(--warn)"></i>‏4–10</span>
+            <span><i style="background:#C4762A"></i>‏11–20</span>
+            <span><i style="background:var(--bad)"></i>غير ظاهر</span>
+            <span><i style="background:var(--brand)"></i>محلك</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- الملف التجاري ---------- -->
+    <section id="screen-profile" class="screen">
+      <h1 class="page-title">الملف التجاري</h1>
+      <p class="page-sub">نقرأ ملفك في قوقل ونحدد النواقص التي تُضعف ظهورك، مرتّبة بحسب أثرها.</p>
+
+      <div id="profileGate"></div>
+
+      <div id="profileBody" class="hidden">
+        <button id="auditBtn" class="btn block">افحص ملفي</button>
+        <div id="auditMsg" class="msg"></div>
+
+        <div id="auditResult" class="hidden">
+          <div class="card">
+            <div class="verdict-row">
+              <div id="auditRing"></div>
+              <div class="verdict-text">
+                <div class="verdict-title" id="auditVerdict">—</div>
+                <div class="verdict-note" id="auditNote">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-head"><h2>نتائج الفحص</h2><span class="note">الأهم أولاً</span></div>
+          <div id="checks"></div>
+
+          <div id="auditCompBox" class="hidden">
+            <div class="section-head"><h2>مقارنة بأقوى منافسيك</h2></div>
+            <div id="auditCompList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- المراجعات ---------- -->
+    <section id="screen-reviews" class="screen">
+      <h1 class="page-title">المراجعات</h1>
+      <p class="page-sub">نفرز مراجعاتك ونستخرج ما يتكرر فيها من مديح وشكاوى.</p>
+
+      <div id="reviewsGate"></div>
+
+      <div id="reviewsBody" class="hidden">
+        <button id="revBtn" class="btn block">حلّل المراجعات</button>
+        <div id="revMsg" class="msg"></div>
+
+        <div id="revResult" class="hidden">
+          <div class="card">
+            <div class="stats" style="margin:0">
+              <div class="stat"><div class="stat-val num" id="rvTotal">—</div><div class="stat-lbl">مراجعة محلَّلة</div></div>
+              <div class="stat"><div class="stat-val num" id="rvPos" style="color:var(--ok)">—</div><div class="stat-lbl">إيجابية</div></div>
+              <div class="stat"><div class="stat-val num" id="rvNeg" style="color:var(--bad)">—</div><div class="stat-lbl">سلبية</div></div>
+              <div class="stat"><div class="stat-val num" id="rvNoRep" style="color:var(--warn)">—</div><div class="stat-lbl">بلا رد</div></div>
+            </div>
+            <div id="revSummary" class="summary"></div>
+          </div>
+
+          <div class="section-head"><h2>ما يمدحه عملاؤك</h2></div>
+          <div id="strengths"></div>
+
+          <div class="section-head"><h2>الشكاوى المتكررة</h2></div>
+          <div id="weaknesses"></div>
+
+          <div class="section-head"><h2>خطوات مقترحة</h2></div>
+          <div id="revRecs"></div>
+
+          <div id="negBox" class="hidden">
+            <div class="section-head"><h2>مراجعات تحتاج ردّاً</h2></div>
+            <div id="negList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- المنافسون ---------- -->
+    <section id="screen-rivals" class="screen">
+      <h1 class="page-title">المنافسون</h1>
+      <p class="page-sub">نحدد من ينافسك فعلياً من نتائج فحصك، ونقرأ مراجعاتهم لنعرف أين يقوون وأين يضعفون.</p>
+
+      <div id="rivalsGate"></div>
+
+      <div id="rivalsBody" class="hidden">
+        <button id="compBtn" class="btn block">حلّل المنافسين</button>
+        <div id="compMsg" class="msg"></div>
+
+        <div id="compResult" class="hidden">
+          <div id="positioning" class="summary"></div>
+
+          <div class="section-head"><h2>خطة المواجهة</h2></div>
+          <div id="planList"></div>
+
+          <div class="section-head"><h2>من ينافسك</h2></div>
+          <div id="rivalList"></div>
+
+          <div id="oppBox" class="hidden">
+            <div class="section-head"><h2>فرصك</h2></div>
+            <div id="oppList"></div>
+          </div>
+          <div id="thrBox" class="hidden">
+            <div class="section-head"><h2>ما يستحق انتباهك</h2></div>
+            <div id="thrList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- تحليل موقع مشروع ---------- -->
+    <section id="screen-site" class="screen">
+      <h1 class="page-title">تحليل موقع مشروع</h1>
+      <p class="page-sub">قبل أن تستأجر: اعرف من ينافسك في المنطقة، وما يحيط بالموقع، وأين الفرص.</p>
+
+      <div class="card">
+        <div class="row">
+          <div class="field" style="margin:0">
+            <label for="locAct">نوع النشاط</label>
+            <input id="locAct" class="input" placeholder="مثال: مقهى">
+          </div>
+          <div class="field" style="margin:0">
+            <label for="locArea">اسم الحي</label>
+            <input id="locArea" class="input" placeholder="اختياري">
+          </div>
+        </div>
+        <div class="field sp-t">
+          <label for="locRadius">نطاق التحليل</label>
+          <select id="locRadius" class="select">
+            <option value="1000">1 كيلومتر — الحي المباشر</option>
+            <option value="1500" selected>1.5 كيلومتر — الحي وما حوله</option>
+            <option value="3000">3 كيلومترات — نطاق واسع</option>
+          </select>
+          <div class="hint">اختر نطاقاً يقارب المسافة التي يقطعها عميلك للوصول إليك.</div>
+        </div>
+
+        <div id="locMap" class="map short"></div>
+        <div class="hint">اضغط على الخريطة لتحديد موقع المشروع.</div>
+
+        <button id="locBtn" class="btn block sp-t" disabled>حلّل الموقع</button>
+        <div id="locMsg" class="msg"></div>
+      </div>
+
+      <div id="locResult" class="hidden">
+        <div class="card">
+          <div class="verdict-row">
+            <div id="locRing"></div>
+            <div class="verdict-text">
+              <div class="verdict-title" id="locVerdict">—</div>
+              <div class="verdict-note" id="locNote">—</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat"><div class="stat-val num" id="lcComp">—</div><div class="stat-lbl">منافس في النطاق</div></div>
+            <div class="stat"><div class="stat-val num" id="lcRating">—</div><div class="stat-lbl">متوسط تقييمهم</div></div>
+            <div class="stat"><div class="stat-val num" id="lcWeak">—</div><div class="stat-lbl">منهم دون 4</div></div>
+            <div class="stat"><div class="stat-val num" id="lcVital">—</div><div class="stat-lbl">حيوية المحيط</div></div>
+          </div>
+          <div id="locSummary" class="summary"></div>
+          <div id="areaChar" class="summary hidden"></div>
+        </div>
+
+        <div id="indBox" class="hidden">
+          <div class="section-head"><h2>مؤشرات السوق</h2><span class="note">ماذا يعني كل رقم لك</span></div>
+          <div id="indList"></div>
+        </div>
+
+        <div id="anchBox" class="hidden">
+          <div class="section-head"><h2>محيط الموقع</h2><span class="note">ما يجلب الناس إلى هنا</span></div>
+          <div id="anchList"></div>
+        </div>
+
+        <div id="brandBox" class="hidden">
+          <div class="section-head"><h2>علامات كبرى قريبة</h2></div>
+          <div class="hint" style="margin-bottom:10px">اختارت هذا المحيط بعد دراسة مواقع — إشارة على جدواه.</div>
+          <div id="brandList"></div>
+        </div>
+
+        <div id="magBox" class="hidden">
+          <div class="section-head"><h2>نقاط الزخم</h2><span class="note">تدفّق يمر بك</span></div>
+          <div id="magList"></div>
+        </div>
+
+        <div id="hoursBox" class="hidden">
+          <div class="section-head"><h2>نشاط المنطقة خلال اليوم</h2></div>
+          <div class="hours" id="hoursBar"></div>
+          <div class="hours-axis"><span>12ص</span><span>6ص</span><span>12م</span><span>6م</span><span>11م</span></div>
+          <div class="hint" id="peakTxt"></div>
+        </div>
+
+        <div id="gapBox" class="hidden">
+          <div class="section-head"><h2>ثغرات السوق</h2><span class="note">شكاوى على المنافسين</span></div>
+          <div id="gapList"></div>
+        </div>
+
+        <div id="lOppBox" class="hidden">
+          <div class="section-head"><h2>الفرص</h2></div>
+          <div id="lOppList"></div>
+        </div>
+
+        <div id="lRiskBox" class="hidden">
+          <div class="section-head"><h2>المخاطر</h2></div>
+          <div id="lRiskList"></div>
+        </div>
+
+        <div id="succBox" class="hidden">
+          <div class="section-head"><h2>عوامل النجاح هنا</h2></div>
+          <div id="succList"></div>
+        </div>
+
+        <div id="lcCompBox" class="hidden">
+          <div class="section-head"><h2>المنافسون في المنطقة</h2></div>
+          <div id="lcCompList"></div>
+        </div>
+
+        <div class="disclaimer" id="locDisc"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const SUPABASE_URL = "https://dpkvkwcofxeptpzdsjre.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Krja6qX-HGdklghDfTJmjQ_XpmIgBPe";
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const $ = id => document.getElementById(id);
-let map, layer, currentBiz = null, currentKw = null;
-let userLoc = null;
-
-function show(el, cls, text){ el.className = "msg " + cls; el.textContent = text; }
-function clearMsg(el){ el.className = "msg"; el.textContent = ""; }
-
-/* ---------- الخريطة ---------- */
-function initMap(){
-  if (map) return;
-  map = L.map("map").setView([21.5433, 39.1728], 12);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { attribution: "© OpenStreetMap" }).addTo(map);
-  layer = L.layerGroup().addTo(map);
-  locateUser();
-}
-
-function locateUser(){
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      if (!currentBiz) map.setView([userLoc.lat, userLoc.lng], 14);
-      L.circleMarker([userLoc.lat, userLoc.lng], {
-        radius: 7, color: "#fff", weight: 2, fillColor: "#3b82f6", fillOpacity: 1
-      }).bindPopup("موقعك الحالي").addTo(map);
-    },
-    () => {},
-    { enableHighAccuracy: true, timeout: 8000 }
-  );
-}
-
-function rankColor(r){
-  if (r === null || r === undefined) return "#e63946";
-  if (r <= 3) return "#2ecc71";
-  if (r <= 10) return "#f4d35e";
-  return "#f4a261";
-}
-
-// دائرة مكتوب فيها الترتيب مباشرة
-function rankIcon(rank){
-  const bg = rankColor(rank);
-  const label = (rank === null || rank === undefined) ? "؟" : rank;
-  return L.divIcon({
-    className: "",
-    html: `<div class="rankPin" style="background:${bg};width:34px;height:34px">${label}</div>`,
-    iconSize: [34, 34],
-    iconAnchor: [17, 17]
-  });
-}
-
-// دبوس محل العميل
-function myIcon(){
-  return L.divIcon({
-    className: "",
-    html: `<div class="myPin">★</div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
-  });
-}
-
-function popupHtml(p){
-  const list = (p.top_competitors || []);
-  const mine = list.find(c => c.is_mine);
-  let html = `<div class="pop"><h4>ترتيبك هنا: ${p.rank ?? "غير ظاهر"}</h4>`;
-  if (!list.length) html += `<div class="r">لا توجد نتائج</div>`;
-  list.forEach(c => {
-    const cls = c.is_mine ? "r me" : "r";
-    const stars = c.rating ? `★${c.rating}` : "—";
-    html += `<div class="${cls}"><span>${c.rank}. ${c.name}${c.is_mine ? " (محلك)" : ""}</span><span>${stars} · ${c.reviews ?? 0}</span></div>`;
-  });
-  html += `</div>`;
-  return html;
-}
-
-/* ---------- المصادقة ---------- */
-$("loginBtn").onclick = async () => {
-  clearMsg($("authMsg"));
-  const { error } = await sb.auth.signInWithPassword({
-    email: $("email").value.trim(), password: $("password").value
-  });
-  if (error) return show($("authMsg"), "err", error.message);
-  boot();
-};
-
-$("signupBtn").onclick = async () => {
-  clearMsg($("authMsg"));
-  const { error } = await sb.auth.signUp({
-    email: $("email").value.trim(), password: $("password").value
-  });
-  if (error) return show($("authMsg"), "err", error.message);
-  show($("authMsg"), "ok", "تم إنشاء الحساب — سجّل الدخول الآن.");
-};
-
-$("logoutBtn").onclick = async () => { await sb.auth.signOut(); location.reload(); };
-
-/* ---------- البحث عن المحل ---------- */
-$("searchBtn").onclick = async () => {
-  const q = $("searchQ").value.trim();
-  if (q.length < 2) return show($("searchMsg"), "err", "اكتب حرفين على الأقل");
-
-  const btn = $("searchBtn");
-  btn.disabled = true; btn.textContent = "…";
-  show($("searchMsg"), "ok", "جارٍ البحث في قوقل ماب…");
-  $("searchResults").innerHTML = "";
-
-  try {
-    const { data, error } = await sb.functions.invoke("search-business", {
-      body: { query: q, lat: userLoc?.lat, lng: userLoc?.lng }
-    });
-    if (error) throw error;
-    if (!data.success) throw new Error(data.error);
-    if (!data.results.length) return show($("searchMsg"), "err", "ما لقينا نتائج — جرّب اسماً أوضح");
-
-    clearMsg($("searchMsg"));
-    renderResults(data.results);
-  } catch (e) {
-    show($("searchMsg"), "err", "فشل البحث: " + (e.message || e));
-  } finally {
-    btn.disabled = false; btn.textContent = "بحث";
-  }
-};
-
-$("searchQ").addEventListener("keydown", e => { if (e.key === "Enter") $("searchBtn").click(); });
-
-function renderResults(results){
-  const box = $("searchResults");
-  box.innerHTML = "";
-  layer.clearLayers();
-  const bounds = [];
-
-  results.forEach(r => {
-    const d = document.createElement("div");
-    d.className = "res";
-    d.innerHTML = `<b>${r.name}</b>
-      <small>${r.address ?? ""}</small>
-      <div class="meta">${r.rating ? "★ " + r.rating : "بدون تقييم"} · ${r.reviews ?? 0} مراجعة${r.category ? " · " + r.category : ""}</div>`;
-    d.onclick = () => saveBusiness(r);
-    box.appendChild(d);
-
-    L.marker([r.lat, r.lng]).bindPopup(r.name).addTo(layer);
-    bounds.push([r.lat, r.lng]);
-  });
-
-  if (bounds.length) map.fitBounds(bounds, { padding: [40, 40] });
-}
-
-async function saveBusiness(r){
-  const { data: { user } } = await sb.auth.getUser();
-  const { data, error } = await sb.from("businesses").insert({
-    owner_id: user.id,
-    name: r.name,
-    category: r.category,
-    address: r.address,
-    lat: r.lat,
-    lng: r.lng,
-    place_id: r.place_id,
-    cid: r.cid,
-    website: r.website,
-    phone: r.phone,
-    google_rating: r.rating,
-    google_reviews_count: r.reviews
-  }).select().single();
-
-  if (error) return show($("searchMsg"), "err", error.message);
-
-  $("searchResults").innerHTML = "";
-  $("searchQ").value = "";
-  await loadBusinesses();
-  $("bizSelect").value = data.id;
-  $("bizSelect").dispatchEvent(new Event("change"));
-}
-
-/* ---------- المحلات المحفوظة ---------- */
-async function loadBusinesses(){
-  const { data } = await sb.from("businesses").select("*").order("created_at");
-  const sel = $("bizSelect");
-  sel.innerHTML = '<option value="">— اختر محلاً محفوظاً أو ابحث عن جديد —</option>';
-  (data || []).forEach(b => {
-    const o = document.createElement("option");
-    o.value = b.id; o.textContent = b.name;
-    o.dataset.lat = b.lat; o.dataset.lng = b.lng;
-    sel.appendChild(o);
-  });
-}
-
-$("bizSelect").onchange = async e => {
-  const opt = e.target.selectedOptions[0];
-  currentBiz = e.target.value || null;
-  currentKw = null;
-  $("newBiz").className = currentBiz ? "hide" : "";
-  if (currentBiz){
-    layer.clearLayers();
-    map.setView([+opt.dataset.lat, +opt.dataset.lng], 14);
-    L.marker([+opt.dataset.lat, +opt.dataset.lng]).bindPopup(opt.textContent).addTo(layer);
-    await loadKeywords();
-  } else {
-    $("kwList").innerHTML = "";
-  }
-  updateScanBtn();
-};
-
-/* ---------- الكلمات ---------- */
-async function loadKeywords(){
-  const { data } = await sb.from("keywords").select("*").eq("business_id", currentBiz);
-  const box = $("kwList"); box.innerHTML = "";
-  (data || []).forEach(k => {
-    const d = document.createElement("div");
-    d.className = "item";
-    d.innerHTML = `<span>${k.term}</span>`;
-    const b = document.createElement("button");
-    b.textContent = currentKw === k.id ? "✓ محددة" : "اختر";
-    b.style.cssText = "margin:0;padding:6px 12px;font-size:13px";
-    if (currentKw !== k.id) b.className = "ghost";
-    b.onclick = () => { currentKw = k.id; loadKeywords(); updateScanBtn(); };
-    d.appendChild(b);
-    box.appendChild(d);
-  });
-}
-
-$("addKw").onclick = async () => {
-  if (!currentBiz) return alert("اختر محلاً أولاً");
-  const term = $("kwTerm").value.trim();
-  if (!term) return;
-  const { error } = await sb.from("keywords").insert({ business_id: currentBiz, term });
-  if (error) return alert(error.message);
-  $("kwTerm").value = "";
-  await loadKeywords();
-};
-
-function updateScanBtn(){
-  $("scanBtn").disabled = !(currentBiz && currentKw);
-  $("auditBtn").disabled = !currentBiz;
-  $("revBtn").disabled = !currentBiz;
-  $("compBtn").disabled = !currentBiz;
-}
-
-/* ---------- الفحص ---------- */
-$("scanBtn").onclick = async () => {
-  const btn = $("scanBtn");
-  btn.disabled = true; btn.textContent = "جارٍ الفحص…";
-  show($("scanMsg"), "ok", "يستغرق من ثوانٍ إلى دقيقة حسب حجم الشبكة…");
-
-  try {
-    const { data, error } = await sb.functions.invoke("run-scan", {
-      body: {
-        business_id: currentBiz,
-        keyword_id: currentKw,
-        grid_size: +$("gridSize").value,
-        grid_spacing_m: +$("spacing").value
-      }
-    });
-    if (error) throw error;
-    if (!data.success) throw new Error(data.error);
-
-    $("stAvg").textContent   = data.avg_rank ?? "—";
-    $("stBest").textContent  = data.best_rank ?? "—";
-    $("stWorst").textContent = data.worst_rank ?? "—";
-    $("stVis").textContent   = (data.visibility_pct ?? 0) + "%";
-    $("stCost").textContent  = data.cost_usd ?? "0";
-    $("stats").className = "stats";
-
-    const { data: pts } = await sb.from("scan_points")
-      .select("*").eq("scan_id", data.scan_id);
-
-    layer.clearLayers();
-    const bounds = [];
-    (pts || []).forEach(p => {
-      L.marker([p.lat, p.lng], { icon: rankIcon(p.rank) })
-        .bindPopup(popupHtml(p))
-        .addTo(layer);
-      bounds.push([p.lat, p.lng]);
-    });
-
-    // دبوس محل العميل فوق كل شيء
-    const b = data.business;
-    if (b) {
-      L.marker([b.lat, b.lng], { icon: myIcon(), zIndexOffset: 1000 })
-        .bindPopup(`<div class="pop"><h4>${b.name}</h4><div class="r">محلك — متوسط ترتيبك ${data.avg_rank ?? "—"}</div></div>`)
-        .addTo(layer);
-      bounds.push([b.lat, b.lng]);
-    }
-
-    if (bounds.length) map.fitBounds(bounds, { padding: [40, 40] });
-
-    show($("scanMsg"), "ok", `اكتمل الفحص — ${data.points_done} نقطة.`);
-  } catch (e) {
-    show($("scanMsg"), "err", "فشل الفحص: " + (e.message || e));
-  } finally {
-    btn.disabled = false; btn.textContent = "ابدأ الفحص";
-  }
-};
-
-/* ---------- تدقيق الملف ---------- */
-function scoreColor(v){
-  if (v >= 80) return "#2ecc71";
-  if (v >= 55) return "#f4d35e";
-  return "#e63946";
-}
-
-$("auditBtn").onclick = async () => {
-  const btn = $("auditBtn");
-  btn.disabled = true; btn.textContent = "جارٍ الفحص…";
-  show($("auditMsg"), "ok", "نقرأ ملفك من قوقل ماب…");
-
-  try {
-    const { data, error } = await sb.functions.invoke("audit-profile", {
-      body: { business_id: currentBiz }
-    });
-    if (error) throw error;
-    if (!data.success) throw new Error(data.error);
-
-    const col = scoreColor(data.score);
-    $("scoreRing").style.background =
-      `conic-gradient(${col} ${data.score * 3.6}deg, #24405c 0deg)`;
-    $("scoreNum").textContent = data.score;
-    $("scoreNum").style.color = col;
-
-    const failed = data.checks.filter(c => !c.pass).length;
-    $("scoreTxt").innerHTML = failed
-      ? `ملفك مكتمل بنسبة <b style="color:${col}">${data.score}%</b> — لديك ${failed} نقطة تحتاج معالجة. عالج المرتبة أولاً فأثرها أكبر.`
-      : `ملفك مكتمل بنسبة <b style="color:${col}">${data.score}%</b> — ممتاز، حافظ على التحديث المنتظم.`;
-
-    const box = $("checks"); box.innerHTML = "";
-    const sorted = [...data.checks].sort((a, b) =>
-      (a.pass === b.pass) ? b.weight - a.weight : (a.pass ? 1 : -1));
-
-    sorted.forEach(c => {
-      const d = document.createElement("div");
-      d.className = c.pass ? "chk" : "chk fail";
-      d.innerHTML = `
-        <div class="ico">${c.pass ? "✅" : "❌"}</div>
-        <div class="body">
-          <div class="t">${c.label} <span class="w">· أثر ${c.impact}</span></div>
-          <div class="d">${c.detail}</div>
-          ${c.action ? `<div class="a">← ${c.action}</div>` : ""}
-        </div>`;
-      box.appendChild(d);
-    });
-
-    if ((data.competitors || []).length) {
-      const cl = $("compList"); cl.innerHTML = "";
-      const mine = document.createElement("div");
-      mine.className = "compRow mine";
-      mine.innerHTML = `<span>${data.my_stats.name} (محلك)</span>
-        <span>★${data.my_stats.rating ?? "—"} · ${data.my_stats.reviews ?? 0} مراجعة</span>`;
-      cl.appendChild(mine);
-
-      data.competitors.forEach(c => {
-        const r = document.createElement("div");
-        r.className = "compRow";
-        r.innerHTML = `<span>${c.name}</span>
-          <span>★${c.rating ?? "—"} · ${c.reviews ?? 0} مراجعة</span>`;
-        cl.appendChild(r);
-      });
-      $("compBox").className = "";
-    } else {
-      $("compBox").className = "hide";
-    }
-
-    $("auditBox").className = "";
-    clearMsg($("auditMsg"));
-    if (!data.profile_found) {
-      show($("auditMsg"), "err", "لم نتمكن من قراءة كل تفاصيل ملفك من قوقل — بعض النتائج تقديرية.");
-    }
-  } catch (e) {
-    show($("auditMsg"), "err", "فشل التدقيق: " + (e.message || e));
-  } finally {
-    btn.disabled = !currentBiz; btn.textContent = "افحص ملفي";
-  }
-};
-
-/* ---------- تحليل المراجعات ---------- */
-$("revBtn").onclick = async () => {
-  const btn = $("revBtn");
-  btn.disabled = true; btn.textContent = "جارٍ التحليل…";
-  show($("revMsg"), "ok", "نسحب المراجعات ونحللها — قد يستغرق نصف دقيقة…");
-
-  try {
-    const { data, error } = await sb.functions.invoke("analyze-reviews", {
-      body: { business_id: currentBiz, depth: 50 }
-    });
-    if (error) throw error;
-    if (!data.success) throw new Error(data.error);
-
-    $("rvTotal").textContent = data.total_reviews;
-    $("rvPos").textContent   = data.positive;
-    $("rvNeg").textContent   = data.negative;
-    $("rvNoRep").textContent = data.negative_without_reply;
-
-    const t = Math.max(1, data.total_reviews);
-    $("revBar").innerHTML = `
-      <i style="background:#2ecc71;width:${(data.positive / t) * 100}%"></i>
-      <i style="background:#f4d35e;width:${(data.neutral / t) * 100}%"></i>
-      <i style="background:#e63946;width:${(data.negative / t) * 100}%"></i>`;
-    $("barPos").textContent = `إيجابي ${Math.round((data.positive / t) * 100)}%`;
-    $("barNeg").textContent = `سلبي ${Math.round((data.negative / t) * 100)}%`;
-
-    $("sumBox").textContent = data.summary || "—";
-
-    const renderTopics = (el, arr, color) => {
-      const box = $(el); box.innerHTML = "";
-      (arr || []).forEach(x => {
-        const pct = Math.min(100, Math.max(0, x.percent ?? 0));
-        const d = document.createElement("div");
-        d.className = "topic";
-        d.innerHTML = `
-          <div class="h"><span>${x.topic}</span><span class="pct" style="color:${color}">${pct}%</span></div>
-          <div class="d">${x.detail ?? ""}</div>
-          <div class="pbar"><i style="width:${pct}%;background:${color}"></i></div>`;
-        box.appendChild(d);
-      });
-      if (!(arr || []).length) box.innerHTML = '<div class="hint">لا توجد بيانات كافية</div>';
-    };
-
-    renderTopics("strengths", data.strengths, "#2ecc71");
-    renderTopics("weaknesses", data.weaknesses, "#e63946");
-
-    const rb = $("recs"); rb.innerHTML = "";
-    (data.recommendations || []).forEach(r => {
-      const d = document.createElement("div");
-      d.className = "rec";
-      d.textContent = "← " + r;
-      rb.appendChild(d);
-    });
-
-    const ns = data.negative_samples || [];
-    if (ns.length) {
-      const nl = $("negList"); nl.innerHTML = "";
-      ns.forEach(r => {
-        const d = document.createElement("div");
-        d.className = "revCard";
-        d.innerHTML = `
-          <div class="m">
-            <span>${r.author ?? "زائر"} · ${"★".repeat(r.rating || 1)}</span>
-            ${r.replied ? "<span>تم الرد</span>" : '<span class="tag">بلا رد</span>'}
-          </div>
-          <div class="tx">${(r.text || "").slice(0, 260)}</div>`;
-        nl.appendChild(d);
-      });
-      $("negBox").className = "";
-    } else {
-      $("negBox").className = "hide";
-    }
-
-    $("revBox").className = "";
-    clearMsg($("revMsg"));
-  } catch (e) {
-    show($("revMsg"), "err", "فشل التحليل: " + (e.message || e));
-  } finally {
-    btn.disabled = !currentBiz; btn.textContent = "حلّل مراجعاتي";
-  }
-};
-
-/* ---------- تحليل المنافسين ---------- */
-function threatClass(t){
-  const s = String(t || "");
-  if (s.includes("مرتفع")) return "t-high";
-  if (s.includes("منخفض")) return "t-low";
-  return "t-mid";
-}
-
-$("compBtn").onclick = async () => {
-  const btn = $("compBtn");
-  btn.disabled = true; btn.textContent = "جارٍ التحليل…";
-  show($("compMsg"), "ok", "نقرأ ملفات منافسيك ومراجعاتهم — قد يستغرق دقيقة أو دقيقتين…");
-
-  try {
-    const { data, error } = await sb.functions.invoke("analyze-competitors", {
-      body: { business_id: currentBiz, max_competitors: 3, review_depth: 30 }
-    });
-    if (error) throw error;
-    if (!data.success) throw new Error(data.error);
-
-    $("posBox").textContent = data.positioning || "—";
-
-    const pl = $("planList"); pl.innerHTML = "";
-    (data.battle_plan || []).forEach((p, i) => {
-      const d = document.createElement("div");
-      d.className = "plan";
-      d.innerHTML = `<div class="num">${p.priority ?? i + 1}</div>
-        <div><div class="t">${p.action ?? ""}</div>
-        <div class="r">${p.reason ?? ""}${p.impact ? " · أثر " + p.impact : ""}</div></div>`;
-      pl.appendChild(d);
-    });
-
-    const cl = $("cmpList"); cl.innerHTML = "";
-    (data.competitors || []).forEach(c => {
-      const pills = [];
-      if (c.rating) pills.push(`★ ${c.rating}`);
-      if (c.reviews != null) pills.push(`${c.reviews} مراجعة`);
-      if (c.price_level) pills.push(`سعر ${c.price_level}`);
-      if (c.category) pills.push(c.category);
-      if (c.photos != null) pills.push(`${c.photos} صورة`);
-      pills.push(`ظهر فوقك في ${c.appearances} نقطة`);
-      if (c.best_rank) pills.push(`أفضل ترتيب ${c.best_rank}`);
-
-      const d = document.createElement("div");
-      d.className = "cCard";
-      d.innerHTML = `
-        <div class="cHead">
-          <div class="cName">${c.name}</div>
-          ${c.threat_level ? `<span class="threat ${threatClass(c.threat_level)}">خطورة ${c.threat_level}</span>` : ""}
-        </div>
-        <div class="cMeta">${pills.map(p => `<span class="pill">${p}</span>`).join("")}</div>
-        ${c.why ? `<div class="cWhy">${c.why}</div>` : ""}
-        ${c.price_impression ? `<div class="cWhy">💰 ${c.price_impression}</div>` : ""}
-        <div class="cCols">
-          <div class="cCol good"><h5>قوته</h5><ul>${(c.strengths || []).map(x => `<li>${x}</li>`).join("") || "<li>—</li>"}</ul></div>
-          <div class="cCol bad"><h5>ضعفه</h5><ul>${(c.weaknesses || []).map(x => `<li>${x}</li>`).join("") || "<li>—</li>"}</ul></div>
-        </div>
-        ${c.menu_url ? `<div style="margin-top:10px"><a href="${c.menu_url}" target="_blank" style="color:var(--acc);font-size:13px">عرض منيو المنافس ↗</a></div>` : ""}`;
-      cl.appendChild(d);
-    });
-
-    const fill = (boxId, listId, arr, cls) => {
-      if (!(arr || []).length) { $(boxId).className = "hide"; return; }
-      const el = $(listId); el.innerHTML = "";
-      arr.forEach(x => {
-        const d = document.createElement("div");
-        d.className = "oppo " + cls;
-        d.textContent = x;
-        el.appendChild(d);
-      });
-      $(boxId).className = "";
-    };
-    fill("oppBox", "oppList", data.opportunities, "o");
-    fill("thrBox", "thrList", data.threats, "t");
-
-    $("cmpBox").className = "";
-    clearMsg($("compMsg"));
-  } catch (e) {
-    show($("compMsg"), "err", "فشل التحليل: " + (e.message || e));
-  } finally {
-    btn.disabled = !currentBiz; btn.textContent = "حلّل منافسيّ";
-  }
-};
-
-/* ---------- تحليل موقع لمشروع جديد ---------- */
-let locMap, locLayer, locPick = null;
-
-function initLocMap(){
-  if (locMap) return;
-  locMap = L.map("locMap").setView(
-    userLoc ? [userLoc.lat, userLoc.lng] : [21.5433, 39.1728], userLoc ? 14 : 12);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { attribution: "© OpenStreetMap" }).addTo(locMap);
-  locLayer = L.layerGroup().addTo(locMap);
-
-  locMap.on("click", e => {
-    locPick = { lat: e.latlng.lat, lng: e.latlng.lng };
-    locLayer.clearLayers();
-    L.marker([locPick.lat, locPick.lng], { icon: myIcon() }).addTo(locLayer);
-    L.circle([locPick.lat, locPick.lng], {
-      radius: +$("locRadius").value, color: "#00c2a8", weight: 1, fillOpacity: .08
-    }).addTo(locLayer);
-    $("locBtn").disabled = false;
-  });
-}
-
-$("locRadius").onchange = () => {
-  if (!locPick) return;
-  locLayer.clearLayers();
-  L.marker([locPick.lat, locPick.lng], { icon: myIcon() }).addTo(locLayer);
-  L.circle([locPick.lat, locPick.lng], {
-    radius: +$("locRadius").value, color: "#00c2a8", weight: 1, fillOpacity: .08
-  }).addTo(locLayer);
-};
-
-$("locBtn").onclick = async () => {
-  const act = $("locAct").value.trim();
-  if (act.length < 2) return show($("locMsg"), "err", "اكتب نوع النشاط");
-  if (!locPick) return show($("locMsg"), "err", "حدد الموقع على الخريطة");
-
-  const btn = $("locBtn");
-  btn.disabled = true; btn.textContent = "جارٍ التحليل…";
-  show($("locMsg"), "ok", "نمسح المنطقة ونقرأ المنافسين والمحيط — قد يستغرق دقيقتين…");
-
-  try {
-    const { data, error } = await sb.functions.invoke("analyze-location", {
-      body: {
-        activity: act,
-        lat: locPick.lat, lng: locPick.lng,
-        area_label: $("locArea").value.trim() || null,
-        radius_m: +$("locRadius").value
-      }
-    });
-    if (error) throw error;
-    if (!data.success) throw new Error(data.error);
-
-    const col = data.score >= 75 ? "#2ecc71" : data.score >= 60 ? "#7fe6d0"
-      : data.score >= 45 ? "#f4d35e" : "#e63946";
-    $("locRing").style.background = `conic-gradient(${col} ${data.score * 3.6}deg, #24405c 0deg)`;
-    $("locScore").textContent = data.score;
-    $("locScore").style.color = col;
-    $("locVerdict").textContent = data.verdict;
-    $("locVerdict").style.color = col;
-
-    const m = data.market_signals || {};
-    $("locSub").textContent =
-      `أقرب منافس: ${m.nearest_name ?? "—"} على بعد ${m.nearest_distance_m ?? "—"} متر · ${m.vitality_label ?? ""}`;
-
-    $("lcComp").textContent   = data.competitors_count ?? "—";
-    $("lcRating").textContent = m.avg_rating ?? "—";
-    $("lcWeak").textContent   = m.weak_competitors ?? "—";
-    $("lcVital").textContent  = (m.vitality_score ?? "—") + "%";
-
-    $("locSum").textContent = data.summary || "—";
-    $("areaChar").textContent = data.area_character || "";
-    $("areaChar").className = data.area_character ? "sumBox" : "hide";
-
-    // مولدات الحركة
-    const an = m.anchors || [];
-    if (an.length) {
-      const el = $("anchList"); el.innerHTML = "";
-      an.sort((a,b) => a.nearest_distance_m - b.nearest_distance_m).forEach(a => {
-        const d = document.createElement("div");
-        d.className = "anchor";
-        d.innerHTML = `<div class="ic">${a.icon}</div>
-          <div class="nm"><b>${a.type}</b> · ${a.count} في النطاق<br>
-          <span style="color:var(--mut);font-size:12.5px">أقربها: ${a.nearest}</span></div>
-          <div class="ds">${a.nearest_distance_m}م</div>`;
-        el.appendChild(d);
-      });
-      $("anchBox").className = "";
-    } else $("anchBox").className = "hide";
-
-    // العلامات الكبرى
-    const br = m.brands || [];
-    if (br.length) {
-      $("brandList").innerHTML = br
-        .map(b => `<span class="brandChip">${b.name} · ${b.distance_m}م</span>`).join("");
-      $("brandBox").className = "";
-    } else $("brandBox").className = "hide";
-
-    // نقاط الزخم
-    const mg = m.magnets || [];
-    if (mg.length) {
-      const el = $("magList"); el.innerHTML = "";
-      mg.forEach(x => {
-        const d = document.createElement("div");
-        d.className = "compRow";
-        d.innerHTML = `<span>${x.name}</span><span>${x.reviews} مراجعة · ${x.distance_m}م</span>`;
-        el.appendChild(d);
-      });
-      $("magBox").className = "";
-    } else $("magBox").className = "hide";
-
-    // أوقات النشاط
-    const ph = data.peak_hours || {};
-    if ((ph.hourly || []).length) {
-      const max = Math.max(...ph.hourly.map(h => h.value), 1);
-      const byHour = {};
-      ph.hourly.forEach(h => byHour[h.hour] = h.value);
-      let html = "";
-      for (let h = 0; h < 24; h++) {
-        const v = byHour[h] ?? 0;
-        const pk = (ph.top || []).includes(h) ? " pk" : "";
-        html += `<i class="${pk}" style="height:${Math.max(2,(v/max)*100)}%" title="${h}:00"></i>`;
-      }
-      $("hoursBar").innerHTML = html;
-      const fmt = h => h === 0 ? "12ص" : h < 12 ? h + "ص" : h === 12 ? "12م" : (h - 12) + "م";
-      $("peakTxt").textContent = (ph.top || []).length
-        ? `أنشط الساعات في المنطقة: ${ph.top.map(fmt).join("، ")} — مبني على ${ph.sources} محل`
-        : "";
-      $("hoursBox").className = "";
-    } else $("hoursBox").className = "hide";
-
-    // مؤشرات السوق مع التفسير
-    const inds = data.indicators || m.indicators || [];
-    if (inds.length) {
-      const el = $("indList"); el.innerHTML = "";
-      const icon = st => st === "good" ? "✅" : st === "warn" ? "⚠️" : "📊";
-      inds.forEach(x => {
-        const d = document.createElement("div");
-        d.className = "indCard " + (x.status || "neutral");
-        let extra = "";
-        if (x.key === "rising" && (x.items || []).length) {
-          extra = `<div style="margin-top:9px">${x.items.map(r =>
-            `<div class="compRow"><span>${r.name}</span><span>★${r.rating} · ${r.reviews} مراجعة · ${r.distance_m}م</span></div>`
-          ).join("")}</div>`;
-        }
-        if (x.key === "complements" && (x.items || []).length) {
-          extra = `<div style="margin-top:9px">${x.items.map(c =>
-            `<span class="brandChip">${c.type}: ${c.count} · أقربها ${c.nearest_distance_m}م</span>`
-          ).join("")}</div>`;
-        }
-        d.innerHTML = `
-          <div class="indHead">
-            <div class="indTitle">${icon(x.status)} ${x.title}</div>
-            <div class="indVal">${x.value}</div>
-          </div>
-          <div class="indWhat">${x.what}</div>
-          <div class="indMeans">${x.means}</div>
-          ${extra}`;
-        el.appendChild(d);
-      });
-      $("indBox").className = "";
-    } else $("indBox").className = "hide";
-
-    const fillList = (boxId, listId, arr, cls) => {
-      if (!(arr || []).length) { $(boxId).className = "hide"; return; }
-      const el = $(listId); el.innerHTML = "";
-      arr.forEach(x => {
-        const d = document.createElement("div");
-        d.className = cls;
-        d.textContent = cls === "gap" ? x : "← " + x;
-        el.appendChild(d);
-      });
-      $(boxId).className = "";
-    };
-    fillList("gapBox", "gapList", data.market_gaps, "gap");
-    fillList("lOppBox", "lOppList", data.opportunities, "oppo o");
-    fillList("lRiskBox", "lRiskList", data.risks, "oppo t");
-    fillList("succBox", "succList", data.success_factors, "rec");
-
-    // المنافسون + رسمهم على الخريطة
-    const cs = data.competitors || [];
-    if (cs.length) {
-      const el = $("lcCompList"); el.innerHTML = "";
-      cs.forEach(c => {
-        const d = document.createElement("div");
-        d.className = "compRow";
-        d.innerHTML = `<span>${c.name}</span>
-          <span>★${c.rating ?? "—"} · ${c.reviews ?? 0} · ${c.distance_m}م</span>`;
-        el.appendChild(d);
-      });
-      $("lcCompBox").className = "";
-
-      cs.forEach(c => {
-        L.circleMarker([c.lat, c.lng], {
-          radius: 7, color: "#fff", weight: 1,
-          fillColor: (c.rating ?? 5) < 4 ? "#e63946" : "#f4a261", fillOpacity: .9
-        }).bindPopup(`<b>${c.name}</b><br>★${c.rating ?? "—"} · ${c.reviews ?? 0} مراجعة`).addTo(locLayer);
-      });
-    } else $("lcCompBox").className = "hide";
-
-    $("locDisc").textContent = data.disclaimer || "";
-    $("locBox").className = "";
-    clearMsg($("locMsg"));
-  } catch (e) {
-    show($("locMsg"), "err", "فشل التحليل: " + (e.message || e));
-  } finally {
-    btn.disabled = !locPick; btn.textContent = "حلّل هذا الموقع";
-  }
-};
-
-/* ---------- الإقلاع ---------- */
-async function boot(){
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return;
-  $("authCard").className = "card hide";
-  $("app").className = "";
-  $("logoutBtn").className = "ghost";
-  initMap();
-  initLocMap();
-  await loadBusinesses();
-}
-boot();
-</script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
