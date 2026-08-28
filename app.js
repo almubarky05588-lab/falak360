@@ -175,9 +175,22 @@ async function loadBusinesses() {
   return data || [];
 }
 
+function resetResults() {
+  ["scanResult", "auditResult", "revResult", "compResult"].forEach((id) => {
+    const el = $(id);
+    if (el) el.className = "hidden";
+  });
+  ["scanMsg", "auditMsg", "revMsg", "compMsg"].forEach((id) => {
+    const el = $(id);
+    if (el) clearMsg(el);
+  });
+  if (layer) layer.clearLayers();
+}
+
 $("bizSelect").onchange = async (e) => {
   currentBiz = e.target.value || null;
   currentKw = null;
+  resetResults();
   $("addBizWrap").className = currentBiz ? "sp-t hidden" : "sp-t";
   if (!currentBiz) { currentBizData = null; $("bizSummary").className = "hidden"; }
   else {
