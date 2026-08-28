@@ -186,13 +186,16 @@ body{
    ========================================================= */
 .stats{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(96px,1fr));
+  grid-template-columns:repeat(4,1fr);
   gap:1px;
   background:var(--line);
   border:1px solid var(--line);
   border-radius:var(--r);
   overflow:hidden;
   margin-top:var(--sp-4);
+}
+@media (max-width:560px){
+  .stats{grid-template-columns:repeat(2,1fr)}
 }
 .stat{background:var(--surface);padding:var(--sp-4) var(--sp-3);text-align:center}
 .stat-val{
