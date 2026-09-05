@@ -76,20 +76,16 @@ function icon(name, size, cls){
 }
 
 /* =========================================================
-   الشعار — مدارات حول مركز، ونقطة على المدار
-   يحمل معنى المنتج: موقعك يُقاس من كل نقطة حولك.
+   الشعار — حرف F داخل قوس 360°
+   قوس مفتوح من الأسفل + حرف F في المركز + "°360" تحته.
    ========================================================= */
 function logoMark(size, color){
   const s = size || 30;
   const c = color || "var(--brand)";
-  return `<svg width="${s}" height="${s}" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-    <circle cx="20" cy="20" r="17.25" stroke="${c}" stroke-width="1.5" opacity=".28"/>
-    <circle cx="20" cy="20" r="11.25" stroke="${c}" stroke-width="1.5" opacity=".55"/>
-    <circle cx="20" cy="20" r="5.5" stroke="${c}" stroke-width="1.75"/>
-    <circle cx="20" cy="20" r="2.25" fill="${c}"/>
-    <circle cx="31.3" cy="12.2" r="2.9" fill="${c}"/>
-    <circle cx="8.2" cy="26.6" r="1.9" fill="${c}" opacity=".45"/>
-    <circle cx="24.4" cy="33.2" r="1.6" fill="${c}" opacity=".3"/>
+  return `<svg width="${s}" height="${s}" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <path d="M 10 34 A 18 18 0 1 1 38 34" stroke="${c}" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    <path d="M 19.5 30 V 13 H 30.5 M 19.5 21 H 28" stroke="${c}" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="24" y="41.5" font-family="inherit" font-size="9.5" font-weight="700" fill="${c}" text-anchor="middle">360&#176;</text>
   </svg>`;
 }
 
