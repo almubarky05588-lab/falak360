@@ -2,397 +2,390 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#263A63">
-<title>فلك ٣٦٠ — موقعك في نتائج قوقل ماب</title>
-<meta name="description" content="اعرف ترتيب محلك في قوقل ماب من كل حي حولك، وحلّل مراجعاتك ومنافسيك، وادرس مواقع مشاريعك الجديدة.">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="styles.css">
+<title>فلك ٣٦٠ — اعرف ترتيبك في قوقل ماب من كل حي</title>
+<meta name="description" content="منصة سعودية تقيس ترتيب محلك في قوقل ماب من كل نقطة حولك، وتحلل مراجعاتك ومنافسيك، وتدرس مواقع مشاريعك الجديدة.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#F4F5F2; --surface:#fff; --surface-2:#FAFAF8;
+  --ink:#111820; --ink-2:#4A5563; --ink-3:#7C8794;
+  --line:#E3E5E0; --line-2:#CFD3CC;
+  --brand:#263A63; --brand-2:#1A2A4A; --brand-tint:#EEF1F7;
+  --ok:#1E7A55; --warn:#A96A12; --bad:#A8271F;
+  --r:12px; --r-lg:18px; --r-full:999px;
+  --f-d:'Readex Pro',system-ui,sans-serif;
+  --f-b:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  --f-n:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f-b);background:var(--canvas);color:var(--ink);line-height:1.7;font-size:16px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+a{color:inherit;text-decoration:none}
+
+header{position:sticky;top:0;z-index:50;background:rgba(244,245,242,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:62px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--f-d);font-weight:600;font-size:18px;color:var(--brand)}
+.logo span{color:var(--ink-3);font-weight:400}
+.nav-links{display:flex;gap:26px;font-size:14.5px;color:var(--ink-2)}
+.nav-links a:hover{color:var(--brand)}
+@media(max-width:760px){.nav-links{display:none}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 24px;border:0;border-radius:var(--r);background:var(--brand);color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,transform .1s}
+.btn:hover{background:var(--brand-2)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--brand);border:1px solid var(--line-2)}
+.btn.ghost:hover{background:var(--brand-tint)}
+.btn.sm{height:38px;padding:0 16px;font-size:14px}
+.btn.block{width:100%}
+
+.hero{padding:76px 0 60px}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:52px;align-items:center}
+@media(max-width:860px){.hero-grid{grid-template-columns:1fr;gap:36px}}
+.eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--brand);background:var(--brand-tint);padding:6px 14px;border-radius:var(--r-full);margin-bottom:20px}
+h1{font-family:var(--f-d);font-size:clamp(30px,5vw,46px);font-weight:700;line-height:1.25;letter-spacing:-.03em}
+h1 em{font-style:normal;color:var(--brand)}
+.lead{font-size:17.5px;color:var(--ink-2);margin-top:18px;max-width:520px;line-height:1.85}
+.hero-cta{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.hero-note{font-size:13px;color:var(--ink-3);margin-top:14px}
+
+.demo{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;box-shadow:0 12px 40px rgba(17,24,32,.09)}
+.demo-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:13px;color:var(--ink-3)}
+.demo-head b{font-family:var(--f-d);font-size:14.5px;color:var(--ink);font-weight:600}
+.gridmap{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;background:radial-gradient(var(--line-2) 1px,transparent 1px) 0 0/16px 16px;padding:14px;border-radius:var(--r);border:1px solid var(--line)}
+.dot{aspect-ratio:1;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-family:var(--f-n);font-weight:600;font-size:13px;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(17,24,32,.25);animation:pop .4s backwards}
+@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+.dot.me{background:var(--brand);box-shadow:0 2px 10px rgba(38,58,99,.5)}
+.demo-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--ink-2)}
+.demo-legend span{display:flex;align-items:center;gap:6px}
+.demo-legend i{width:9px;height:9px;border-radius:var(--r-full)}
+
+.band{background:var(--surface);border-block:1px solid var(--line);padding:56px 0}
+.sec-head{max-width:660px;margin-bottom:38px}
+.sec-head h2{font-family:var(--f-d);font-size:clamp(24px,3.5vw,32px);font-weight:600;letter-spacing:-.025em;line-height:1.35}
+.sec-head p{color:var(--ink-2);margin-top:12px;font-size:16.5px}
+.center{margin-inline:auto;text-align:center}
+
+.problem{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:800px){.problem{grid-template-columns:1fr}}
+.p-card{border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;background:var(--surface-2)}
+.p-card .q{font-family:var(--f-d);font-size:17px;font-weight:600;line-height:1.5}
+.p-card .a{font-size:14.5px;color:var(--ink-2);margin-top:10px;line-height:1.8}
+
+.pillars{padding:64px 0}
+.pill{display:grid;grid-template-columns:auto 1fr;gap:18px;padding:24px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);margin-bottom:14px}
+.pill .n{width:38px;height:38px;border-radius:var(--r);background:var(--brand-tint);color:var(--brand);display:flex;align-items:center;justify-content:center;font-family:var(--f-n);font-weight:600;font-size:15px}
+.pill h3{font-family:var(--f-d);font-size:18px;font-weight:600;letter-spacing:-.01em}
+.pill p{font-size:15px;color:var(--ink-2);margin-top:7px;line-height:1.8}
+.pill .out{margin-top:12px;font-size:14px;background:var(--surface-2);border-inline-start:3px solid var(--brand);border-radius:8px;padding:10px 13px;color:var(--ink)}
+
+.pricing{padding:64px 0}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
+@media(max-width:900px){.plans{grid-template-columns:1fr}}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:28px 24px;position:relative}
+.plan.featured{border-color:var(--brand);border-width:2px;box-shadow:0 14px 40px rgba(38,58,99,.14)}
+.plan-tag{position:absolute;top:-13px;inset-inline-start:24px;background:var(--brand);color:#fff;font-size:12px;font-weight:600;padding:4px 13px;border-radius:var(--r-full)}
+.plan h3{font-family:var(--f-d);font-size:19px;font-weight:600}
+.plan .who{font-size:13.5px;color:var(--ink-3);margin-top:4px;min-height:42px}
+.price{display:flex;align-items:baseline;gap:7px;margin:18px 0 4px}
+.price .v{font-family:var(--f-n);font-size:36px;font-weight:600;letter-spacing:-.03em}
+.price .u{font-size:14px;color:var(--ink-3)}
+.vat{font-size:12px;color:var(--ink-3);margin-bottom:20px}
+.feats{list-style:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--line)}
+.feats li{display:flex;gap:9px;font-size:14.5px;line-height:1.75;margin-bottom:11px;color:var(--ink-2)}
+.feats li b{color:var(--ink);font-weight:600}
+.tick{flex:0 0 auto;margin-top:5px;width:15px;height:15px;color:var(--ok)}
+.dash{flex:0 0 auto;margin-top:5px;width:15px;height:15px;color:var(--line-2)}
+.feats li.off{color:var(--ink-3)}
+
+.extra{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px}
+@media(max-width:900px){.extra{grid-template-columns:1fr}}
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px}
+.ex h4{font-family:var(--f-d);font-size:16.5px;font-weight:600}
+.ex .p{font-family:var(--f-n);font-size:22px;font-weight:600;margin:10px 0 3px;color:var(--brand)}
+.ex .s{font-size:13px;color:var(--ink-3)}
+.ex p.d{font-size:14px;color:var(--ink-2);margin-top:12px;line-height:1.75}
+
+.faq{padding:56px 0}
+.q-item{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:18px 20px;margin-bottom:10px}
+.q-item .qq{font-family:var(--f-d);font-size:16px;font-weight:600}
+.q-item .aa{font-size:14.5px;color:var(--ink-2);margin-top:8px;line-height:1.8}
+
+.cta{background:var(--brand);color:#fff;border-radius:var(--r-lg);padding:52px 32px;text-align:center;margin:20px 0 60px}
+.cta h2{font-family:var(--f-d);font-size:clamp(23px,3.5vw,30px);font-weight:600;letter-spacing:-.02em}
+.cta p{color:#C9D3E6;margin-top:12px;font-size:16px;max-width:520px;margin-inline:auto}
+.cta .btn{background:#fff;color:var(--brand);margin-top:24px}
+.cta .btn:hover{background:#EEF1F7}
+
+footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:var(--ink-3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+</style>
 </head>
 <body>
 
-<!-- ===================== الدخول ===================== -->
-<div id="authScreen" class="auth-wrap">
-  <div class="auth-card">
-    <div class="auth-head">
-      <div id="authLogo"></div>
-      <h1>فلك ٣٦٠</h1>
-      <p>اعرف موقعك في نتائج قوقل ماب، وما الذي يرفعه.</p>
+<header>
+  <div class="wrap nav">
+    <div class="logo">
+      <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="17.25" stroke="#263A63" stroke-width="1.5" opacity=".28"/>
+        <circle cx="20" cy="20" r="11.25" stroke="#263A63" stroke-width="1.5" opacity=".55"/>
+        <circle cx="20" cy="20" r="5.5" stroke="#263A63" stroke-width="1.75"/>
+        <circle cx="20" cy="20" r="2.25" fill="#263A63"/>
+        <circle cx="31.3" cy="12.2" r="2.9" fill="#263A63"/>
+        <circle cx="8.2" cy="26.6" r="1.9" fill="#263A63" opacity=".45"/>
+        <circle cx="24.4" cy="33.2" r="1.6" fill="#263A63" opacity=".3"/>
+      </svg>
+      فلك <span>٣٦٠</span>
     </div>
-
-    <div class="field">
-      <label for="email">البريد الإلكتروني</label>
-      <input id="email" class="input" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
-    </div>
-    <div class="field">
-      <label for="password">كلمة المرور</label>
-      <input id="password" class="input" type="password" autocomplete="current-password" placeholder="6 أحرف على الأقل">
-    </div>
-
-    <button id="loginBtn" class="btn block">دخول</button>
-    <button id="signupBtn" class="btn ghost block sp-t">إنشاء حساب جديد</button>
-    <div id="authMsg" class="msg"></div>
+    <nav class="nav-links">
+      <a href="#how">كيف تعمل</a>
+      <a href="#pricing">الأسعار</a>
+      <a href="#faq">أسئلة</a>
+    </nav>
+    <a class="btn sm" href="app.html">ابدأ الآن</a>
   </div>
-</div>
+</header>
 
-<!-- ===================== التطبيق ===================== -->
-<div id="app" class="hidden">
-
-  <header class="app-header">
-    <div class="brand">
-      <div id="headerLogo" class="brand-mark"></div>
-      <div class="brand-name">فلك <span>٣٦٠</span></div>
+<section class="wrap hero">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow">منصة سعودية للسيو المحلي</div>
+      <h1>محلك رقم <em>1</em> عند بابك.<br>ورقم <em>14</em> في الحي المجاور.</h1>
+      <p class="lead">
+        ترتيبك في قوقل ماب ليس رقماً واحداً — يتغيّر مع كل شارع.
+        فلك ٣٦٠ يقيسه من عشرات النقاط حول محلك، ويكشف لك أين تختفي، ومن يأخذ مكانك، ولماذا.
+      </p>
+      <div class="hero-cta">
+        <a class="btn" href="app.html">افحص محلك</a>
+        <a class="btn ghost" href="#pricing">شاهد الباقات</a>
+      </div>
+      <div class="hero-note">بيانات حقيقية من قوقل ماب · تقرير خلال دقيقة</div>
     </div>
-    <button id="logoutBtn" class="btn ghost sm">خروج</button>
-  </header>
 
-  <nav class="tabs" id="tabs">
-    <button class="tab active" data-screen="overview" data-icon="compass">نظرة عامة</button>
-    <button class="tab" data-screen="rank" data-icon="map-pin">الترتيب</button>
-    <button class="tab" data-screen="profile" data-icon="clipboard-check">الملف التجاري</button>
-    <button class="tab" data-screen="reviews" data-icon="message-square">المراجعات</button>
-    <button class="tab" data-screen="rivals" data-icon="users">المنافسون</button>
-    <button class="tab" data-screen="site" data-icon="telescope">موقع مشروع</button>
-  </nav>
+    <div class="demo">
+      <div class="demo-head">
+        <b>مقهى في حي النهضة</b>
+        <span>كلمة: «مقهى»</span>
+      </div>
+      <div class="gridmap" id="gridmap"></div>
+      <div class="demo-legend">
+        <span><i style="background:#1E7A55"></i>‏1–3</span>
+        <span><i style="background:#A96A12"></i>‏4–10</span>
+        <span><i style="background:#A8271F"></i>غير ظاهر</span>
+        <span><i style="background:#263A63"></i>محلك</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <main class="page">
+<section class="band">
+  <div class="wrap">
+    <div class="sec-head center">
+      <h2>ثلاثة أسئلة يعجز صاحب المحل عن إجابتها</h2>
+      <p>وكلها تُقاس اليوم، بلا تخمين.</p>
+    </div>
+    <div class="problem">
+      <div class="p-card">
+        <div class="q">لماذا لا يجدني الناس؟</div>
+        <div class="a">تظهر جيداً أمام محلك، وتختفي على بعد كيلومتر. ما لم تقس ذلك، لن تعرف حجم ما تخسره.</div>
+      </div>
+      <div class="p-card">
+        <div class="q">لماذا يتقدّم عليّ جاري؟</div>
+        <div class="a">التقييم وحده لا يكفي. عدد المراجعات والتصنيفات واكتمال الملف تصنع الفارق — ونحن نقارنها بمنافسيك واحداً واحداً.</div>
+      </div>
+      <div class="p-card">
+        <div class="q">ماذا أفعل غداً؟</div>
+        <div class="a">لا نكتفي بعرض الأرقام. كل تقرير ينتهي بخطوات محددة مرتبة بحسب أثرها على ترتيبك.</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- ---------- نظرة عامة ---------- -->
-    <section id="screen-overview" class="screen active">
-      <h1 class="page-title">نظرة عامة</h1>
-      <p class="page-sub">اختر محلك، ثم تنقّل بين الأقسام لفحص كل جانب.</p>
+<section class="wrap pillars" id="how">
+  <div class="sec-head">
+    <h2>أربعة أعمدة تقيس وضعك بالكامل</h2>
+    <p>كل عمود يجيب على سؤال، وينتهي بخطوة عملية.</p>
+  </div>
 
-      <div class="card">
-        <div class="field" style="margin:0">
-          <label for="bizSelect">المحل</label>
-          <select id="bizSelect" class="select"></select>
-        </div>
+  <div class="pill">
+    <div class="n">1</div>
+    <div>
+      <h3>الترتيب على الخريطة</h3>
+      <p>نوزّع شبكة نقاط حول محلك، ونسأل قوقل من كل نقطة: من يظهر لمن يبحث هنا؟ فتحصل على خريطة ملوّنة تكشف نطاق ظهورك الحقيقي.</p>
+      <div class="out">النتيجة: تعرف الأحياء التي تخسر فيها العملاء قبل أن يصلوك.</div>
+    </div>
+  </div>
 
-        <div id="addBizWrap" class="sp-t">
-          <div class="field">
-            <label for="searchQ">ابحث عن محلك في قوقل ماب</label>
-            <div class="row">
-              <input id="searchQ" class="input" placeholder="اكتب اسم المحل كما هو في قوقل">
-              <button id="searchBtn" class="btn" style="flex:0 0 auto">بحث</button>
-            </div>
-            <div class="hint">نبحث حول موقعك الحالي. اضغط على محلك من النتائج لإضافته ببياناته كاملة.</div>
-          </div>
-          <div id="searchMsg" class="msg"></div>
-          <div id="searchResults"></div>
-        </div>
+  <div class="pill">
+    <div class="n">2</div>
+    <div>
+      <h3>تدقيق الملف التجاري</h3>
+      <p>نقرأ ملفك في قوقل ونفحص أحد عشر عنصراً — التصنيفات، الصور، الأوقات، الوصف، الخدمات، الموقع الإلكتروني — ونعطيك درجة اكتمال وقائمة نواقص مرتّبة بحسب أثرها.</p>
+      <div class="out">النتيجة: قائمة إصلاحات تنفّذها بنفسك اليوم.</div>
+    </div>
+  </div>
+
+  <div class="pill">
+    <div class="n">3</div>
+    <div>
+      <h3>تحليل المراجعات</h3>
+      <p>نسحب مراجعاتك، نفرز السلبي عن الإيجابي، ونستخرج ما يتكرر فيها: ما الذي يمدحه عملاؤك، وما الشكوى التي تعود كل شهر — بنسبة كل موضوع.</p>
+      <div class="out">النتيجة: تعرف مشكلتك التشغيلية الأولى، لا انطباعاً عاماً.</div>
+    </div>
+  </div>
+
+  <div class="pill">
+    <div class="n">4</div>
+    <div>
+      <h3>تحليل المنافسين</h3>
+      <p>نحدد من ينافسك فعلياً من نتائج فحصك — لا من تظنهم — ثم نقرأ مراجعاتهم لنكشف أين يقوون وأين يضعفون، وننتهي بخطة مواجهة مرتّبة بالأولوية.</p>
+      <div class="out">النتيجة: تعرف أين تهاجم وأين تحمي نفسك.</div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="pricing">
+  <div class="wrap">
+    <div class="sec-head center">
+      <h2>باقات واضحة، بلا التزام طويل</h2>
+      <p>اشتراك شهري يُلغى في أي وقت. الأسعار لا تشمل ضريبة القيمة المضافة.</p>
+    </div>
+
+    <div class="plans">
+      <div class="plan">
+        <h3>الأساسية</h3>
+        <div class="who">لمحل واحد يريد أن يعرف موقعه ويبدأ التحسين.</div>
+        <div class="price"><span class="v">129</span><span class="u">ريال / شهرياً</span></div>
+        <div class="vat">لمحل واحد</div>
+        <a class="btn ghost block" href="app.html">ابدأ</a>
+        <ul class="feats">
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span><b>3 كلمات</b> مفتاحية · فحص أسبوعي</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>خريطة الترتيب الكاملة</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تدقيق الملف التجاري <b>مرتين شهرياً</b></span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تحليل المراجعات <b>مرة شهرياً</b></span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تحليل المنافسين <b>مرة شهرياً</b></span></li>
+          <li class="off"><svg class="dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 12h12"/></svg><span>تنبيهات فورية</span></li>
+        </ul>
       </div>
 
-      <div id="bizSummary" class="hidden">
-        <div class="card">
-          <div class="verdict-row">
-            <div id="ovRing"></div>
-            <div class="verdict-text">
-              <div class="verdict-title" id="ovName">—</div>
-              <div class="verdict-note" id="ovMeta">—</div>
-            </div>
-          </div>
-          <div class="stats">
-            <div class="stat"><div class="stat-val num" id="ovRating">—</div><div class="stat-lbl">التقييم</div></div>
-            <div class="stat"><div class="stat-val num" id="ovReviews">—</div><div class="stat-lbl">مراجعة</div></div>
-            <div class="stat"><div class="stat-val num" id="ovKeywords">—</div><div class="stat-lbl">كلمة متابَعة</div></div>
-            <div class="stat"><div class="stat-val num" id="ovScans">—</div><div class="stat-lbl">فحص سابق</div></div>
-          </div>
-        </div>
-
-        <div class="section-head"><h2>ابدأ من هنا</h2></div>
-        <div id="quickActions"></div>
-      </div>
-    </section>
-
-    <!-- ---------- الترتيب ---------- -->
-    <section id="screen-rank" class="screen">
-      <h1 class="page-title">الترتيب على الخريطة</h1>
-      <p class="page-sub">نفحص ترتيبك من نقاط موزّعة حول محلك، فتعرف أين تظهر وأين تختفي.</p>
-
-      <div id="rankGate"></div>
-
-      <div id="rankBody" class="hidden">
-        <div class="card">
-          <div class="field">
-            <label for="kwTerm">الكلمات المفتاحية</label>
-            <div class="row">
-              <input id="kwTerm" class="input" placeholder="ما الذي يبحث عنه عملاؤك؟">
-              <button id="addKw" class="btn ghost" style="flex:0 0 auto">إضافة</button>
-            </div>
-            <div class="hint">اكتب ما يبحث عنه الناس فعلاً، لا اسم محلك.</div>
-          </div>
-          <div id="kwList"></div>
-        </div>
-
-        <div class="card">
-          <div class="row">
-            <div class="field" style="margin:0">
-              <label for="gridSize">حجم الشبكة</label>
-              <select id="gridSize" class="select">
-                <option value="3">‏3×3 — 9 نقاط</option>
-                <option value="5" selected>‏5×5 — 25 نقطة</option>
-                <option value="7">‏7×7 — 49 نقطة</option>
-              </select>
-            </div>
-            <div class="field" style="margin:0">
-              <label for="spacing">المسافة بين النقاط</label>
-              <select id="spacing" class="select">
-                <option value="500">500 متر</option>
-                <option value="800" selected>800 متر</option>
-                <option value="1500">1.5 كيلومتر</option>
-              </select>
-            </div>
-          </div>
-          <button id="scanBtn" class="btn block sp-t" disabled>ابدأ الفحص</button>
-          <div id="scanMsg" class="msg"></div>
-        </div>
-
-        <div id="scanResult" class="hidden">
-          <div class="card">
-            <div class="verdict-row">
-              <div id="scanRing"></div>
-              <div class="verdict-text">
-                <div class="verdict-title" id="scanVerdict">—</div>
-                <div class="verdict-note" id="scanNote">—</div>
-              </div>
-            </div>
-            <div class="stats">
-              <div class="stat"><div class="stat-val num" id="stAvg">—</div><div class="stat-lbl">متوسط الترتيب</div></div>
-              <div class="stat"><div class="stat-val num" id="stBest">—</div><div class="stat-lbl">أفضل ترتيب</div></div>
-              <div class="stat"><div class="stat-val num" id="stWorst">—</div><div class="stat-lbl">أسوأ ترتيب</div></div>
-              <div class="stat"><div class="stat-val num" id="stVis">—</div><div class="stat-lbl">نسبة الظهور</div></div>
-            </div>
-          </div>
-
-          <div id="map" class="map"></div>
-          <div class="legend">
-            <span><i style="background:var(--ok)"></i>‏1–3</span>
-            <span><i style="background:var(--warn)"></i>‏4–10</span>
-            <span><i style="background:#C4762A"></i>‏11–20</span>
-            <span><i style="background:var(--bad)"></i>غير ظاهر</span>
-            <span><i style="background:var(--brand)"></i>محلك</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ---------- الملف التجاري ---------- -->
-    <section id="screen-profile" class="screen">
-      <h1 class="page-title">الملف التجاري</h1>
-      <p class="page-sub">نقرأ ملفك في قوقل ونحدد النواقص التي تُضعف ظهورك، مرتّبة بحسب أثرها.</p>
-
-      <div id="profileGate"></div>
-
-      <div id="profileBody" class="hidden">
-        <button id="auditBtn" class="btn block">افحص ملفي</button>
-        <div id="auditMsg" class="msg"></div>
-
-        <div id="auditResult" class="hidden">
-          <div class="card">
-            <div class="verdict-row">
-              <div id="auditRing"></div>
-              <div class="verdict-text">
-                <div class="verdict-title" id="auditVerdict">—</div>
-                <div class="verdict-note" id="auditNote">—</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="section-head"><h2>نتائج الفحص</h2><span class="note">الأهم أولاً</span></div>
-          <div id="checks"></div>
-
-          <div id="auditCompBox" class="hidden">
-            <div class="section-head"><h2>مقارنة بأقوى منافسيك</h2></div>
-            <div id="auditCompList"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ---------- المراجعات ---------- -->
-    <section id="screen-reviews" class="screen">
-      <h1 class="page-title">المراجعات</h1>
-      <p class="page-sub">نفرز مراجعاتك ونستخرج ما يتكرر فيها من مديح وشكاوى.</p>
-
-      <div id="reviewsGate"></div>
-
-      <div id="reviewsBody" class="hidden">
-        <button id="revBtn" class="btn block">حلّل المراجعات</button>
-        <div id="revMsg" class="msg"></div>
-
-        <div id="revResult" class="hidden">
-          <div class="card">
-            <div class="stats" style="margin:0">
-              <div class="stat"><div class="stat-val num" id="rvTotal">—</div><div class="stat-lbl">مراجعة محلَّلة</div></div>
-              <div class="stat"><div class="stat-val num" id="rvPos" style="color:var(--ok)">—</div><div class="stat-lbl">إيجابية</div></div>
-              <div class="stat"><div class="stat-val num" id="rvNeg" style="color:var(--bad)">—</div><div class="stat-lbl">سلبية</div></div>
-              <div class="stat"><div class="stat-val num" id="rvNoRep" style="color:var(--warn)">—</div><div class="stat-lbl">بلا رد</div></div>
-            </div>
-            <div id="revSummary" class="summary"></div>
-          </div>
-
-          <div class="section-head"><h2>ما يمدحه عملاؤك</h2></div>
-          <div id="strengths"></div>
-
-          <div class="section-head"><h2>الشكاوى المتكررة</h2></div>
-          <div id="weaknesses"></div>
-
-          <div class="section-head"><h2>خطوات مقترحة</h2></div>
-          <div id="revRecs"></div>
-
-          <div id="negBox" class="hidden">
-            <div class="section-head"><h2>مراجعات تحتاج ردّاً</h2></div>
-            <div id="negList"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ---------- المنافسون ---------- -->
-    <section id="screen-rivals" class="screen">
-      <h1 class="page-title">المنافسون</h1>
-      <p class="page-sub">نحدد من ينافسك فعلياً من نتائج فحصك، ونقرأ مراجعاتهم لنعرف أين يقوون وأين يضعفون.</p>
-
-      <div id="rivalsGate"></div>
-
-      <div id="rivalsBody" class="hidden">
-        <button id="compBtn" class="btn block">حلّل المنافسين</button>
-        <div id="compMsg" class="msg"></div>
-
-        <div id="compResult" class="hidden">
-          <div id="positioning" class="summary"></div>
-
-          <div class="section-head"><h2>خطة المواجهة</h2></div>
-          <div id="planList"></div>
-
-          <div class="section-head"><h2>من ينافسك</h2></div>
-          <div id="rivalList"></div>
-
-          <div id="oppBox" class="hidden">
-            <div class="section-head"><h2>فرصك</h2></div>
-            <div id="oppList"></div>
-          </div>
-          <div id="thrBox" class="hidden">
-            <div class="section-head"><h2>ما يستحق انتباهك</h2></div>
-            <div id="thrList"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ---------- تحليل موقع مشروع ---------- -->
-    <section id="screen-site" class="screen">
-      <h1 class="page-title">تحليل موقع مشروع</h1>
-      <p class="page-sub">قبل أن تستأجر: اعرف من ينافسك في المنطقة، وما يحيط بالموقع، وأين الفرص.</p>
-
-      <div class="card">
-        <div class="row">
-          <div class="field" style="margin:0">
-            <label for="locAct">نوع النشاط</label>
-            <input id="locAct" class="input" placeholder="مثال: مقهى">
-          </div>
-          <div class="field" style="margin:0">
-            <label for="locArea">اسم الحي</label>
-            <input id="locArea" class="input" placeholder="اختياري">
-          </div>
-        </div>
-        <div class="field sp-t">
-          <label for="locRadius">نطاق التحليل</label>
-          <select id="locRadius" class="select">
-            <option value="1000">1 كيلومتر — الحي المباشر</option>
-            <option value="1500" selected>1.5 كيلومتر — الحي وما حوله</option>
-            <option value="3000">3 كيلومترات — نطاق واسع</option>
-          </select>
-          <div class="hint">اختر نطاقاً يقارب المسافة التي يقطعها عميلك للوصول إليك.</div>
-        </div>
-
-        <div id="locMap" class="map short"></div>
-        <div class="hint">اضغط على الخريطة لتحديد موقع المشروع.</div>
-
-        <button id="locBtn" class="btn block sp-t" disabled>حلّل الموقع</button>
-        <div id="locMsg" class="msg"></div>
+      <div class="plan featured">
+        <div class="plan-tag">الأكثر ملاءمة</div>
+        <h3>النمو</h3>
+        <div class="who">لمحل جاد في المنافسة ويتابع تقدّمه أسبوعياً.</div>
+        <div class="price"><span class="v">299</span><span class="u">ريال / شهرياً</span></div>
+        <div class="vat">لمحل واحد</div>
+        <a class="btn block" href="app.html">ابدأ</a>
+        <ul class="feats">
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span><b>8 كلمات</b> مفتاحية · فحص كل 3 أيام</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>سجل التطور ومقارنة قبل / بعد</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تحليل المراجعات والمنافسين <b>4 مرات شهرياً</b></span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تنبيه عند تراجع ترتيبك أو وصول مراجعة سلبية</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>أدوات طلب التقييم (رابط و QR)</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تقرير شهري جاهز للمشاركة</span></li>
+        </ul>
       </div>
 
-      <div id="locResult" class="hidden">
-        <div class="card">
-          <div class="verdict-row">
-            <div id="locRing"></div>
-            <div class="verdict-text">
-              <div class="verdict-title" id="locVerdict">—</div>
-              <div class="verdict-note" id="locNote">—</div>
-            </div>
-          </div>
-          <div class="stats">
-            <div class="stat"><div class="stat-val num" id="lcComp">—</div><div class="stat-lbl">منافس في النطاق</div></div>
-            <div class="stat"><div class="stat-val num" id="lcRating">—</div><div class="stat-lbl">متوسط تقييمهم</div></div>
-            <div class="stat"><div class="stat-val num" id="lcWeak">—</div><div class="stat-lbl">منهم دون 4</div></div>
-            <div class="stat"><div class="stat-val num" id="lcVital">—</div><div class="stat-lbl">حيوية المحيط</div></div>
-          </div>
-          <div id="locSummary" class="summary"></div>
-          <div id="areaChar" class="summary hidden"></div>
-        </div>
-
-        <div id="indBox" class="hidden">
-          <div class="section-head"><h2>مؤشرات السوق</h2><span class="note">ماذا يعني كل رقم لك</span></div>
-          <div id="indList"></div>
-        </div>
-
-        <div id="anchBox" class="hidden">
-          <div class="section-head"><h2>محيط الموقع</h2><span class="note">ما يجلب الناس إلى هنا</span></div>
-          <div id="anchList"></div>
-        </div>
-
-        <div id="brandBox" class="hidden">
-          <div class="section-head"><h2>علامات كبرى قريبة</h2></div>
-          <div class="hint" style="margin-bottom:10px">اختارت هذا المحيط بعد دراسة مواقع — إشارة على جدواه.</div>
-          <div id="brandList"></div>
-        </div>
-
-        <div id="magBox" class="hidden">
-          <div class="section-head"><h2>نقاط الزخم</h2><span class="note">تدفّق يمر بك</span></div>
-          <div id="magList"></div>
-        </div>
-
-        <div id="hoursBox" class="hidden">
-          <div class="section-head"><h2>نشاط المنطقة خلال اليوم</h2></div>
-          <div class="hours" id="hoursBar"></div>
-          <div class="hours-axis"><span>12ص</span><span>6ص</span><span>12م</span><span>6م</span><span>11م</span></div>
-          <div class="hint" id="peakTxt"></div>
-        </div>
-
-        <div id="gapBox" class="hidden">
-          <div class="section-head"><h2>ثغرات السوق</h2><span class="note">شكاوى على المنافسين</span></div>
-          <div id="gapList"></div>
-        </div>
-
-        <div id="lOppBox" class="hidden">
-          <div class="section-head"><h2>الفرص</h2></div>
-          <div id="lOppList"></div>
-        </div>
-
-        <div id="lRiskBox" class="hidden">
-          <div class="section-head"><h2>المخاطر</h2></div>
-          <div id="lRiskList"></div>
-        </div>
-
-        <div id="succBox" class="hidden">
-          <div class="section-head"><h2>عوامل النجاح هنا</h2></div>
-          <div id="succList"></div>
-        </div>
-
-        <div id="lcCompBox" class="hidden">
-          <div class="section-head"><h2>المنافسون في المنطقة</h2></div>
-          <div id="lcCompList"></div>
-        </div>
-
-        <div class="disclaimer" id="locDisc"></div>
+      <div class="plan">
+        <h3>الاحترافية</h3>
+        <div class="who">لأصحاب الفروع المتعددة ومن يديرون علامة كاملة.</div>
+        <div class="price"><span class="v">599</span><span class="u">ريال / شهرياً</span></div>
+        <div class="vat">حتى 3 فروع</div>
+        <a class="btn ghost block" href="app.html">ابدأ</a>
+        <ul class="feats">
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span><b>10 كلمات لكل فرع</b> · فحص كل 3 أيام</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>لوحة موحّدة تقارن الفروع وترتّبها بالأداء</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>رصد الفرع المتراجع تلقائياً</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>فحص اتساق أسماء الفروع في قوقل</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تحليلات موسّعة · حتى 20 شهرياً</span></li>
+          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>دعم مباشر</span></li>
+        </ul>
       </div>
-    </section>
+    </div>
 
-  </main>
+    <div class="extra">
+      <div class="ex">
+        <h4>للوكالات</h4>
+        <div class="p">89 ريال</div>
+        <div class="s">لكل محل · بحد أدنى 10 محلات</div>
+        <p class="d">أدر حسابات عملائك من لوحة واحدة، وأصدر التقارير بشعار وكالتك. كل محل بمستوى باقة النمو.</p>
+      </div>
+      <div class="ex">
+        <h4>للفرنشايز</h4>
+        <div class="p">149 ريال</div>
+        <div class="s">لكل فرع · بحد أدنى 5 فروع</div>
+        <p class="d">ترتيب الفروع بالأداء، ورصد المتراجع منها، وتحليل شكاوى موحّد يفرّق بين خلل الفرع وخلل النظام.</p>
+      </div>
+      <div class="ex">
+        <h4>تقرير موقع مشروع</h4>
+        <div class="p">199 ريال</div>
+        <div class="s">للتقرير الواحد · بلا اشتراك</div>
+        <p class="d">قبل أن تستأجر: المنافسون في النطاق، ومولّدات الحركة حولك، وثغرات السوق، ودرجة جاذبية الموقع. ثلاثة تقارير بـ 449 ريال.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap faq" id="faq">
+  <div class="sec-head"><h2>أسئلة قبل أن تبدأ</h2></div>
+
+  <div class="q-item">
+    <div class="qq">هل الترتيب الذي تعرضونه حقيقي؟</div>
+    <div class="aa">نعم. لا نخمّن ولا نحسب ترتيباً خاصاً بنا — نستعلم من قوقل بإحداثيات كل نقطة، فتحصل على النتيجة كما تظهر لمن يبحث من هناك.</div>
+  </div>
+
+  <div class="q-item">
+    <div class="qq">هل ترفعون ترتيبي؟</div>
+    <div class="aa">لا أحد يستطيع ضمان ذلك، ومن يَعِدك به فهو يبالغ. ما نقدّمه: قياس دقيق لوضعك، وتشخيص لأسباب تأخّرك، وخطوات مثبتة الأثر تنفّذها بنفسك — وقياس النتيجة بعدها.</div>
+  </div>
+
+  <div class="q-item">
+    <div class="qq">هل تحذفون المراجعات السلبية؟</div>
+    <div class="aa">لا يمكن لأحد حذف مراجعة لأنها سلبية فحسب. ما نفعله: نرصدها فور وصولها، ونحلل ما يتكرر فيها، ونساعدك على الرد ومعالجة سببها — وعلى زيادة المراجعات الإيجابية حتى يتحسّن متوسطك.</div>
+  </div>
+
+  <div class="q-item">
+    <div class="qq">هل أحتاج خبرة تقنية؟</div>
+    <div class="aa">لا. تبحث عن اسم محلك، تختاره، وتضغط زراً واحداً. التقارير مكتوبة بالعربية وبلغة صاحب المحل لا بلغة المبرمجين.</div>
+  </div>
+
+  <div class="q-item">
+    <div class="qq">ماذا لو ألغيت الاشتراك؟</div>
+    <div class="aa">الاشتراك شهري ويُلغى متى شئت. بياناتك وتقاريرك تبقى متاحة لك حتى نهاية المدة المدفوعة.</div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="cta">
+    <h2>اعرف ترتيبك اليوم</h2>
+    <p>أضف محلك، واختر كلمة يبحث بها عملاؤك، واحصل على خريطة ظهورك خلال دقيقة.</p>
+    <a class="btn" href="app.html">ابدأ الآن</a>
+  </div>
+
+  <footer>
+    <div>فلك ٣٦٠ — منصة سعودية للسيو المحلي</div>
+    <div>البيانات من قوقل ماب · التحليلات لا تغني عن دراسة الجدوى</div>
+  </footer>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module" src="app.js"></script>
+<script>
+const ranks = [
+  12, 8, 6, 9, 14,
+   7, 4, 2, 5, 10,
+   5, 2, null, 3, 7,
+   6, 3, 1, 2, 8,
+  11, 7, 4, 6, 13
+];
+const color = r => r == null ? "#A8271F" : r <= 3 ? "#1E7A55" : r <= 10 ? "#A96A12" : "#C4762A";
+document.getElementById("gridmap").innerHTML = ranks.map((r, i) =>
+  i === 12
+    ? `<div class="dot me" style="animation-delay:${i * 22}ms">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+           <circle cx="12" cy="12" r="9"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg>
+       </div>`
+    : `<div class="dot" style="background:${color(r)};animation-delay:${i * 22}ms">${r ?? "؟"}</div>`
+).join("");
+</script>
 </body>
 </html>
