@@ -13,14 +13,10 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-/* الحالة */
-let currentBiz = null;
-let currentBizData = null;
-let currentKw = null;
-let userLoc = null;
+let currentBiz = null, currentBizData = null, currentKw = null, userLoc = null;
 let map, layer, locMap, locLayer, locPick = null;
 
-/* ---------------- رسائل الحالة ---------------- */
+/* ---------------- رسائل ---------------- */
 function msg(el, kind, text) {
   const ic = kind === "error" ? "alert-triangle" : kind === "done" ? "check-circle" : "info";
   el.className = `msg show ${kind}`;
@@ -39,7 +35,6 @@ function busy(btn, on, label) {
   }
 }
 
-/* ---------------- حالات فارغة ---------------- */
 function emptyState(el, iconName, title, body, actionLabel, actionScreen) {
   el.innerHTML = `<div class="empty">
     ${icon(iconName, 34)}
@@ -47,8 +42,7 @@ function emptyState(el, iconName, title, body, actionLabel, actionScreen) {
     <p>${esc(body)}</p>
     ${actionLabel ? `<button class="btn" data-goto="${actionScreen}">${esc(actionLabel)}</button>` : ""}
   </div>`;
-  el.querySelectorAll("[data-goto]").forEach((b) =>
-    b.onclick = () => showScreen(b.dataset.goto));
+  el.querySelectorAll("[data-goto]").forEach((b) => b.onclick = () => showScreen(b.dataset.goto));
 }
 
 /* ---------------- التنقّل ---------------- */
@@ -58,8 +52,16 @@ function showScreen(name) {
   const el = $(`screen-${name}`);
   if (el) el.classList.add("active");
   window.scrollTo({ top: 0, behavior: "smooth" });
-  if (name === "rank" && map) setTimeout(() => map.invalidateSize(), 60);
-  if (name === "site") { initLocMap(); setTimeout(() => locMap && locMap.invalidateSize(), 60); }
+
+  // الخرائط تُنشأ بعد ظهور الشاشة، وإلا حُسبت أبعادها صفراً
+  if (name === "rank") {
+    initMap();
+    requestAnimationFrame(() => setTimeout(() => map && map.invalidateSize(), 80));
+  }
+  if (name === "site") {
+    initLocMap();
+    requestAnimationFrame(() => setTimeout(() => locMap && locMap.invalidateSize(), 80));
+  }
 }
 
 function initChrome() {
@@ -106,6 +108,8 @@ function baseLayer() {
 
 function initMap() {
   if (map) return;
+  const el = $("map");
+  if (!el) return;
   map = L.map("map", { scrollWheelZoom: false })
     .setView(userLoc ? [userLoc.lat, userLoc.lng] : [21.5433, 39.1728], 13);
   baseLayer().addTo(map);
@@ -114,6 +118,8 @@ function initMap() {
 
 function initLocMap() {
   if (locMap) return;
+  const el = $("locMap");
+  if (!el) return;
   locMap = L.map("locMap", { scrollWheelZoom: false })
     .setView(userLoc ? [userLoc.lat, userLoc.lng] : [21.5433, 39.1728], userLoc ? 14 : 12);
   baseLayer().addTo(locMap);
@@ -129,8 +135,7 @@ function drawPick() {
   locLayer.clearLayers();
   L.marker([locPick.lat, locPick.lng], { icon: mePin() }).addTo(locLayer);
   L.circle([locPick.lat, locPick.lng], {
-    radius: +$("locRadius").value, color: "#263A63",
-    weight: 1, fillOpacity: .07,
+    radius: +$("locRadius").value, color: "#263A63", weight: 1, fillOpacity: .07,
   }).addTo(locLayer);
 }
 $("locRadius").onchange = () => { if (locPick) drawPick(); };
@@ -147,11 +152,19 @@ function locateUser() {
   );
 }
 
+/* دبوس الترتيب — حجمه يتناسب مع قوّته */
 function rankPin(rank) {
+  const size = rank == null ? 26 : rank <= 3 ? 38 : rank <= 6 ? 34 : rank <= 10 ? 31 : 28;
+  const inner = rank == null
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>`
+    : rank;
+  const cls = rank == null ? "rank-pin gone" : "rank-pin";
+  const bg = rank == null ? "" : `background:${rankColor(rank)};`;
+  const fs = rank == null ? "" : `font-size:${size >= 34 ? 14 : 12.5}px;`;
   return L.divIcon({
     className: "",
-    html: `<div class="rank-pin" style="background:${rankColor(rank)};width:34px;height:34px">${rank ?? "—"}</div>`,
-    iconSize: [34, 34], iconAnchor: [17, 17],
+    html: `<div class="${cls}" style="${bg}${fs}">${inner}</div>`,
+    iconSize: [size, size], iconAnchor: [size / 2, size / 2],
   });
 }
 function mePin() {
@@ -177,13 +190,13 @@ async function loadBusinesses() {
 
 function resetResults() {
   ["scanResult", "auditResult", "revResult", "compResult"].forEach((id) => {
-    const el = $(id);
-    if (el) el.className = "hidden";
+    const el = $(id); if (el) el.className = "hidden";
   });
   ["scanMsg", "auditMsg", "revMsg", "compMsg"].forEach((id) => {
-    const el = $(id);
-    if (el) clearMsg(el);
+    const el = $(id); if (el) clearMsg(el);
   });
+  const sp = $("spread"); if (sp) sp.className = "spread hidden";
+  const dg = $("diagnose"); if (dg) dg.className = "diagnose hidden";
   if (layer) layer.clearLayers();
 }
 
@@ -205,11 +218,9 @@ $("bizSelect").onchange = async (e) => {
 async function renderOverview() {
   const b = currentBizData;
   if (!b) return;
-
   const [{ count: kwCount }, { count: scanCount }] = await Promise.all([
     sb.from("keywords").select("*", { count: "exact", head: true }).eq("business_id", b.id),
-    sb.from("scans").select("*", { count: "exact", head: true })
-      .eq("business_id", b.id).eq("status", "completed"),
+    sb.from("scans").select("*", { count: "exact", head: true }).eq("business_id", b.id).eq("status", "completed"),
   ]);
 
   const rate = b.google_rating ?? null;
@@ -293,7 +304,7 @@ async function saveBusiness(r) {
   $("bizSelect").dispatchEvent(new Event("change"));
 }
 
-/* ---------------- الكلمات المفتاحية ---------------- */
+/* ---------------- الكلمات ---------------- */
 async function loadKeywords() {
   const { data } = await sb.from("keywords").select("*").eq("business_id", currentBiz);
   const box = $("kwList");
@@ -325,7 +336,6 @@ $("addKw").onclick = async () => {
 
 function updateScanBtn() { $("scanBtn").disabled = !(currentBiz && currentKw); }
 
-/* ---------------- الحواجز ---------------- */
 function refreshGates() {
   const gates = [
     ["rankGate", "rankBody"], ["profileGate", "profileBody"],
@@ -340,6 +350,55 @@ function refreshGates() {
     }
   });
   updateScanBtn();
+}
+
+/* ---------------- عرض نتائج الفحص ---------------- */
+function renderSpread(pts) {
+  const el = $("spread");
+  if (!el) return;
+  const total = pts.length || 1;
+  const seg = [
+    { n: pts.filter((p) => p.rank != null && p.rank <= 3).length, c: "var(--ok)", t: "1–3" },
+    { n: pts.filter((p) => p.rank != null && p.rank > 3 && p.rank <= 10).length, c: "var(--warn)", t: "4–10" },
+    { n: pts.filter((p) => p.rank != null && p.rank > 10).length, c: "#C4762A", t: "11–20" },
+    { n: pts.filter((p) => p.rank == null).length, c: "#C4837D", t: "غير ظاهر" },
+  ].filter((x) => x.n > 0);
+
+  el.innerHTML = seg.map((x) => {
+    const pct = (x.n / total) * 100;
+    const label = pct >= 16 ? `${x.t} <span>${x.n}</span>` : `<span>${x.n}</span>`;
+    return `<div style="flex:${x.n};background:${x.c}" title="${x.t}: ${x.n}">${label}</div>`;
+  }).join("");
+  el.className = "spread";
+}
+
+function renderDiagnose(data, pts) {
+  const el = $("diagnose");
+  if (!el) return;
+  const vis = data.visibility_pct ?? 0;
+
+  if (vis === 0) {
+    el.innerHTML = `<h4>${icon("alert-triangle", 17)}محلك لم يظهر في أي نقطة</h4>
+      <p>بحثنا من ${pts.length} نقطة حول محلك ولم يظهر ضمن أول عشرين نتيجة في أيٍّ منها. الأسباب الأكثر شيوعاً:</p>
+      <ul>
+        <li>الكلمة عامة جداً ويزاحمك عليها كثيرون — جرّب كلمة أدق تصف ما تقدّمه تحديداً.</li>
+        <li>نطاق الشبكة أوسع من نطاق محلك الفعلي — قلّل المسافة إلى 500 متر.</li>
+        <li>ملفك التجاري ناقص أو تصنيفه غير دقيق — افحصه من تبويب «الملف التجاري».</li>
+      </ul>`;
+    el.className = "diagnose";
+    return;
+  }
+
+  if (vis < 60) {
+    const gone = pts.filter((p) => p.rank == null).length;
+    el.innerHTML = `<h4>${icon("alert-triangle", 17)}ظهورك محدود في نطاقك</h4>
+      <p>تختفي في ${gone} نقطة من ${pts.length}. النقاط الحمراء تكشف الأحياء التي يفقدك فيها الباحثون —
+      اضغط على أي نقطة لترى من يظهر مكانك هناك.</p>`;
+    el.className = "diagnose";
+    return;
+  }
+
+  el.className = "diagnose hidden";
 }
 
 /* ---------------- فحص الترتيب ---------------- */
@@ -361,7 +420,7 @@ $("scanBtn").onclick = async () => {
     const vis = data.visibility_pct ?? 0;
     $("scanRing").innerHTML = orbitRing(Math.round(vis), 100, scoreColor(vis), 108, "ظهور");
     $("scanVerdict").textContent =
-      vis >= 90 ? "ظاهر في معظم المنطقة" : vis >= 60 ? "ظهور جزئي" : "ظهور ضعيف";
+      vis >= 90 ? "ظاهر في معظم المنطقة" : vis >= 60 ? "ظهور جزئي" : vis > 0 ? "ظهور ضعيف" : "غير ظاهر";
     $("scanNote").textContent = data.avg_rank
       ? `متوسط ترتيبك ${data.avg_rank} عبر ${data.points_done} نقطة.`
       : "لم تظهر في نتائج هذه الكلمة.";
@@ -373,9 +432,13 @@ $("scanBtn").onclick = async () => {
 
     $("scanResult").className = "";
     initMap();
-    setTimeout(() => map.invalidateSize(), 60);
+    requestAnimationFrame(() => setTimeout(() => map && map.invalidateSize(), 80));
 
     const { data: pts } = await sb.from("scan_points").select("*").eq("scan_id", data.scan_id);
+
+    renderSpread(pts || []);
+    renderDiagnose(data, pts || []);
+
     layer.clearLayers();
     const bounds = [];
     (pts || []).forEach((p) => {
@@ -547,8 +610,7 @@ $("compBtn").onclick = async () => {
       if (c.category) chips.push(c.category);
       chips.push(`فوقك في ${c.appearances} نقطة`);
       if (c.best_rank) chips.push(`أفضل ترتيب ${c.best_rank}`);
-      const li = (arr) => (arr || []).length
-        ? arr.map((x) => `<li>${esc(x)}</li>`).join("") : "<li>—</li>";
+      const li = (arr) => (arr || []).length ? arr.map((x) => `<li>${esc(x)}</li>`).join("") : "<li>—</li>";
 
       return `<div class="card" style="padding:16px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
@@ -640,7 +702,6 @@ $("locBtn").onclick = async () => {
       $("areaChar").className = "summary";
     } else $("areaChar").className = "summary hidden";
 
-    /* المؤشرات */
     const inds = data.indicators || m.indicators || [];
     if (inds.length) {
       $("indList").innerHTML = inds.map((x) => {
@@ -668,7 +729,6 @@ $("locBtn").onclick = async () => {
       $("indBox").className = "";
     } else $("indBox").className = "hidden";
 
-    /* المحيط */
     const an = (m.anchors || []).slice().sort((a, b) => a.nearest_distance_m - b.nearest_distance_m);
     if (an.length) {
       $("anchList").innerHTML = an.map((a) => `
@@ -683,7 +743,6 @@ $("locBtn").onclick = async () => {
       $("anchBox").className = "";
     } else $("anchBox").className = "hidden";
 
-    /* العلامات */
     const br = m.brands || [];
     if (br.length) {
       $("brandList").innerHTML = br.map((b) =>
@@ -691,7 +750,6 @@ $("locBtn").onclick = async () => {
       $("brandBox").className = "";
     } else $("brandBox").className = "hidden";
 
-    /* الزخم */
     const mg = m.magnets || [];
     if (mg.length) {
       $("magList").innerHTML = mg.map((x) =>
@@ -700,7 +758,6 @@ $("locBtn").onclick = async () => {
       $("magBox").className = "";
     } else $("magBox").className = "hidden";
 
-    /* الساعات */
     const ph = data.peak_hours || {};
     if ((ph.hourly || []).length) {
       const byHour = {}; ph.hourly.forEach((h) => byHour[h.hour] = h.value);
@@ -722,7 +779,6 @@ $("locBtn").onclick = async () => {
     fillPoints("lRiskBox", "lRiskList", data.risks, "bad");
     fillPoints("succBox", "succList", data.success_factors, "plain");
 
-    /* المنافسون على الخريطة */
     const cs = data.competitors || [];
     if (cs.length) {
       $("lcCompList").innerHTML = cs.map((c) =>
@@ -756,7 +812,6 @@ async function boot() {
   $("authScreen").className = "auth-wrap hidden";
   $("app").className = "";
   locateUser();
-  initMap();
 
   const list = await loadBusinesses();
   refreshGates();
