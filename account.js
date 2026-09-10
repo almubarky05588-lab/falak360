@@ -1,6 +1,7 @@
 /* =========================================================
    فلك ٣٦٠ — شاشة «اشتراكي»
    تُحقن تلقائياً: تبويب + شاشة + شارة الأيام في الترويسة
+   + بوابة الرصيد أمام تحليل «موقع مشروع» و«محل معروض للبيع»
    ========================================================= */
 
 import { icon } from "./icons.js";
@@ -43,8 +44,17 @@ const METERS = [
   ["monitors", "رصد تحركات المنافسين"],
 ];
 
+const reportsAr = (n) => n === 1 ? "تقرير واحد" : n === 2 ? "تقريران"
+  : n <= 10 ? `${n} تقارير` : `${n} تقريراً`;
+
+const GATES = [
+  { kind: "location", btn: "locBtn", msgEl: "locMsg", result: "locResult" },
+  { kind: "acquisition", btn: "buyBtn", msgEl: "buyMsg", result: "buyResult" },
+];
+
 let plansCache = [];
 let loading = false;
+let credits = { location: null, acquisition: null };
 
 /* ---------------- الاتصال ---------------- */
 function token() {
@@ -136,6 +146,11 @@ const CSS = `
 .acc-pcard li{display:flex;gap:7px;align-items:flex-start}
 .acc-pcard li svg{width:14px;height:14px;color:var(--ok);flex:0 0 auto;margin-top:3px}
 .acc-paylink{font-weight:600;color:inherit;text-decoration:underline;margin-inline-start:6px}
+.acc-gate{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:var(--r);background:var(--brand-tint);color:var(--brand);font-size:13.5px;line-height:1.6;margin-top:var(--sp-4)}
+.acc-gate.ok{background:var(--ok-tint);color:var(--ok)}
+.acc-gate svg{width:16px;height:16px;flex:0 0 auto;margin-top:3px}
+.acc-gate b{font-family:var(--font-num)}
+.acc-gate .acc-cbtns{margin-top:10px}
 `;
 
 /* ---------------- التركيب ---------------- */
@@ -177,6 +192,7 @@ function mount() {
       if (!app.classList.contains("hidden")) refreshBadge();
     }).observe(app, { attributes: true, attributeFilter: ["class"] });
   }
+  mountGates();
   if (token()) refreshBadge();
 }
 
@@ -203,8 +219,16 @@ function paintBadge(acc) {
   }
 }
 
+function sync(acc) {
+  paintBadge(acc);
+  if (acc?.credits) {
+    credits = { location: acc.credits.location ?? 0, acquisition: acc.credits.acquisition ?? 0 };
+    paintGates();
+  }
+}
+
 async function refreshBadge() {
-  try { paintBadge(await rpc("my_account")); } catch { /* الشارة ليست حرجة */ }
+  try { sync(await rpc("my_account")); } catch { /* الشارة ليست حرجة */ }
 }
 
 /* ---------------- التحميل ---------------- */
@@ -216,7 +240,7 @@ async function load() {
     body.innerHTML = `<div class="card acc-loading"><span class="acc-spin"></span>جارٍ تحميل اشتراكك…</div>`;
   }
   try {
-    const [acc, plans, subs, credits, bizCount] = await Promise.all([
+    const [acc, plans, subs, pendCredits, bizCount] = await Promise.all([
       rpc("my_account"),
       api("plans?select=code,name,price_sar,tagline,max_businesses,max_keywords_per_business,scans_per_month,audits_per_month,reviews_per_month,competitors_per_month,monitors_per_month,features&is_active=eq.true&price_sar=gt.0&order=sort_order")
         .then((r) => r.data || []),
@@ -230,8 +254,8 @@ async function load() {
     ]);
     if (acc?.error) throw new Error(acc.error);
     plansCache = plans;
-    render(acc, subs, credits, bizCount);
-    paintBadge(acc);
+    render(acc, subs, pendCredits, bizCount);
+    sync(acc);
     body.dataset.ready = "1";
   } catch (e) {
     body.innerHTML = `<div class="empty">${icon("alert-triangle", 34)}
@@ -361,7 +385,7 @@ function render(acc, subs, pendCredits, bizCount) {
       <div class="list-row">
         <div><div>${esc(x.title)}</div><div class="meta"><span class="num">${x.amount ?? "—"}</span> ر.س · ${fmtDate(x.at)}</div></div>
         ${x.link
-          ? `<a class="btn sm" href="${esc(x.link)}" target="_blank" rel="noopener">${icon("external-link", 15)}ادفع الآن</a>`
+          ? `<a class="btn sm" href="${esc(x.link)}">${icon("banknote", 15)}ادفع الآن</a>`
           : `<span class="chip" style="margin:0">بانتظار رابط السداد</span>`}
       </div>`).join("")}
     <div class="hint">رابط السداد صالح لمرة واحدة. بعد السداد نؤكّد الدفع ونفعّل طلبك — عادةً خلال ساعات العمل.</div>` : "";
@@ -414,13 +438,12 @@ function render(acc, subs, pendCredits, bizCount) {
 }
 
 /* ---------------- الطلبات ---------------- */
-function showPay(r) {
-  const el = $("accMsg");
+function showPay(r, el = $("accMsg")) {
   if (!r?.ok) return msg(el, "error", r?.message || "تعذّر إنشاء الطلب");
   const link = safeUrl(r.payment_link);
   el.className = "msg show done";
   el.innerHTML = `${icon("check-circle", 17)}<span>${esc(r.message)}${link
-    ? ` <a class="acc-paylink" href="${esc(link)}" target="_blank" rel="noopener">افتح رابط السداد</a>` : ""}</span>`;
+    ? ` <a class="acc-paylink" href="${esc(link)}">افتح رابط السداد</a>` : ""}</span>`;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
@@ -441,6 +464,82 @@ async function requestReport(btn) {
     await load();
   } catch (e) {
     msg($("accMsg"), "error", e.message || String(e));
+  } finally { if (btn.isConnected) busy(btn, false); }
+}
+
+/* ---------------- بوابة التقارير المدفوعة ---------------- */
+function mountGates() {
+  GATES.forEach((g) => {
+    const btn = $(g.btn);
+    if (!btn || $(`gate-${g.kind}`)) return;
+    btn.insertAdjacentHTML("beforebegin", `<div id="gate-${g.kind}"></div>`);
+    // يعمل قبل معالج app.js: نتحقق من الرصيد ثم نشغّل التحليل بأنفسنا
+    btn.addEventListener("click", (ev) => gateClick(ev, g), { capture: true });
+
+    const res = $(g.result);
+    if (res) {
+      new MutationObserver(() => { if (res.className === "") refreshBadge(); })
+        .observe(res, { attributes: true, attributeFilter: ["class"] });
+    }
+    const m = $(g.msgEl);
+    if (m) {
+      new MutationObserver(() => { if (m.classList.contains("error")) refreshBadge(); })
+        .observe(m, { attributes: true, attributeFilter: ["class"] });
+    }
+  });
+}
+
+function paintGates() {
+  GATES.forEach((g) => {
+    const el = $(`gate-${g.kind}`);
+    const bal = credits[g.kind];
+    if (!el) return;
+    if (bal == null) { el.innerHTML = ""; return; }
+    const r = REPORTS[g.kind];
+    if (bal > 0) {
+      el.innerHTML = `<div class="acc-gate ok">${icon("check-circle", 16)}
+        <span>رصيدك: ${reportsAr(bal)} — يُخصم تقرير واحد عند التحليل.</span></div>`;
+      return;
+    }
+    el.innerHTML = `<div class="acc-gate">${icon("banknote", 16)}<div>
+      <div>هذا التحليل يُشترى بالتقرير ولا يحتاج اشتراكاً. اشترِ تقريراً، وبعد تأكيد الدفع يُضاف لرصيدك.</div>
+      <div class="acc-cbtns">${r.offers.map((o, i) =>
+        `<button class="btn sm${i ? " ghost" : ""}" data-gbuy="${g.kind}" data-qty="${o.qty}">${o.label} · ${o.price} ر.س</button>`).join("")}
+      </div></div></div>`;
+    el.querySelectorAll("[data-gbuy]").forEach((b) => b.onclick = () => buyFromGate(g, b));
+  });
+}
+
+async function gateClick(ev, g) {
+  const btn = ev.currentTarget;
+  if (btn.disabled) return;
+  ev.stopImmediatePropagation();
+  ev.preventDefault();
+
+  let bal = null;
+  try {
+    const acc = await rpc("my_account");
+    sync(acc);
+    bal = credits[g.kind];
+  } catch { /* الخادم يتحقق على كل حال */ }
+
+  if (bal === 0) {
+    msg($(g.msgEl), "info", "لا يوجد لديك رصيد لهذا التقرير — اشترِ تقريراً من الأعلى.");
+    $(`gate-${g.kind}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  if (bal != null && !window.confirm(`سيُخصم تقرير واحد من رصيدك (لديك ${reportsAr(bal)}). متابعة؟`)) return;
+
+  if (typeof btn.onclick === "function") btn.onclick.call(btn, ev);
+}
+
+async function buyFromGate(g, btn) {
+  busy(btn, true);
+  try {
+    const r = await rpc("request_report", { p_kind: g.kind, p_qty: Number(btn.dataset.qty) || 1 });
+    showPay(r, $(g.msgEl));
+  } catch (e) {
+    msg($(g.msgEl), "error", e.message || String(e));
   } finally { if (btn.isConnected) busy(btn, false); }
 }
 
