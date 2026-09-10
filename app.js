@@ -45,6 +45,16 @@ function emptyState(el, iconName, title, body, actionLabel, actionScreen) {
   el.querySelectorAll("[data-goto]").forEach((b) => b.onclick = () => showScreen(b.dataset.goto));
 }
 
+const timeAgo = (iso) => {
+  if (!iso) return "";
+  const mins = Math.floor((Date.now() - Date.parse(iso)) / 60000);
+  if (mins < 60) return `قبل ${mins} دقيقة`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `قبل ${hrs} ساعة`;
+  const days = Math.floor(hrs / 24);
+  return days === 1 ? "أمس" : `قبل ${days} يوماً`;
+};
+
 /* ---------------- التنقّل ---------------- */
 function showScreen(name) {
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
@@ -53,7 +63,6 @@ function showScreen(name) {
   if (el) el.classList.add("active");
   window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // الخرائط تُنشأ بعد ظهور الشاشة، وإلا حُسبت أبعادها صفراً
   if (name === "rank") {
     initMap();
     requestAnimationFrame(() => setTimeout(() => map && map.invalidateSize(), 80));
@@ -108,8 +117,7 @@ function baseLayer() {
 
 function initMap() {
   if (map) return;
-  const el = $("map");
-  if (!el) return;
+  if (!$("map")) return;
   map = L.map("map", { scrollWheelZoom: false })
     .setView(userLoc ? [userLoc.lat, userLoc.lng] : [21.5433, 39.1728], 13);
   baseLayer().addTo(map);
@@ -118,8 +126,7 @@ function initMap() {
 
 function initLocMap() {
   if (locMap) return;
-  const el = $("locMap");
-  if (!el) return;
+  if (!$("locMap")) return;
   locMap = L.map("locMap", { scrollWheelZoom: false })
     .setView(userLoc ? [userLoc.lat, userLoc.lng] : [21.5433, 39.1728], userLoc ? 14 : 12);
   baseLayer().addTo(locMap);
@@ -152,7 +159,6 @@ function locateUser() {
   );
 }
 
-/* دبوس الترتيب — حجمه يتناسب مع قوّته */
 function rankPin(rank) {
   const size = rank == null ? 26 : rank <= 3 ? 38 : rank <= 6 ? 34 : rank <= 10 ? 31 : 28;
   const inner = rank == null
@@ -192,11 +198,16 @@ function resetResults() {
   ["scanResult", "auditResult", "revResult", "compResult"].forEach((id) => {
     const el = $(id); if (el) el.className = "hidden";
   });
-  ["scanMsg", "auditMsg", "revMsg", "compMsg"].forEach((id) => {
+  ["scanMsg", "auditMsg", "revMsg", "compMsg", "watchMsg"].forEach((id) => {
     const el = $(id); if (el) clearMsg(el);
   });
   const sp = $("spread"); if (sp) sp.className = "spread hidden";
   const dg = $("diagnose"); if (dg) dg.className = "diagnose hidden";
+  ["watchEvents", "watchList", "ovAlerts"].forEach((id) => {
+    const el = $(id); if (el) el.innerHTML = "";
+  });
+  $("watchTime").textContent = "لم تبدأ المراقبة بعد";
+  $("ovAlertsBox").className = "hidden";
   if (layer) layer.clearLayers();
 }
 
@@ -211,6 +222,8 @@ $("bizSelect").onchange = async (e) => {
     currentBizData = data;
     await renderOverview();
     await loadKeywords();
+    await loadAlerts();
+    await loadLastWatch();
   }
   refreshGates();
 };
@@ -237,7 +250,7 @@ async function renderOverview() {
     { s: "rank", i: "map-pin", t: "افحص ترتيبك", d: "اعرف من أي الأحياء تظهر ومن أيها تختفي" },
     { s: "profile", i: "clipboard-check", t: "دقّق ملفك التجاري", d: "النواقص التي تُضعف ظهورك" },
     { s: "reviews", i: "message-square", t: "حلّل مراجعاتك", d: "ما يتكرر من مديح وشكاوى" },
-    { s: "rivals", i: "users", t: "حلّل منافسيك", d: "يتطلب فحص ترتيب سابق" },
+    { s: "rivals", i: "users", t: "راقب منافسيك", d: "من دخل نطاقك ومن يتسارع" },
   ];
   $("quickActions").innerHTML = actions.map((a) => `
     <div class="icon-row" style="cursor:pointer" data-goto="${a.s}">
@@ -249,6 +262,32 @@ async function renderOverview() {
     el.onclick = () => showScreen(el.dataset.goto));
 
   $("bizSummary").className = "";
+}
+
+/* ---------------- التنبيهات في نظرة عامة ---------------- */
+const ALERT_ICON = {
+  new_rival: "alert-triangle", rival_left: "trending-down",
+  rival_surge: "trending-up", rank_drop: "trending-down",
+  review_negative: "message-square",
+};
+const ALERT_CLASS = { high: "high", warn: "warn", info: "calm" };
+
+async function loadAlerts() {
+  const { data } = await sb.from("alerts")
+    .select("*").eq("business_id", currentBiz)
+    .order("created_at", { ascending: false }).limit(6);
+
+  if (!(data || []).length) { $("ovAlertsBox").className = "hidden"; return; }
+
+  $("ovAlerts").innerHTML = data.map((a) => `
+    <div class="event ${ALERT_CLASS[a.severity] || "calm"}">
+      <div class="ic">${icon(ALERT_ICON[a.kind] || "info", 17)}</div>
+      <div>
+        <div class="t">${esc(a.title)}</div>
+        <div class="d">${esc(a.body || "")} <span class="muted">· ${timeAgo(a.created_at)}</span></div>
+      </div>
+    </div>`).join("");
+  $("ovAlertsBox").className = "";
 }
 
 /* ---------------- البحث عن محل ---------------- */
@@ -549,7 +588,9 @@ $("revBtn").onclick = async () => {
       : `<div class="hint">لا توجد بيانات كافية.</div>`;
 
     $("strengths").innerHTML = topics(data.strengths, "var(--ok)");
-    $("weaknesses").innerHTML = topics(data.weaknesses, "var(--bad)");
+    $("weaknesses").innerHTML = (data.weaknesses || []).length
+      ? topics(data.weaknesses, "var(--bad)")
+      : `<div class="point ok">لا شكاوى متكررة في مراجعاتك — عملاؤك راضون بشكل عام. حافظ على المستوى.</div>`;
     $("revRecs").innerHTML = (data.recommendations || [])
       .map((r) => `<div class="point warn">${esc(r)}</div>`).join("")
       || `<div class="hint">لا توجد توصيات.</div>`;
@@ -575,9 +616,179 @@ $("revBtn").onclick = async () => {
   } finally { busy(btn, false, "حلّل المراجعات"); }
 };
 
+/* ---------------- مراقبة المنافسين ---------------- */
+function deltaTag(d) {
+  if (d == null) return "";
+  if (d > 0) return `<span class="delta up">+${d}</span>`;
+  if (d < 0) return `<span class="delta down">${d}</span>`;
+  return `<span class="delta flat">—</span>`;
+}
+const fmtH = (h) => h === 0 ? "12ص" : h < 12 ? `${h}ص` : h === 12 ? "12م" : `${h - 12}م`;
+
+async function loadLastWatch() {
+  const { data } = await sb.from("competitor_snapshots")
+    .select("captured_at").eq("business_id", currentBiz)
+    .order("captured_at", { ascending: false }).limit(1).maybeSingle();
+  $("watchTime").textContent = data
+    ? `آخر مراقبة ${timeAgo(data.captured_at)}`
+    : "لم تبدأ المراقبة بعد";
+}
+
+function renderWatch(data) {
+  $("watchTime").textContent = data.previous_check
+    ? `قورنت بمراقبة ${timeAgo(data.previous_check)}`
+    : "أول مراقبة لنطاقك";
+
+  const ev = [];
+
+  if (data.first_run) {
+    ev.push({
+      cls: "calm", ic: "telescope", t: "بدأت مراقبة نطاقك",
+      d: `سجّلنا ${data.rivals.length} منافساً في محيطك. من الآن فصاعداً سننبّهك عند دخول أي وافد جديد أو تسارع أحدهم.`,
+    });
+  } else {
+    (data.newcomers || []).forEach((n) => {
+      const close = n.distance_m <= 500;
+      ev.push({
+        cls: close ? "high" : "warn", ic: "alert-triangle",
+        t: `منافس جديد على بعد ${n.distance_m} متر`,
+        d: `«${n.name}» دخل نطاقك${n.rating ? ` بتقييم ${n.rating}` : ""}${n.reviews ? ` و${n.reviews} مراجعة` : ""}. ${close ? "قريب جداً منك — راقبه عن كثب." : "راقب نموه في المراقبات القادمة."}`,
+      });
+    });
+
+    (data.departed || []).forEach((d) => {
+      ev.push({
+        cls: "good", ic: "trending-down", t: "منافس لم يعد يظهر",
+        d: `«${d.name}» اختفى من نتائج منطقتك — حصته السوقية متاحة الآن.`,
+      });
+    });
+
+    (data.surges || []).forEach((s) => {
+      ev.push({
+        cls: "warn", ic: "trending-up", t: "منافس يتسارع",
+        d: `«${s.name}» كسب ${s.delta} مراجعة منذ آخر مراقبة (المجموع ${s.reviews_now}).`,
+      });
+    });
+
+    if (!ev.length) {
+      ev.push({
+        cls: "good", ic: "check-circle", t: "لا وافدين جدد",
+        d: "راقبنا نطاقك ولم يدخله منافس جديد ولم يتسارع أحد. مشهدك مستقر — استغل الاستقرار لتوسيع فارقك.",
+      });
+    }
+  }
+
+  $("watchEvents").innerHTML = ev.map((e) => `
+    <div class="event ${e.cls}">
+      <div class="ic">${icon(e.ic, 17)}</div>
+      <div><div class="t">${esc(e.t)}</div><div class="d">${esc(e.d)}</div></div>
+    </div>`).join("");
+
+  const me = data.my_stats;
+  const rows = [`
+    <div class="watch-row mine">
+      <div class="nm">${esc(me.name)} — محلك
+        ${me.peak_top?.length ? `<small>ذروتك: ${me.peak_top.map(fmtH).join("، ")}</small>` : ""}
+      </div>
+      <div class="fig"><b>${me.rating ?? "—"}</b><small>تقييم</small></div>
+      <div class="fig"><b>${me.reviews ?? 0}</b><small>مراجعة</small></div>
+    </div>`];
+
+  (data.rivals || []).slice(0, 10).forEach((r) => {
+    rows.push(`
+      <div class="watch-row">
+        <div class="nm">${esc(r.name)}
+          ${r.is_new ? `<span class="pill-new">جديد</span>` : ""}
+          ${r.busy_now != null && r.busy_now >= 60 ? `<span class="pill-busy">مزدحم الآن</span>` : ""}
+          <small>${r.distance_m}م${r.peak_top?.length ? ` · ذروته ${r.peak_top.map(fmtH).join("، ")}` : ""}</small>
+        </div>
+        <div class="fig"><b>${r.rating ?? "—"}</b><small>${deltaTag(r.rating_delta) || "تقييم"}</small></div>
+        <div class="fig"><b>${r.reviews ?? 0}</b><small>${deltaTag(r.reviews_delta) || "مراجعة"}</small></div>
+      </div>`);
+  });
+
+  $("watchList").innerHTML = rows.join("");
+}
+
+$("watchBtn").onclick = async () => {
+  const btn = $("watchBtn");
+  busy(btn, true, "جارٍ");
+  msg($("watchMsg"), "info", "نراقب نطاقك…");
+  try {
+    const { data, error } = await sb.functions.invoke("monitor-rivals", {
+      body: { business_id: currentBiz, radius_m: 1500 },
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    renderWatch(data);
+    clearMsg($("watchMsg"));
+    loadAlerts();
+  } catch (e) {
+    msg($("watchMsg"), "error", "تعذّرت المراقبة: " + (e.message || e));
+  } finally { busy(btn, false, "تحديث الآن"); }
+};
+
 /* ---------------- تحليل المنافسين ---------------- */
 const threatClass = (t) => String(t || "").includes("مرتفع") ? "bad"
   : String(t || "").includes("منخفض") ? "ok" : "warn";
+
+function renderDuel(d, me) {
+  if (!d) { $("duelCard").innerHTML = ""; return; }
+  const total = Math.max(d.reviews ?? 1, me.reviews ?? 0, 1);
+  const myPct = Math.max(3, ((me.reviews ?? 0) / total) * 100);
+
+  const mine = me.momentum?.per_month ?? 0;
+  const his = d.momentum?.per_month ?? 0;
+  const trend = d.momentum?.trend;
+  const trendCls = trend === "يتحسّن" ? "down" : trend === "يتراجع" ? "up" : "";
+
+  $("duelCard").innerHTML = `
+    <div class="duel">
+      <div class="duel-tag">${icon("target", 13)} خصمك الأول</div>
+      <div class="duel-name">${esc(d.name)}</div>
+      <div class="duel-sub">يظهر فوقك في ${d.appearances} من ${d.total_points} نقطة في نطاقك</div>
+
+      <div class="duel-bar">
+        <div class="duel-ends">
+          <span>أنت<b>${me.reviews ?? 0}</b></span>
+          <span style="text-align:left">${esc(d.name)}<b>${d.reviews ?? 0}</b></span>
+        </div>
+        <div class="duel-track"><i style="width:${myPct}%"></i></div>
+        <div class="duel-verdict">${esc(d.gap_verdict)}${d.gap ? ` · الفجوة ${d.gap} مراجعة` : ""}</div>
+      </div>
+
+      <div class="duel-grid">
+        <div class="duel-cell">
+          <div class="v ${mine >= his ? "up" : "down"}">${mine}</div>
+          <div class="l">مراجعاتك شهرياً</div>
+        </div>
+        <div class="duel-cell">
+          <div class="v">${his}</div>
+          <div class="l">مراجعاته شهرياً</div>
+        </div>
+        <div class="duel-cell">
+          <div class="v ${trendCls}">${trend ?? "—"}</div>
+          <div class="l">اتجاهه</div>
+        </div>
+      </div>
+
+      ${d.momentum ? `<div class="duel-verdict" style="margin-top:12px">
+        آخر 30 يوماً: كسب ${d.momentum.last_30d} مراجعة —
+        ${d.momentum.positive_30d} إيجابية و${d.momentum.negative_30d} سلبية.
+        ${d.needed_per_month ? ` للحاق به خلال سنة تحتاج ${d.needed_per_month} مراجعة شهرياً.` : ""}
+      </div>` : ""}
+
+      ${d.weak_spot ? `<div class="duel-move">
+        <div class="h">نقطة ضعفه</div>
+        <div class="t">${esc(d.weak_spot)}</div>
+      </div>` : ""}
+
+      ${d.move ? `<div class="duel-move">
+        <div class="h">خطوتك ضده</div>
+        <div class="t">${esc(d.move)}</div>
+      </div>` : ""}
+    </div>`;
+}
 
 $("compBtn").onclick = async () => {
   const btn = $("compBtn");
@@ -591,6 +802,7 @@ $("compBtn").onclick = async () => {
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
 
+    renderDuel(data.top_rival, data.my_stats || {});
     $("positioning").textContent = data.positioning || "—";
 
     $("planList").innerHTML = (data.battle_plan || []).map((p, i) => `
@@ -608,8 +820,9 @@ $("compBtn").onclick = async () => {
       if (c.reviews != null) chips.push(`${c.reviews} مراجعة`);
       if (c.price_level) chips.push(`سعر ${c.price_level}`);
       if (c.category) chips.push(c.category);
-      chips.push(`فوقك في ${c.appearances} نقطة`);
-      if (c.best_rank) chips.push(`أفضل ترتيب ${c.best_rank}`);
+      chips.push(`فوقك في ${c.appearances} من ${c.total_points}`);
+      if (c.reply_rate != null) chips.push(`يرد على ${c.reply_rate}%`);
+      if (c.momentum?.trend) chips.push(`اتجاهه ${c.momentum.trend}`);
       const li = (arr) => (arr || []).length ? arr.map((x) => `<li>${esc(x)}</li>`).join("") : "<li>—</li>";
 
       return `<div class="card" style="padding:16px">
@@ -637,7 +850,7 @@ $("compBtn").onclick = async () => {
     clearMsg($("compMsg"));
   } catch (e) {
     msg($("compMsg"), "error", "تعذّر التحليل: " + (e.message || e));
-  } finally { busy(btn, false, "حلّل المنافسين"); }
+  } finally { busy(btn, false, "حلّل المنافسين بعمق"); }
 };
 
 function fillPoints(boxId, listId, arr, cls) {
@@ -662,7 +875,6 @@ const IND_ICONS = {
   rising: "trending-up", demand: "bar-chart", maturity: "layers",
   complements: "route", rent: "building2", peak: "clock",
 };
-const fmtH = (h) => h === 0 ? "12ص" : h < 12 ? `${h}ص` : h === 12 ? "12م" : `${h - 12}م`;
 
 $("locBtn").onclick = async () => {
   const act = $("locAct").value.trim();
