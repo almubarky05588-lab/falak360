@@ -515,3 +515,80 @@ a{color:var(--brand)}
   background:var(--info-tint);border:1px solid #D8E3F2;border-radius:var(--r);
   padding:12px var(--sp-3);margin-top:var(--sp-4);color:#2E4C74}
 .range-note svg{width:16px;height:16px;flex:0 0 auto;margin-top:2px}
+
+/* =========================================================
+   ملصق طلب التقييم
+   ========================================================= */
+.badge-tool{margin-top:var(--sp-4)}
+.size-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:var(--sp-3)}
+.size-opt{flex:1;min-width:100px;padding:10px 8px;border:1px solid var(--line-2);
+  border-radius:var(--r);background:var(--surface);cursor:pointer;text-align:center;
+  font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink-2);
+  transition:border-color .15s,background .15s}
+.size-opt small{display:block;font-size:10.5px;font-weight:400;color:var(--ink-3);margin-top:2px}
+.size-opt.on{border-color:var(--brand);background:var(--brand-tint);color:var(--brand)}
+
+.sticker-wrap{display:flex;justify-content:center;padding:var(--sp-4);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);
+  overflow:auto}
+
+.sticker{
+  background:#101820;color:#fff;border-radius:18px;
+  padding:26px 22px;text-align:center;flex:0 0 auto;
+  box-shadow:0 8px 28px rgba(17,24,32,.22);
+}
+.sticker.s-card{width:230px}
+.sticker.s-table{width:300px}
+.sticker.s-wall{width:370px}
+
+.sticker .shop{font-family:var(--font-display);font-weight:600;letter-spacing:-.02em;
+  line-height:1.35;margin-bottom:14px}
+.sticker.s-card .shop{font-size:17px}
+.sticker.s-table .shop{font-size:21px}
+.sticker.s-wall .shop{font-size:25px}
+
+.sticker .ask-ar{font-weight:600;line-height:1.5}
+.sticker .ask-en{color:#9AA6B4;line-height:1.4;margin-top:2px}
+.sticker.s-card .ask-ar{font-size:13.5px} .sticker.s-card .ask-en{font-size:11px}
+.sticker.s-table .ask-ar{font-size:16px}  .sticker.s-table .ask-en{font-size:12.5px}
+.sticker.s-wall .ask-ar{font-size:19px}   .sticker.s-wall .ask-en{font-size:14px}
+
+.sticker .stars{display:flex;justify-content:center;gap:4px;margin:12px 0}
+.sticker .stars svg{fill:#F0B429;stroke:none}
+.sticker.s-card .stars svg{width:17px;height:17px}
+.sticker.s-table .stars svg{width:21px;height:21px}
+.sticker.s-wall .stars svg{width:25px;height:25px}
+
+.sticker .qbox{background:#fff;border-radius:12px;padding:10px;display:inline-block;margin:6px 0 12px}
+.sticker .qbox canvas,.sticker .qbox img{display:block}
+
+.sticker .tap{color:#C9D3E0;line-height:1.5}
+.sticker.s-card .tap{font-size:11.5px}
+.sticker.s-table .tap{font-size:13px}
+.sticker.s-wall .tap{font-size:15px}
+
+.sticker .foot{border-top:1px solid rgba(255,255,255,.14);margin-top:16px;padding-top:11px;
+  display:flex;align-items:center;justify-content:center;gap:7px;color:#8592A3}
+.sticker.s-card .foot{font-size:9.5px}
+.sticker.s-table .foot{font-size:10.5px}
+.sticker.s-wall .foot{font-size:11.5px}
+.sticker .foot svg{opacity:.85}
+.sticker.s-card .foot svg{width:16px;height:16px}
+.sticker.s-table .foot svg{width:19px;height:19px}
+.sticker.s-wall .foot svg{width:22px;height:22px}
+
+.sticker-actions{display:flex;gap:8px;margin-top:var(--sp-3);flex-wrap:wrap}
+.sticker-actions .btn{flex:1;min-width:130px}
+
+.policy-note{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.7;
+  background:var(--warn-tint);border:1px solid #EFDFC2;border-radius:var(--r);
+  padding:11px var(--sp-3);margin-top:var(--sp-3);color:#875312}
+.policy-note svg{width:15px;height:15px;flex:0 0 auto;margin-top:2px}
+
+#printArea{display:none}
+@media print{
+  body > *:not(#printArea){display:none!important}
+  #printArea{display:flex!important;align-items:center;justify-content:center;
+    position:fixed;inset:0;background:#fff}
+  #printArea .sticker{box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
