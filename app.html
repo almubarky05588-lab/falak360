@@ -93,6 +93,11 @@
           </div>
         </div>
 
+        <div id="ovAlertsBox" class="hidden">
+          <div class="section-head"><h2>ما استجدّ في نطاقك</h2></div>
+          <div id="ovAlerts"></div>
+        </div>
+
         <div class="section-head"><h2>ابدأ من هنا</h2></div>
         <div id="quickActions"></div>
       </div>
@@ -243,15 +248,30 @@
 
     <section id="screen-rivals" class="screen">
       <h1 class="page-title">المنافسون</h1>
-      <p class="page-sub">نحدد من ينافسك فعلياً من نتائج فحصك، ونقرأ مراجعاتهم لنعرف أين يقوون وأين يضعفون.</p>
+      <p class="page-sub">نراقب نطاقك باستمرار، ونكشف من ينافسك فعلياً وأين يقوى وأين يضعف.</p>
 
       <div id="rivalsGate"></div>
 
       <div id="rivalsBody" class="hidden">
-        <button id="compBtn" class="btn block">حلّل المنافسين</button>
+
+        <div class="card">
+          <div class="watch-head">
+            <div>
+              <div style="font-family:var(--font-display);font-size:16px;font-weight:600">مراقبة نطاقك</div>
+              <div class="watch-time" id="watchTime">لم تبدأ المراقبة بعد</div>
+            </div>
+            <button id="watchBtn" class="btn ghost sm">تحديث الآن</button>
+          </div>
+          <div id="watchMsg" class="msg"></div>
+          <div id="watchEvents" class="sp-t"></div>
+          <div id="watchList"></div>
+        </div>
+
+        <button id="compBtn" class="btn block">حلّل المنافسين بعمق</button>
         <div id="compMsg" class="msg"></div>
 
         <div id="compResult" class="hidden">
+          <div id="duelCard"></div>
           <div id="positioning" class="summary"></div>
 
           <div class="section-head"><h2>خطة المواجهة</h2></div>
