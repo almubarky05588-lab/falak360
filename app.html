@@ -48,6 +48,7 @@
     <button class="tab" data-screen="reviews" data-icon="message-square">المراجعات</button>
     <button class="tab" data-screen="rivals" data-icon="users">المنافسون</button>
     <button class="tab" data-screen="site" data-icon="telescope">موقع مشروع</button>
+    <button class="tab" data-screen="buy" data-icon="briefcase">محل معروض للبيع</button>
   </nav>
 
   <main class="page">
@@ -443,6 +444,93 @@
         </div>
 
         <div class="disclaimer" id="locDisc"></div>
+      </div>
+    </section>
+
+    <section id="screen-buy" class="screen">
+      <h1 class="page-title">محل معروض للبيع</h1>
+      <p class="page-sub">قبل أن تدفع التقبيل: اعرف هل المحل حيّ أم متوقف، وهل مشكلته في الإدارة أم في الموقع.</p>
+
+      <div class="card">
+        <div class="field">
+          <label for="buyQ">ابحث عن المحل في قوقل ماب</label>
+          <div class="row">
+            <input id="buyQ" class="input" placeholder="اسم المحل كما هو في قوقل">
+            <button id="buySearchBtn" class="btn" style="flex:0 0 auto">بحث</button>
+          </div>
+          <div class="hint">اكتب اسم المحل مع المدينة إن كان الاسم شائعاً — مثال: مقهى الواحة، أبو عريش</div>
+        </div>
+        <div id="buySearchMsg" class="msg"></div>
+        <div id="buyResults"></div>
+
+        <div id="buyPicked" class="hidden">
+          <div class="list-row mine sp-t">
+            <span id="buyPickedName">—</span>
+            <button class="btn ghost sm" id="buyChange">تغيير</button>
+          </div>
+          <button id="buyBtn" class="btn block sp-t">حلّل هذا المحل</button>
+          <div id="buyMsg" class="msg"></div>
+        </div>
+      </div>
+
+      <div id="buyResult" class="hidden">
+        <div class="card">
+          <div class="verdict-row">
+            <div id="buyRing"></div>
+            <div class="verdict-text">
+              <div class="verdict-title" id="buyVerdict">—</div>
+              <div class="verdict-note" id="buyMeta">—</div>
+            </div>
+          </div>
+          <div class="verdicts" id="buyVerdicts"></div>
+          <div id="buySummary" class="summary"></div>
+        </div>
+
+        <div class="section-head"><h2>نبض المحل</h2><span class="note">حركته الفعلية</span></div>
+        <div id="buyPulse"></div>
+        <div class="stats" id="buyStats"></div>
+
+        <div id="buyReadingBox" class="hidden">
+          <div class="section-head"><h2>قراءة المعطيات</h2></div>
+          <div id="buyReading" class="summary"></div>
+        </div>
+
+        <div id="buyRedBox" class="hidden">
+          <div class="section-head"><h2>إشارات خطر</h2></div>
+          <div id="buyRed"></div>
+        </div>
+
+        <div id="buyGreenBox" class="hidden">
+          <div class="section-head"><h2>إشارات إيجابية</h2></div>
+          <div id="buyGreen"></div>
+        </div>
+
+        <div id="buyCmpBox" class="hidden">
+          <div class="section-head"><h2>شكاوى عملائه</h2><span class="note">وهل تُعالَج</span></div>
+          <div id="buyCmp"></div>
+        </div>
+
+        <div id="buyAskBox" class="hidden">
+          <div class="section-head"><h2>اسأل البائع</h2><span class="note">قبل أي التزام</span></div>
+          <div id="buyAsk"></div>
+        </div>
+
+        <div id="buyVerifyBox" class="hidden">
+          <div class="section-head"><h2>تحقّق بنفسك</h2><span class="note">لا يكفي فيها كلامه</span></div>
+          <div id="buyVerify"></div>
+        </div>
+
+        <div id="buyNegBox" class="hidden">
+          <div class="section-head"><h2>نقاط تفاوض</h2></div>
+          <div id="buyNeg"></div>
+        </div>
+
+        <div id="buyRivalsBox" class="hidden">
+          <div class="section-head"><h2>المنافسون حوله</h2></div>
+          <div id="buyRivals"></div>
+        </div>
+
+        <div id="buyScope"></div>
       </div>
     </section>
 
