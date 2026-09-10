@@ -15,6 +15,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
 
 let currentBiz = null, currentBizData = null, currentKw = null, userLoc = null;
 let map, layer, locMap, locLayer, locPick = null;
+let buyTarget = null;
 
 /* ---------------- رسائل ---------------- */
 function msg(el, kind, text) {
@@ -1125,6 +1126,221 @@ function fillPoints(boxId, listId, arr, cls) {
   $(boxId).className = "";
 }
 
+/* ---------------- محل معروض للبيع ---------------- */
+$("buySearchBtn").onclick = async () => {
+  const q = $("buyQ").value.trim();
+  if (q.length < 2) return msg($("buySearchMsg"), "error", "اكتب اسم المحل.");
+  const btn = $("buySearchBtn");
+  busy(btn, true, "بحث");
+  msg($("buySearchMsg"), "info", "نبحث في قوقل ماب…");
+  $("buyResults").innerHTML = "";
+
+  try {
+    const { data, error } = await sb.functions.invoke("search-business", {
+      body: { query: q, lat: userLoc?.lat, lng: userLoc?.lng },
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    if (!data.results.length) return msg($("buySearchMsg"), "error", "لا نتائج. اكتب الاسم مع المدينة.");
+
+    clearMsg($("buySearchMsg"));
+    $("buyResults").innerHTML = data.results.map((r, i) => `
+      <div class="result" data-i="${i}">
+        <div class="n">${esc(r.name)}</div>
+        <div class="a">${esc(r.address || "")}</div>
+        <div class="m">
+          <span class="num">${r.rating ? "★ " + r.rating : "بلا تقييم"}</span>
+          <span>${r.reviews ?? 0} مراجعة</span>
+          ${r.category ? `<span>${esc(r.category)}</span>` : ""}
+        </div>
+      </div>`).join("");
+
+    $("buyResults").querySelectorAll(".result").forEach((el) =>
+      el.onclick = () => {
+        buyTarget = data.results[+el.dataset.i];
+        $("buyResults").innerHTML = "";
+        $("buyPickedName").textContent = buyTarget.name;
+        $("buyPicked").className = "";
+        $("buyResult").className = "hidden";
+      });
+  } catch (e) {
+    msg($("buySearchMsg"), "error", "تعذّر البحث: " + (e.message || e));
+  } finally { busy(btn, false, "بحث"); }
+};
+$("buyQ").addEventListener("keydown", (e) => { if (e.key === "Enter") $("buySearchBtn").click(); });
+
+$("buyChange").onclick = () => {
+  buyTarget = null;
+  $("buyPicked").className = "hidden";
+  $("buyResult").className = "hidden";
+  $("buyQ").focus();
+};
+
+function vdClass(text, kind) {
+  const t = String(text || "");
+  if (kind === "activity") {
+    if (t.includes("متوقفة")) return "bad";
+    if (t.includes("متراجعة")) return "warn";
+    if (t.includes("متنامية")) return "good";
+    return "";
+  }
+  if (kind === "location") {
+    if (t.includes("قوي")) return "good";
+    if (t.includes("ضعيف")) return "bad";
+    return "warn";
+  }
+  if (t.includes("بنيوية")) return "bad";
+  if (t.includes("تشغيلية")) return "good";
+  return "warn";
+}
+
+function renderBuy(d) {
+  const v = d.vitals || {};
+
+  $("buyRing").innerHTML = orbitRing(d.score, 100, scoreColor(d.score), 116, "المؤشر");
+  $("buyVerdict").textContent = d.verdict;
+  $("buyVerdict").style.color = scoreColor(d.score);
+  $("buyMeta").textContent = [d.target?.category, d.target?.address].filter(Boolean).join(" · ") || "—";
+
+  $("buyVerdicts").innerHTML = `
+    <div class="vd ${vdClass(d.activity_status, "activity")}">
+      <div class="lb">حالة المحل</div><div class="vl">${esc(d.activity_status || "—")}</div>
+    </div>
+    <div class="vd ${vdClass(d.location_grade, "location")}">
+      <div class="lb">الموقع نفسه</div><div class="vl">${esc(d.location_grade || "—")}</div>
+    </div>
+    <div class="vd ${vdClass(d.fixability, "fix")}">
+      <div class="lb">قابلية الإصلاح</div><div class="vl">${esc(d.fixability || "—")}</div>
+    </div>`;
+
+  $("buySummary").textContent = d.summary || "—";
+
+  // النبض
+  if (v.last_90d != null) {
+    const dir = v.last_90d < v.prev_90d ? "down" : v.last_90d > v.prev_90d ? "up" : "";
+    let note = "";
+    if (v.momentum === "متوقف") {
+      note = `آخر مراجعة وصلته قبل ${v.days_since_last} يوماً. حركة العملاء متوقفة أو شبه متوقفة.`;
+    } else if (v.momentum === "متراجع") {
+      note = `عدد مراجعاته انخفض إلى نحو النصف مقارنة بالفترة السابقة — تراجع واضح في حركة العملاء.`;
+    } else if (v.momentum === "متسارع") {
+      note = `حركته تتزايد. اسأل البائع لماذا يبيع محلاً ينمو.`;
+    } else {
+      note = `حركته ثابتة تقريباً بين الفترتين.`;
+    }
+    if (v.quality_trend === "يتراجع") note += " ومتوسط تقييم مراجعاته الأخيرة أقل من السابق — الجودة تنزل.";
+    else if (v.quality_trend === "يتحسّن") note += " ومتوسط تقييم مراجعاته الأخيرة أعلى من السابق.";
+
+    $("buyPulse").innerHTML = `
+      <div class="pulse ${dir}">
+        <div class="p-side"><b>${v.prev_90d ?? 0}</b><small>الـ90 يوماً السابقة</small></div>
+        <div class="p-arrow">←</div>
+        <div class="p-side"><b>${v.last_90d}</b><small>آخر 90 يوماً</small></div>
+      </div>
+      <div class="pulse-note">${esc(note)}</div>`;
+  } else {
+    $("buyPulse").innerHTML = `<div class="point warn">لا تتوفر مراجعات مؤرّخة كافية لقياس حركته — وهذا بحد ذاته إشارة تستحق السؤال.</div>`;
+  }
+
+  $("buyStats").innerHTML = `
+    <div class="stat"><div class="stat-val num">${v.rating ?? "—"}</div><div class="stat-lbl">تقييمه</div></div>
+    <div class="stat"><div class="stat-val num">${v.reviews_total ?? 0}</div><div class="stat-lbl">مراجعاته</div></div>
+    <div class="stat"><div class="stat-val num">${v.vs_area_pct != null ? v.vs_area_pct + "%" : "—"}</div><div class="stat-lbl">مقابل متوسط المنطقة</div></div>
+    <div class="stat"><div class="stat-val num">${v.rivals_count ?? "—"}</div><div class="stat-lbl">منافس حوله</div></div>`;
+
+  if (d.reading) {
+    $("buyReading").textContent = d.reading;
+    $("buyReadingBox").className = "";
+  } else $("buyReadingBox").className = "hidden";
+
+  fillPoints("buyRedBox", "buyRed", d.red_flags, "bad");
+  fillPoints("buyGreenBox", "buyGreen", d.green_flags, "ok");
+
+  const cmp = d.complaints || [];
+  if (cmp.length) {
+    $("buyCmp").innerHTML = cmp.map((c) => {
+      const fixable = String(c.fixable || "").includes("نعم");
+      return `<div class="cmp-row">
+        <div>
+          <div class="t">${esc(c.topic)}${c.percent ? ` — ${c.percent}%` : ""}</div>
+          ${c.note ? `<div class="n">${esc(c.note)}</div>` : ""}
+        </div>
+        <span class="fx ${fixable ? "y" : "n"}">${fixable ? "قابلة للإصلاح" : "يصعب إصلاحها"}</span>
+      </div>`;
+    }).join("");
+    $("buyCmpBox").className = "";
+  } else $("buyCmpBox").className = "hidden";
+
+  const ask = d.ask_seller || [];
+  if (ask.length) {
+    $("buyAsk").innerHTML = ask.map((a, i) => `
+      <div class="ask">
+        <div class="n">${i + 1}</div>
+        <div>
+          <div class="q">${esc(a.q)}</div>
+          ${a.why ? `<div class="why">${esc(a.why)}</div>` : ""}
+        </div>
+      </div>`).join("");
+    $("buyAskBox").className = "";
+  } else $("buyAskBox").className = "hidden";
+
+  const ver = d.verify_yourself || [];
+  if (ver.length) {
+    $("buyVerify").innerHTML = ver.map((x) => `
+      <div class="icon-row">
+        <div class="ico">${icon("clipboard-check", 17)}</div>
+        <div class="body">
+          <div class="t">${esc(x.item)}</div>
+          ${x.why ? `<div class="d">${esc(x.why)}</div>` : ""}
+        </div>
+      </div>`).join("");
+    $("buyVerifyBox").className = "";
+  } else $("buyVerifyBox").className = "hidden";
+
+  fillPoints("buyNegBox", "buyNeg", d.negotiation, "warn");
+
+  const rv = d.rivals || [];
+  if (rv.length) {
+    $("buyRivals").innerHTML = rv.map((r) => `
+      <div class="list-row"><span>${esc(r.name)}
+        ${r.busy_now != null && r.busy_now >= 60 ? `<span class="pill-busy">مزدحم الآن</span>` : ""}
+      </span>
+      <span class="meta num">★${r.rating ?? "—"} · ${r.reviews ?? 0} · ${r.distance_m}م</span></div>`).join("");
+    $("buyRivalsBox").className = "";
+  } else $("buyRivalsBox").className = "hidden";
+
+  $("buyScope").innerHTML = `<div class="scope">${icon("info", 16)}<span>${esc(d.scope_note || "")}</span></div>`;
+
+  $("buyResult").className = "";
+}
+
+$("buyBtn").onclick = async () => {
+  if (!buyTarget) return msg($("buyMsg"), "error", "اختر المحل من نتائج البحث.");
+  const btn = $("buyBtn");
+  busy(btn, true, "جارٍ التحليل");
+  msg($("buyMsg"), "info", "نقيس حركته ونقرأ مراجعاته ونفحص موقعه ومنافسيه. قد يستغرق دقيقتين.");
+
+  try {
+    const { data, error } = await sb.functions.invoke("analyze-acquisition", {
+      body: {
+        name: buyTarget.name,
+        place_id: buyTarget.place_id ?? null,
+        cid: buyTarget.cid ?? null,
+        lat: buyTarget.lat, lng: buyTarget.lng,
+        category: buyTarget.category ?? null,
+        address: buyTarget.address ?? null,
+        radius_m: 1500,
+      },
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    renderBuy(data);
+    clearMsg($("buyMsg"));
+  } catch (e) {
+    msg($("buyMsg"), "error", "تعذّر التحليل: " + (e.message || e));
+  } finally { busy(btn, false, "حلّل هذا المحل"); }
+};
+
 /* ---------------- تحديد موقع المشروع ---------------- */
 $("geoBtn").onclick = async () => {
   const city = $("locCity").value.trim();
@@ -1149,12 +1365,9 @@ $("geoBtn").onclick = async () => {
     setPick(data.lat, data.lng, true, data.approximate ? 13 : street ? 17 : 15);
     setTimeout(() => locMap && locMap.invalidateSize(), 100);
 
-    if (data.approximate) {
-      msg($("geoMsg"), "info", data.note);
-    } else {
-      msg($("geoMsg"), "done",
-        `وُجد: ${data.label}${data.address ? " — " + data.address : ""}. اضغط على الخريطة لضبط الموقع بدقة.`);
-    }
+    if (data.approximate) msg($("geoMsg"), "info", data.note);
+    else msg($("geoMsg"), "done",
+      `وُجد: ${data.label}${data.address ? " — " + data.address : ""}. اضغط على الخريطة لضبط الموقع بدقة.`);
   } catch (e) {
     msg($("geoMsg"), "error", "تعذّر البحث: " + (e.message || e));
   } finally { busy(btn, false, "ابحث عن الموقع"); }
@@ -1168,15 +1381,12 @@ $("coordBtn").onclick = () => {
   if (!raw) return msg($("geoMsg"), "error", "الصق الإحداثيات أو رابط الخريطة.");
 
   let lat = null, lng = null;
-
   let m = raw.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (m) { lat = +m[1]; lng = +m[2]; }
-
   if (lat == null) {
     m = raw.match(/[?&]q=(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
     if (m) { lat = +m[1]; lng = +m[2]; }
   }
-
   if (lat == null) {
     m = raw.match(/(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
     if (m) { lat = +m[1]; lng = +m[2]; }
@@ -1317,9 +1527,9 @@ $("locBtn").onclick = async () => {
       const max = Math.max(...ph.hourly.map((h) => h.value), 1);
       let html = "";
       for (let h = 0; h < 24; h++) {
-        const v = byHour[h] ?? 0;
+        const val = byHour[h] ?? 0;
         const pk = (ph.top || []).includes(h) ? " class='peak'" : "";
-        html += `<i${pk} style="height:${Math.max(3, (v / max) * 100)}%" title="${fmtH(h)}"></i>`;
+        html += `<i${pk} style="height:${Math.max(3, (val / max) * 100)}%" title="${fmtH(h)}"></i>`;
       }
       $("hoursBar").innerHTML = html;
       $("peakTxt").textContent = (ph.top || []).length
