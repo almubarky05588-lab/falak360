@@ -250,7 +250,7 @@ async function renderOverview() {
 
   const actions = [
     { s: "rank", i: "map-pin", t: "افحص ترتيبك", d: "اعرف من أي الأحياء تظهر ومن أيها تختفي" },
-    { s: "profile", i: "clipboard-check", t: "أنشئ خطة رفع ظهورك", d: "محتوى جاهز تنسخه إلى ملفك" },
+    { s: "profile", i: "clipboard-check", t: "أنشئ خطة رفع ظهورك", d: "محتوى جاهز وملصق تقييم للطباعة" },
     { s: "reviews", i: "message-square", t: "حلّل مراجعاتك", d: "ما يتكرر من مديح وشكاوى" },
     { s: "rivals", i: "users", t: "راقب منافسيك", d: "من دخل نطاقك ومن يتسارع" },
   ];
@@ -559,6 +559,98 @@ $("auditBtn").onclick = async () => {
   } finally { busy(btn, false, "افحص ملفي"); }
 };
 
+/* ---------------- ملصق طلب التقييم ---------------- */
+const SIZES = {
+  card:  { cls: "s-card",  qr: 4, label: "بطاقة مع الطلب", hint: "صغير" },
+  table: { cls: "s-table", qr: 5, label: "ملصق طاولة", hint: "متوسط" },
+  wall:  { cls: "s-wall",  qr: 7, label: "ملصق جداري", hint: "كبير" },
+};
+let stickerSize = "table";
+
+function reviewUrl() {
+  const pid = currentBizData?.place_id;
+  if (pid) return `https://search.google.com/local/writereview?placeid=${pid}`;
+  const cid = currentBizData?.cid;
+  if (cid) return `https://search.google.com/local/writereview?placeid=${cid}`;
+  return null;
+}
+
+function qrHtml(text, cell) {
+  try {
+    const q = qrcode(0, "M");
+    q.addData(text);
+    q.make();
+    return q.createImgTag(cell, 0);
+  } catch {
+    return `<div style="font-size:11px;color:#101820;padding:14px">تعذّر توليد الرمز</div>`;
+  }
+}
+
+const starSvg = `<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.4l-5.8 3 1.1-6.45-4.7-4.6 6.5-.95z"/></svg>`;
+
+function stickerHtml() {
+  const url = reviewUrl();
+  if (!url) return null;
+  const s = SIZES[stickerSize];
+  const name = currentBizData?.name ?? "متجرك";
+
+  return `<div class="sticker ${s.cls}">
+    <div class="shop">${esc(name)}</div>
+    <div class="ask-ar">شاركنا تقييمك على قوقل ماب</div>
+    <div class="ask-en">Review us on Google Maps</div>
+    <div class="stars">${starSvg.repeat(5)}</div>
+    <div class="qbox">${qrHtml(url, s.qr)}</div>
+    <div class="tap">قرّب كاميرا جوالك أو امسح الرمز</div>
+    <div class="foot">
+      ${logoMark(19)}
+      <span>هذا الرمز مقدَّم من فلك ٣٦٠ · falak360.net</span>
+    </div>
+  </div>`;
+}
+
+function renderSticker() {
+  const box = $("stickerBox");
+  if (!box) return;
+  const html = stickerHtml();
+
+  if (!html) {
+    box.innerHTML = `<div class="hint">لا يتوفر معرّف قوقل لهذا المحل — أعد إضافته من شاشة «نظرة عامة» عبر البحث ليُحفظ معرّفه.</div>`;
+    return;
+  }
+
+  box.innerHTML = `
+    <div class="size-row">
+      ${Object.entries(SIZES).map(([k, v]) => `
+        <button class="size-opt ${k === stickerSize ? "on" : ""}" data-size="${k}">
+          ${v.label}<small>${v.hint}</small>
+        </button>`).join("")}
+    </div>
+    <div class="sticker-wrap">${html}</div>
+    <div class="sticker-actions">
+      <button class="btn" id="printSticker">${icon("clipboard-check", 17)}اطبع الملصق</button>
+      <button class="btn ghost" id="copyLink">${icon("external-link", 17)}انسخ رابط التقييم</button>
+    </div>
+    <div class="hint">اطبعه وضعه على طاولة الكاشير، أو أرفق نسخة صغيرة مع كل طلب — بحسب طبيعة نشاطك.</div>
+    <div class="policy-note">${icon("alert-triangle", 15)}<span>اطلب الرأي بلا مقابل. تقديم خصم أو هدية مقابل التقييم مخالف لسياسات قوقل وقد يُعرّض ملفك للتعليق.</span></div>`;
+
+  box.querySelectorAll("[data-size]").forEach((b) =>
+    b.onclick = () => { stickerSize = b.dataset.size; renderSticker(); });
+
+  $("printSticker").onclick = () => {
+    $("printArea").innerHTML = stickerHtml();
+    window.print();
+  };
+
+  $("copyLink").onclick = async (e) => {
+    const b = e.currentTarget;
+    try {
+      await navigator.clipboard.writeText(reviewUrl());
+      b.innerHTML = `${icon("check-circle", 17)}تم النسخ`;
+      setTimeout(() => { b.innerHTML = `${icon("external-link", 17)}انسخ رابط التقييم`; }, 1800);
+    } catch { /* */ }
+  };
+}
+
 /* ---------------- خطة رفع الظهور ---------------- */
 function copyBtn(id) {
   return `<button class="btn-copy" data-copy="${id}">${icon("clipboard-check", 14)}نسخ</button>`;
@@ -641,19 +733,21 @@ function renderPlan(d) {
       </div>`;
     }
 
-    if (key === "reviews" && d.review_target?.target) {
-      const t = d.review_target;
+    if (key === "reviews") {
+      const t = d.review_target || {};
       if (t.ask_text) store["ask"] = t.ask_text;
       return `<div class="act-content">
-        <div class="target-grid">
+        ${t.target ? `<div class="target-grid">
           <div class="target-cell"><b>${t.target}</b><small>مراجعة هدفاً</small></div>
           <div class="target-cell"><b>${t.weeks ?? "—"}</b><small>أسبوعاً</small></div>
           <div class="target-cell"><b>${t.per_week ?? "—"}</b><small>أسبوعياً</small></div>
-        </div>
+        </div>` : ""}
         ${t.how ? `<div class="ind-means">${esc(t.how)}</div>` : ""}
         ${t.ask_text ? `
           <div class="copy-row" style="margin-top:12px"><span class="lbl">رسالة جاهزة لطلب التقييم</span>${copyBtn("ask")}</div>
           <div class="copy-box">${esc(t.ask_text)}</div>` : ""}
+        <div class="copy-row" style="margin-top:18px"><span class="lbl">ملصق جاهز للطباعة برمز متجرك</span></div>
+        <div id="stickerBox" class="badge-tool"></div>
       </div>`;
     }
 
@@ -700,6 +794,7 @@ function renderPlan(d) {
     </div>`).join("") || `<div class="hint">لا توجد خطوات.</div>`;
 
   bindCopy($("planSteps"), store);
+  renderSticker();
 
   $("rangeNote").innerHTML = d.realistic_range_m
     ? `<div class="range-note">${icon("info", 16)}<span>نطاقك الواقعي حالياً نحو ${d.realistic_range_m} متر حول محلك — هذا أبعد مدى ظهرت فيه فعلاً. خارج هذا النطاق يحكم القرب لا الجودة، ولا تستطيع أي أداة تجاوزه.</span></div>`
@@ -1199,96 +1294,4 @@ async function boot() {
     $("bizSelect").dispatchEvent(new Event("change"));
   }
 }
-/* ---------------- ملصق طلب التقييم ---------------- */
-const SIZES = {
-  card:  { cls: "s-card",  qr: 4, label: "بطاقة مع الطلب" },
-  table: { cls: "s-table", qr: 5, label: "ملصق طاولة" },
-  wall:  { cls: "s-wall",  qr: 7, label: "ملصق جداري" },
-};
-let stickerSize = "table";
-
-function reviewUrl() {
-  const pid = currentBizData?.place_id;
-  if (pid) return `https://search.google.com/local/writereview?placeid=${pid}`;
-  const cid = currentBizData?.cid;
-  if (cid) return `https://search.google.com/local/writereview?placeid=${cid}`;
-  return null;
-}
-
-function qrHtml(text, cell) {
-  try {
-    const q = qrcode(0, "M");
-    q.addData(text);
-    q.make();
-    return q.createImgTag(cell, 0);
-  } catch {
-    return `<div style="font-size:11px;color:#101820;padding:14px">تعذّر توليد الرمز</div>`;
-  }
-}
-
-const starSvg = `<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.4l-5.8 3 1.1-6.45-4.7-4.6 6.5-.95z"/></svg>`;
-
-function stickerHtml() {
-  const url = reviewUrl();
-  const s = SIZES[stickerSize];
-  const name = currentBizData?.name ?? "متجرك";
-  if (!url) return null;
-
-  return `<div class="sticker ${s.cls}">
-    <div class="shop">${esc(name)}</div>
-    <div class="ask-ar">شاركنا تقييمك على قوقل ماب</div>
-    <div class="ask-en">Review us on Google Maps</div>
-    <div class="stars">${starSvg.repeat(5)}</div>
-    <div class="qbox">${qrHtml(url, s.qr)}</div>
-    <div class="tap">قرّب كاميرا جوالك أو امسح الرمز</div>
-    <div class="foot">
-      ${logoMark(19)}
-      <span>هذا الرمز مقدَّم من فلك ٣٦٠ · falak360.net</span>
-    </div>
-  </div>`;
-}
-
-function renderSticker() {
-  const box = $("stickerBox");
-  if (!box) return;
-  const html = stickerHtml();
-
-  if (!html) {
-    box.innerHTML = `<div class="hint">لا يتوفر معرّف قوقل لهذا المحل — أعد إضافته من شاشة «نظرة عامة» عبر البحث ليُحفظ معرّفه.</div>`;
-    return;
-  }
-
-  box.innerHTML = `
-    <div class="size-row">
-      ${Object.entries(SIZES).map(([k, v]) => `
-        <button class="size-opt ${k === stickerSize ? "on" : ""}" data-size="${k}">
-          ${v.label}<small>${k === "card" ? "صغير" : k === "table" ? "متوسط" : "كبير"}</small>
-        </button>`).join("")}
-    </div>
-    <div class="sticker-wrap">${html}</div>
-    <div class="sticker-actions">
-      <button class="btn" id="printSticker">${icon("clipboard-check", 17)}اطبع الملصق</button>
-      <button class="btn ghost" id="copyLink">${icon("external-link", 17)}انسخ رابط التقييم</button>
-    </div>
-    <div class="hint">اطبعه وضعه على طاولة الكاشير، أو أرفق نسخة صغيرة مع كل طلب — بحسب طبيعة نشاطك.</div>
-    <div class="policy-note">${icon("alert-triangle", 15)}<span>اطلب الرأي بلا مقابل. تقديم خصم أو هدية مقابل التقييم مخالف لسياسات قوقل وقد يُعرّض ملفك للتعليق.</span></div>`;
-
-  box.querySelectorAll("[data-size]").forEach((b) =>
-    b.onclick = () => { stickerSize = b.dataset.size; renderSticker(); });
-
-  $("printSticker").onclick = () => {
-    $("printArea").innerHTML = stickerHtml();
-    window.print();
-  };
-
-  $("copyLink").onclick = async (e) => {
-    try {
-      await navigator.clipboard.writeText(reviewUrl());
-      const b = e.currentTarget;
-      b.innerHTML = `${icon("check-circle", 17)}تم النسخ`;
-      setTimeout(() => { b.innerHTML = `${icon("external-link", 17)}انسخ رابط التقييم`; }, 1800);
-    } catch { /* */ }
-  };
-}
-
 boot();
