@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#263A63">
+<meta name="robots" content="noindex, nofollow">
+<title>فلك ٣٦٠ — لوحة الإدارة</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .adm-actions{display:flex;align-items:center;gap:8px}
+  .adm-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:var(--sp-5)}
+  .adm-tab{height:36px;padding:0 14px;border-radius:var(--r-full);border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font:inherit;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .adm-tab.active{background:var(--brand);border-color:var(--brand);color:#fff}
+  .adm-tab .n{font-family:var(--font-num);font-size:12px;background:rgba(0,0,0,.08);border-radius:999px;padding:0 7px}
+  .adm-tab.active .n{background:rgba(255,255,255,.2)}
+  .adm-req{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:16px;margin-bottom:10px}
+  .adm-req-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .adm-req-title{font-family:var(--font-display);font-size:15.5px;font-weight:600}
+  .adm-amt{font-family:var(--font-num);font-size:20px;font-weight:600;white-space:nowrap}
+  .adm-amt small{font-family:var(--font-body);font-size:12px;color:var(--ink-3);font-weight:400;margin-inline-start:3px}
+  .adm-who{font-size:13px;color:var(--ink-2);margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 14px}
+  .adm-who span{display:inline-flex;align-items:center;gap:5px}
+  .adm-who svg{width:14px;height:14px;color:var(--ink-3)}
+  .adm-link{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;border-radius:var(--r);background:var(--surface-2);border:1px dashed var(--line-2);font-size:12.5px;color:var(--ink-2);overflow:hidden}
+  .adm-link code{font-family:var(--font-num);direction:ltr;unicode-bidi:embed;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .adm-link.none{border-color:var(--warn);color:var(--warn);background:var(--warn-tint)}
+  .adm-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .adm-row .input{height:38px;font-size:13.5px;flex:1;min-width:160px}
+  .adm-inv{width:100%;border-collapse:collapse;font-size:13.5px}
+  .adm-inv th{font-weight:500;font-size:12px;color:var(--ink-3);text-align:start;padding:8px 6px;border-bottom:1px solid var(--line)}
+  .adm-inv td{padding:10px 6px;border-bottom:1px solid var(--line)}
+  .adm-inv tr:last-child td{border-bottom:0}
+  .adm-inv .num{font-family:var(--font-num)}
+  .adm-inv .zero{color:var(--bad);font-weight:600}
+  .adm-inv .low{color:var(--warn);font-weight:600}
+  textarea.input{height:auto;min-height:130px;padding:10px 12px;font-family:var(--font-num);font-size:13px;direction:ltr;text-align:left;line-height:1.7;resize:vertical}
+  .adm-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .adm-filter .chip{cursor:pointer;margin:0}
+  .adm-filter .chip.on{background:var(--brand-tint);border-color:var(--brand);color:var(--brand)}
+  .adm-lrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin-bottom:6px;font-size:13px}
+  .adm-lrow code{font-family:var(--font-num);direction:ltr;unicode-bidi:embed;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+  .adm-lrow .meta{font-size:12px;color:var(--ink-3);white-space:nowrap}
+  .badge.info{background:var(--info-tint);color:var(--info)}
+  .badge.mute{background:var(--surface-2);color:var(--ink-3);border:1px solid var(--line)}
+  .adm-loading{display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:14px}
+  .adm-spin{width:16px;height:16px;border:2px solid var(--line-2);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite}
+</style>
+</head>
+<body>
+
+<div id="authScreen" class="auth-wrap hidden">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div id="authLogo"></div>
+      <h1>لوحة الإدارة</h1>
+      <p>فلك ٣٦٠ — للمشرفين فقط</p>
+    </div>
+    <div class="field">
+      <label for="email">البريد الإلكتروني</label>
+      <input id="email" class="input" type="email" inputmode="email" autocomplete="email">
+    </div>
+    <div class="field">
+      <label for="password">كلمة المرور</label>
+      <input id="password" class="input" type="password" autocomplete="current-password">
+    </div>
+    <button id="loginBtn" class="btn block">دخول</button>
+    <div id="authMsg" class="msg"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="app-header">
+    <div class="brand">
+      <div id="headerLogo" class="brand-mark"></div>
+      <div class="brand-name">فلك <span>٣٦٠</span> · الإدارة</div>
+    </div>
+    <div class="adm-actions">
+      <button id="refreshBtn" class="btn ghost sm">تحديث</button>
+      <button id="logoutBtn" class="btn ghost sm">خروج</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title">لوحة الإدارة</h1>
+    <p class="page-sub">تأكيد المدفوعات، ومخزون روابط نيوليب.</p>
+
+    <div class="stats" style="margin:0 0 var(--sp-5)">
+      <div class="stat"><div class="stat-val num" id="stPending">—</div><div class="stat-lbl">بانتظار التأكيد</div></div>
+      <div class="stat"><div class="stat-val num" id="stWaiting">—</div><div class="stat-lbl">بلا رابط سداد</div></div>
+      <div class="stat"><div class="stat-val num" id="stStock">—</div><div class="stat-lbl">رابط متاح</div></div>
+      <div class="stat"><div class="stat-val num" id="stEmpty">—</div><div class="stat-lbl">مبلغ نفد مخزونه</div></div>
+    </div>
+
+    <div class="adm-tabs" id="tabs">
+      <button class="adm-tab active" data-view="pending">الطلبات <span class="n" id="nPending">0</span></button>
+      <button class="adm-tab" data-view="stock">المخزون</button>
+      <button class="adm-tab" data-view="links">الروابط</button>
+      <button class="adm-tab" data-view="recent">آخر المدفوعات</button>
+    </div>
+
+    <div id="topMsg" class="msg" style="margin:0 0 var(--sp-4)"></div>
+
+    <section id="view-pending" class="screen active"><div id="pendingList"></div></section>
+
+    <section id="view-stock" class="screen">
+      <div class="card">
+        <table class="adm-inv">
+          <thead><tr><th>البند</th><th>المبلغ</th><th>متاح</th><th>مسحوب</th><th>ينتظر رابطاً</th><th></th></tr></thead>
+          <tbody id="invBody"></tbody>
+        </table>
+      </div>
+
+      <div class="section-head"><h2>أضف روابط سداد</h2><span class="note">تُربط تلقائياً بالطلبات المنتظرة</span></div>
+      <div class="card">
+        <div class="row">
+          <div class="field">
+            <label for="addKind">البند والمبلغ</label>
+            <select id="addKind" class="select"></select>
+          </div>
+          <div class="field">
+            <label for="addNote">ملاحظة (اختياري)</label>
+            <input id="addNote" class="input" placeholder="مثل: دفعة نيوليب سبتمبر">
+          </div>
+        </div>
+        <div class="field" style="margin:0">
+          <label for="addUrls">الروابط — رابط في كل سطر</label>
+          <textarea id="addUrls" class="input" placeholder="https://..."></textarea>
+          <div class="hint">تأكد أن مبلغ كل رابط في نيوليب يطابق المبلغ المختار. الروابط المكررة أو غير https تُتجاهل.</div>
+        </div>
+        <button id="addBtn" class="btn sp-t">أضف للمخزون</button>
+        <div id="addMsg" class="msg"></div>
+      </div>
+    </section>
+
+    <section id="view-links" class="screen">
+      <div class="adm-filter" id="linkFilter">
+        <span class="chip on" data-st="">الكل</span>
+        <span class="chip" data-st="available">متاح</span>
+        <span class="chip" data-st="assigned">مسحوب لعميل</span>
+        <span class="chip" data-st="used">مستخدم</span>
+        <span class="chip" data-st="void">مُبطل</span>
+      </div>
+      <div id="linksList"></div>
+    </section>
+
+    <section id="view-recent" class="screen"><div id="recentList"></div></section>
+  </main>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { icon, logoMark } from "./icons.js";
+
+const sb = createClient("https://dpkvkwcofxeptpzdsjre.supabase.co",
+  "sb_publishable_Krja6qX-HGdklghDfTJmjQ_XpmIgBPe");
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const safeUrl = (u) => (typeof u === "string" && /^https:\/\//i.test(u) ? u : null);
+const fmtDT = (iso) => iso ? new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",
+  { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)) : "—";
+const tail = (u) => { const s = String(u || ""); return s.length > 46 ? "…" + s.slice(-44) : s; };
+const PURPOSE = { subscription: "اشتراك", report: "تقرير" };
+const LSTATUS = {
+  available: ["ok", "متاح"], assigned: ["info", "مسحوب"],
+  used: ["mute", "مستخدم"], void: ["bad", "مُبطل"],
+};
+
+let dash = null;
+let linkFilter = "";
+
+/* ---------------- أدوات ---------------- */
+function msg(el, kind, text) {
+  const ic = kind === "error" ? "alert-triangle" : kind === "done" ? "check-circle" : "info";
+  el.className = `msg show ${kind}`;
+  el.innerHTML = `${icon(ic, 17)}<span>${esc(text)}</span>`;
+}
+function busy(btn, on, label = "لحظة") {
+  if (on) { btn.dataset.label = btn.innerHTML; btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>${esc(label)}`; }
+  else { btn.disabled = false; btn.innerHTML = btn.dataset.label || ""; }
+}
+const loadingBox = () => `<div class="card adm-loading"><span class="adm-spin"></span>جارٍ التحميل…</div>`;
+const empty = (ic, t, b) => `<div class="empty">${icon(ic, 34)}<h3>${esc(t)}</h3><p>${esc(b)}</p></div>`;
+
+async function rpc(fn, args = {}) {
+  const { data, error } = await sb.rpc(fn, args);
+  if (error) throw new Error(error.code === "42501" ? "غير مصرّح — هذا الحساب ليس مشرفاً" : error.message);
+  return data;
+}
+
+function waLink(phone, text) {
+  let d = String(phone || "").replace(/\D/g, "");
+  if (!d) return null;
+  if (d.startsWith("00")) d = d.slice(2);
+  if (d.startsWith("05")) d = "966" + d.slice(1);
+  else if (d.startsWith("5") && d.length === 9) d = "966" + d;
+  return `https://wa.me/${d}?text=${encodeURIComponent(text)}`;
+}
+
+/* ---------------- التنقل ---------------- */
+function showView(v) {
+  document.querySelectorAll(".adm-tab").forEach((t) => t.classList.toggle("active", t.dataset.view === v));
+  document.querySelectorAll("main .screen").forEach((s) => s.classList.toggle("active", s.id === `view-${v}`));
+  if (v === "links") loadLinks();
+}
+document.querySelectorAll(".adm-tab").forEach((t) => t.onclick = () => showView(t.dataset.view));
+
+/* ---------------- اللوحة ---------------- */
+async function loadDash() {
+  if (!dash) $("pendingList").innerHTML = loadingBox();
+  try {
+    dash = await rpc("admin_dashboard");
+    renderStats();
+    renderPending();
+    renderStock();
+    renderRecent();
+  } catch (e) {
+    msg($("topMsg"), "error", e.message);
+  }
+}
+
+function renderStats() {
+  const p = dash.pending || [], c = dash.catalog || [];
+  $("stPending").textContent = p.length;
+  $("stWaiting").textContent = p.filter((x) => !x.payment_link).length;
+  $("stStock").textContent = c.reduce((s, x) => s + Number(x.available || 0), 0);
+  $("stEmpty").textContent = c.filter((x) => Number(x.available || 0) === 0).length;
+  $("nPending").textContent = p.length;
+}
+
+function renderPending() {
+  const list = dash.pending || [];
+  const el = $("pendingList");
+  if (!list.length) {
+    el.innerHTML = empty("check-circle", "لا طلبات معلّقة", "كل الطلبات مؤكدة أو ملغاة.");
+    return;
+  }
+  el.innerHTML = list.map((r) => {
+    const link = safeUrl(r.payment_link);
+    const who = [
+      `<span>${icon("inbox", 14)}${esc(r.email)}</span>`,
+      r.full_name ? `<span>${icon("users", 14)}${esc(r.full_name)}</span>` : "",
+      r.phone ? `<span>${icon("phone", 14)}<span class="num" dir="ltr">${esc(r.phone)}</span></span>` : "",
+      `<span>${icon("clock", 14)}${fmtDT(r.created_at)}</span>`,
+    ].join("");
+    const wa = link && r.phone ? waLink(r.phone,
+      `مرحباً، هذا رابط سداد طلبك في فلك ٣٦٠ (${r.title} — ${r.amount} ر.س):\n${link}`) : null;
+    return `
+      <div class="adm-req" data-type="${esc(r.type)}" data-id="${esc(r.id)}">
+        <div class="adm-req-top">
+          <div>
+            <div class="adm-req-title">${esc(r.title)}</div>
+            <div class="adm-who">${who}</div>
+          </div>
+          <div class="adm-amt">${r.amount ?? "—"}<small>ر.س</small></div>
+        </div>
+        ${link
+          ? `<div class="adm-link">${icon("external-link", 14)}<code title="${esc(link)}">${esc(tail(link))}</code>
+               ${r.link_note ? `<span>${esc(r.link_note)}</span>` : ""}
+               <button class="btn ghost sm" data-copy="${esc(link)}">نسخ</button>
+               ${wa ? `<a class="btn ghost sm" href="${esc(wa)}" target="_blank" rel="noopener">واتساب</a>` : ""}</div>`
+          : `<div class="adm-link none">${icon("alert-triangle", 14)}<span>لا يوجد رابط — أضف رابطاً بمبلغ ${r.amount} ر.س من المخزون وسيُربط تلقائياً</span></div>`}
+        <div class="adm-row">
+          <input class="input" data-note placeholder="مرجع العملية من إيميل نيوليب (اختياري)">
+          <button class="btn sm" data-confirm>${icon("check-circle", 15)}تأكيد الدفع</button>
+          <button class="btn ghost sm" data-cancel>إلغاء</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  el.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "نُسخ"; }
+    catch { b.textContent = "تعذّر"; }
+    setTimeout(() => (b.textContent = "نسخ"), 1500);
+  });
+  el.querySelectorAll(".adm-req").forEach((card) => {
+    const r = list.find((x) => x.id === card.dataset.id);
+    card.querySelector("[data-confirm]").onclick = (ev) => confirmPay(r, card, ev.currentTarget);
+    card.querySelector("[data-cancel]").onclick = (ev) => cancelReq(r, ev.currentTarget);
+  });
+}
+
+async function confirmPay(r, card, btn) {
+  if (!r.payment_link && !window.confirm("هذا الطلب بلا رابط سداد. هل استلمت المبلغ بطريقة أخرى؟")) return;
+  if (!window.confirm(`تأكيد استلام ${r.amount} ر.س\n${r.title}\n${r.email}`)) return;
+  busy(btn, true, "جارٍ التأكيد");
+  try {
+    const res = await rpc("admin_confirm", {
+      p_type: r.type, p_id: r.id, p_note: card.querySelector("[data-note]").value.trim() || null,
+    });
+    msg($("topMsg"), res.ok ? "done" : "error", `${res.message} — ${r.email}`);
+    await loadDash();
+  } catch (e) { msg($("topMsg"), "error", e.message); }
+  finally { if (btn.isConnected) busy(btn, false); }
+}
+
+async function cancelReq(r, btn) {
+  if (!window.confirm(`إلغاء طلب «${r.title}» للعميل ${r.email}؟`)) return;
+  let release = false;
+  if (r.payment_link) {
+    release = window.confirm(
+      "هل تعيد رابط السداد إلى المخزون ليُستخدم لعميل آخر؟\n\n" +
+      "اختر «موافق» فقط إذا تأكدت أن العميل لم يفتح الرابط ولن يسدد عليه.\n" +
+      "اختر «إلغاء» لإبطال الرابط نهائياً (الأسلم).");
+  }
+  busy(btn, true);
+  try {
+    const res = await rpc("admin_cancel", { p_type: r.type, p_id: r.id, p_release: release });
+    msg($("topMsg"), res.ok ? "done" : "error", res.message);
+    await loadDash();
+  } catch (e) { msg($("topMsg"), "error", e.message); }
+  finally { if (btn.isConnected) busy(btn, false); }
+}
+
+/* ---------------- المخزون ---------------- */
+function renderStock() {
+  const cat = dash.catalog || [];
+  $("invBody").innerHTML = cat.map((c) => {
+    const a = Number(c.available || 0);
+    const cls = a === 0 ? "zero" : a < 3 ? "low" : "";
+    return `<tr>
+      <td>${esc(c.label)}<div class="hint" style="margin:2px 0 0">${PURPOSE[c.purpose] || c.purpose}</div></td>
+      <td class="num">${c.amount}</td>
+      <td class="num ${cls}">${a}</td>
+      <td class="num">${c.assigned || 0}</td>
+      <td class="num ${Number(c.waiting) ? "zero" : ""}">${c.waiting || 0}</td>
+      <td><button class="btn ghost sm" data-pick="${esc(c.purpose)}|${c.amount}">أضف</button></td>
+    </tr>`;
+  }).join("");
+
+  const sel = $("addKind");
+  const prev = sel.value;
+  sel.innerHTML = cat.map((c) =>
+    `<option value="${esc(c.purpose)}|${c.amount}">${esc(c.label)} — ${c.amount} ر.س</option>`).join("");
+  if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+
+  $("invBody").querySelectorAll("[data-pick]").forEach((b) => b.onclick = () => {
+    sel.value = b.dataset.pick;
+    $("addUrls").focus();
+    $("addUrls").scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
+
+$("addBtn").onclick = async () => {
+  const btn = $("addBtn");
+  const [purpose, amount] = $("addKind").value.split("|");
+  const urls = $("addUrls").value.split(/\s+/).map((u) => u.trim()).filter(Boolean);
+  if (!urls.length) return msg($("addMsg"), "error", "الصق رابطاً واحداً على الأقل");
+  if (!window.confirm(`إضافة ${urls.length} رابط بمبلغ ${amount} ر.س (${PURPOSE[purpose]})؟`)) return;
+  busy(btn, true, "جارٍ الإضافة");
+  try {
+    const r = await rpc("admin_add_links", {
+      p_urls: urls, p_amount: Number(amount), p_purpose: purpose,
+      p_note: $("addNote").value.trim() || null,
+    });
+    const parts = [`أُضيف ${r.added}`];
+    if (r.skipped) parts.push(`تُجوهل ${r.skipped} (مكرر أو غير https)`);
+    if (r.assigned) parts.push(`ورُبط ${r.assigned} بطلبات كانت تنتظر`);
+    msg($("addMsg"), "done", parts.join(" · "));
+    $("addUrls").value = "";
+    await loadDash();
+  } catch (e) { msg($("addMsg"), "error", e.message); }
+  finally { busy(btn, false); }
+};
+
+/* ---------------- الروابط ---------------- */
+document.querySelectorAll("#linkFilter .chip").forEach((c) => c.onclick = () => {
+  document.querySelectorAll("#linkFilter .chip").forEach((x) => x.classList.toggle("on", x === c));
+  linkFilter = c.dataset.st;
+  loadLinks();
+});
+
+async function loadLinks() {
+  const el = $("linksList");
+  el.innerHTML = loadingBox();
+  try {
+    const rows = await rpc("admin_links", { p_status: linkFilter || null });
+    if (!rows.length) { el.innerHTML = empty("inbox", "لا روابط", "لا توجد روابط بهذه الحالة."); return; }
+    el.innerHTML = rows.map((l) => {
+      const [k, t] = LSTATUS[l.status] || ["mute", l.status];
+      const when = l.used_at || l.assigned_at || l.created_at;
+      return `<div class="adm-lrow">
+        <span class="badge ${k}">${t}</span>
+        <span class="num" style="white-space:nowrap">${l.amount_sar} ر.س</span>
+        <span class="meta">${PURPOSE[l.purpose] || l.purpose}</span>
+        <code title="${esc(l.url)}">${esc(tail(l.url))}</code>
+        <span class="meta">${l.assigned_email ? esc(l.assigned_email) + " · " : ""}${fmtDT(when)}</span>
+        ${l.status === "available" ? `<button class="btn ghost sm" data-void="${esc(l.id)}">إبطال</button>` : ""}
+      </div>`;
+    }).join("");
+    el.querySelectorAll("[data-void]").forEach((b) => b.onclick = async () => {
+      if (!window.confirm("إبطال هذا الرابط؟ لن يُسحب لأي عميل بعد ذلك.")) return;
+      busy(b, true);
+      try {
+        const r = await rpc("admin_void_link", { p_id: b.dataset.void });
+        msg($("topMsg"), r.ok ? "done" : "error", r.message);
+        await Promise.all([loadLinks(), loadDash()]);
+      } catch (e) { msg($("topMsg"), "error", e.message); busy(b, false); }
+    });
+  } catch (e) { el.innerHTML = ""; msg($("topMsg"), "error", e.message); }
+}
+
+/* ---------------- آخر المدفوعات ---------------- */
+function renderRecent() {
+  const list = dash.recent || [];
+  $("recentList").innerHTML = list.length
+    ? list.map((r) => `<div class="list-row">
+        <div><div>${esc(r.title)}</div><div class="meta">${esc(r.email)} · ${fmtDT(r.paid_at)}</div></div>
+        <span class="num" style="font-weight:600">${r.amount ?? "—"} ر.س</span></div>`).join("")
+    : empty("banknote", "لا مدفوعات بعد", "ستظهر هنا المدفوعات المؤكدة.");
+}
+
+/* ---------------- الدخول ---------------- */
+$("loginBtn").onclick = async () => {
+  const btn = $("loginBtn");
+  busy(btn, true, "جارٍ الدخول");
+  const { error } = await sb.auth.signInWithPassword({
+    email: $("email").value.trim(), password: $("password").value,
+  });
+  busy(btn, false);
+  if (error) return msg($("authMsg"), "error", error.message);
+  boot();
+};
+$("logoutBtn").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+$("refreshBtn").onclick = async () => {
+  const b = $("refreshBtn");
+  busy(b, true);
+  await loadDash();
+  if ($("view-links").classList.contains("active")) await loadLinks();
+  busy(b, false);
+};
+
+async function boot() {
+  $("authLogo").innerHTML = logoMark(44);
+  $("headerLogo").innerHTML = logoMark(30);
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $("authScreen").classList.remove("hidden"); return; }
+
+  const { data: isAdmin } = await sb.rpc("is_admin");
+  if (!isAdmin) {
+    $("authScreen").classList.remove("hidden");
+    $("loginBtn").classList.add("hidden");
+    msg($("authMsg"), "error", "هذا الحساب ليس مشرفاً.");
+    $("authMsg").insertAdjacentHTML("afterend",
+      `<button class="btn ghost block sp-t" id="swBtn">دخول بحساب آخر</button>`);
+    $("swBtn").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+    return;
+  }
+
+  $("authScreen").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  await loadDash();
+}
+boot();
+</script>
+</body>
+</html>
