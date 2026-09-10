@@ -55,6 +55,8 @@ const timeAgo = (iso) => {
   return days === 1 ? "أمس" : `قبل ${days} يوماً`;
 };
 
+const fmtH = (h) => h === 0 ? "12ص" : h < 12 ? `${h}ص` : h === 12 ? "12م" : `${h - 12}م`;
+
 /* ---------------- التنقّل ---------------- */
 function showScreen(name) {
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
@@ -195,10 +197,10 @@ async function loadBusinesses() {
 }
 
 function resetResults() {
-  ["scanResult", "auditResult", "revResult", "compResult"].forEach((id) => {
+  ["scanResult", "auditResult", "revResult", "compResult", "planResult"].forEach((id) => {
     const el = $(id); if (el) el.className = "hidden";
   });
-  ["scanMsg", "auditMsg", "revMsg", "compMsg", "watchMsg"].forEach((id) => {
+  ["scanMsg", "auditMsg", "revMsg", "compMsg", "watchMsg", "planMsg"].forEach((id) => {
     const el = $(id); if (el) clearMsg(el);
   });
   const sp = $("spread"); if (sp) sp.className = "spread hidden";
@@ -248,7 +250,7 @@ async function renderOverview() {
 
   const actions = [
     { s: "rank", i: "map-pin", t: "افحص ترتيبك", d: "اعرف من أي الأحياء تظهر ومن أيها تختفي" },
-    { s: "profile", i: "clipboard-check", t: "دقّق ملفك التجاري", d: "النواقص التي تُضعف ظهورك" },
+    { s: "profile", i: "clipboard-check", t: "أنشئ خطة رفع ظهورك", d: "محتوى جاهز تنسخه إلى ملفك" },
     { s: "reviews", i: "message-square", t: "حلّل مراجعاتك", d: "ما يتكرر من مديح وشكاوى" },
     { s: "rivals", i: "users", t: "راقب منافسيك", d: "من دخل نطاقك ومن يتسارع" },
   ];
@@ -264,7 +266,7 @@ async function renderOverview() {
   $("bizSummary").className = "";
 }
 
-/* ---------------- التنبيهات في نظرة عامة ---------------- */
+/* ---------------- التنبيهات ---------------- */
 const ALERT_ICON = {
   new_rival: "alert-triangle", rival_left: "trending-down",
   rival_surge: "trending-up", rank_drop: "trending-down",
@@ -422,7 +424,7 @@ function renderDiagnose(data, pts) {
       <ul>
         <li>الكلمة عامة جداً ويزاحمك عليها كثيرون — جرّب كلمة أدق تصف ما تقدّمه تحديداً.</li>
         <li>نطاق الشبكة أوسع من نطاق محلك الفعلي — قلّل المسافة إلى 500 متر.</li>
-        <li>ملفك التجاري ناقص أو تصنيفه غير دقيق — افحصه من تبويب «الملف التجاري».</li>
+        <li>ملفك التجاري ناقص أو تصنيفه غير دقيق — أنشئ خطة رفع الظهور من تبويب «الملف التجاري».</li>
       </ul>`;
     el.className = "diagnose";
     return;
@@ -525,7 +527,7 @@ $("auditBtn").onclick = async () => {
     $("auditVerdict").textContent =
       data.score >= 80 ? "ملف مكتمل" : data.score >= 55 ? "ملف يحتاج تحسيناً" : "ملف ناقص";
     $("auditNote").textContent = failed
-      ? `${failed} نقطة تحتاج معالجة. ابدأ بالأولى فأثرها أكبر.`
+      ? `${failed} نقطة تحتاج معالجة. أنشئ خطتك أدناه لتحصل على محتواها جاهزاً.`
       : "كل النقاط مكتملة. حافظ على التحديث المنتظم.";
 
     const sorted = [...data.checks].sort((a, b) =>
@@ -555,6 +557,172 @@ $("auditBtn").onclick = async () => {
   } catch (e) {
     msg($("auditMsg"), "error", "تعذّر الفحص: " + (e.message || e));
   } finally { busy(btn, false, "افحص ملفي"); }
+};
+
+/* ---------------- خطة رفع الظهور ---------------- */
+function copyBtn(id) {
+  return `<button class="btn-copy" data-copy="${id}">${icon("clipboard-check", 14)}نسخ</button>`;
+}
+
+function bindCopy(root, store) {
+  root.querySelectorAll("[data-copy]").forEach((b) => {
+    b.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(store[b.dataset.copy] || "");
+        b.classList.add("done");
+        b.innerHTML = `${icon("check-circle", 14)}تم النسخ`;
+        setTimeout(() => {
+          b.classList.remove("done");
+          b.innerHTML = `${icon("clipboard-check", 14)}نسخ`;
+        }, 1800);
+      } catch {
+        b.textContent = "انسخ يدوياً";
+      }
+    };
+  });
+}
+
+function renderPlan(d) {
+  const store = {};
+
+  $("planSummary").innerHTML = d.summary
+    ? `<div class="summary">${esc(d.summary)}</div>` : "";
+
+  if ((d.blockers || []).length) {
+    $("blockerList").innerHTML = d.blockers.map((b, i) => `
+      <div class="blocker ${String(b.weight || "").includes("عال") ? "" : "mid"}">
+        <div class="n">${i + 1}</div>
+        <div>
+          <div class="t">${esc(b.issue)}</div>
+          <div class="w">${esc(b.why || "")}</div>
+        </div>
+      </div>`).join("");
+    $("blockerBox").className = "";
+  } else $("blockerBox").className = "hidden";
+
+  const content = (key) => {
+    if (key === "primary_category" || key === "extra_categories") {
+      const all = [];
+      if (d.primary_category) all.push(`<span class="tag-cat primary">${esc(d.primary_category)}</span>`);
+      (d.extra_categories || []).forEach((c) => all.push(`<span class="tag-cat">${esc(c)}</span>`));
+      if (!all.length) return "";
+      store["cats"] = [d.primary_category, ...(d.extra_categories || [])].filter(Boolean).join("\n");
+      return `<div class="act-content">
+        <div class="copy-row"><span class="lbl">الرئيسي أولاً ثم الفرعية</span>${copyBtn("cats")}</div>
+        <div class="tag-list">${all.join("")}</div>
+      </div>`;
+    }
+
+    if (key === "description" && d.description_text) {
+      store["desc"] = d.description_text;
+      return `<div class="act-content">
+        <div class="copy-row"><span class="lbl">وصف جاهز — ${d.description_text.length} حرف</span>${copyBtn("desc")}</div>
+        <div class="copy-box">${esc(d.description_text)}</div>
+      </div>`;
+    }
+
+    if (key === "services" && (d.services || []).length) {
+      store["svcs"] = d.services.join("\n");
+      return `<div class="act-content">
+        <div class="copy-row"><span class="lbl">أضف كل واحدة كخدمة منفصلة</span>${copyBtn("svcs")}</div>
+        ${d.services.map((s) => `<div class="svc">${icon("check-circle", 15)}${esc(s)}</div>`).join("")}
+      </div>`;
+    }
+
+    if (key === "photos" && d.photo_plan?.breakdown?.length) {
+      return `<div class="act-content">
+        <div class="copy-row"><span class="lbl">المجموع ${d.photo_plan.total ?? ""} صورة</span></div>
+        ${d.photo_plan.breakdown.map((p) => `
+          <div class="shot">
+            <div class="cnt">${p.count}</div>
+            <div><div class="t">${esc(p.type)}</div>
+            ${p.tip ? `<div class="tip">${esc(p.tip)}</div>` : ""}</div>
+          </div>`).join("")}
+      </div>`;
+    }
+
+    if (key === "reviews" && d.review_target?.target) {
+      const t = d.review_target;
+      if (t.ask_text) store["ask"] = t.ask_text;
+      return `<div class="act-content">
+        <div class="target-grid">
+          <div class="target-cell"><b>${t.target}</b><small>مراجعة هدفاً</small></div>
+          <div class="target-cell"><b>${t.weeks ?? "—"}</b><small>أسبوعاً</small></div>
+          <div class="target-cell"><b>${t.per_week ?? "—"}</b><small>أسبوعياً</small></div>
+        </div>
+        ${t.how ? `<div class="ind-means">${esc(t.how)}</div>` : ""}
+        ${t.ask_text ? `
+          <div class="copy-row" style="margin-top:12px"><span class="lbl">رسالة جاهزة لطلب التقييم</span>${copyBtn("ask")}</div>
+          <div class="copy-box">${esc(t.ask_text)}</div>` : ""}
+      </div>`;
+    }
+
+    if (key === "posts" && (d.posts || []).length) {
+      return `<div class="act-content">
+        ${d.posts.map((p, i) => {
+          store[`post${i}`] = p.text;
+          return `<div class="post-item">
+            <div class="copy-row">
+              <span class="h">${esc(p.title || `المنشور ${i + 1}`)}</span>
+              ${copyBtn(`post${i}`)}
+            </div>
+            <div class="copy-box">${esc(p.text)}</div>
+          </div>`;
+        }).join("")}
+        <div class="hint">انشر واحداً كل أسبوع. المنشور يبقى ظاهراً سبعة أيام.</div>
+      </div>`;
+    }
+
+    if (key === "keywords" && (d.keyword_ideas || []).length) {
+      return `<div class="act-content">
+        ${d.keyword_ideas.map((k) => `
+          <div class="list-row"><span>${esc(k.term)}</span>
+          <span class="meta">${esc(k.why || "")}</span></div>`).join("")}
+      </div>`;
+    }
+
+    return "";
+  };
+
+  $("planSteps").innerHTML = (d.steps || []).map((s) => `
+    <div class="act">
+      <div class="act-head">
+        <div class="n">${s.order}</div>
+        <div class="body">
+          <div class="t">${esc(s.title)}
+            <span class="meta">أثر ${esc(s.impact || "—")} · ${esc(s.timeframe || "")}</span>
+          </div>
+          ${s.detail ? `<div class="d">${esc(s.detail)}</div>` : ""}
+        </div>
+      </div>
+      ${s.where ? `<div class="act-where">${icon("map-pin", 15)}<span>${esc(s.where)}</span></div>` : ""}
+      ${content(s.content_key)}
+    </div>`).join("") || `<div class="hint">لا توجد خطوات.</div>`;
+
+  bindCopy($("planSteps"), store);
+
+  $("rangeNote").innerHTML = d.realistic_range_m
+    ? `<div class="range-note">${icon("info", 16)}<span>نطاقك الواقعي حالياً نحو ${d.realistic_range_m} متر حول محلك — هذا أبعد مدى ظهرت فيه فعلاً. خارج هذا النطاق يحكم القرب لا الجودة، ولا تستطيع أي أداة تجاوزه.</span></div>`
+    : "";
+
+  $("planResult").className = "";
+}
+
+$("planBtn").onclick = async () => {
+  const btn = $("planBtn");
+  busy(btn, true, "جارٍ الإنشاء");
+  msg($("planMsg"), "info", "نقرأ ملفك وفحوصاتك ومنافسيك ونكتب خطتك. قد يستغرق دقيقة.");
+  try {
+    const { data, error } = await sb.functions.invoke("growth-plan", {
+      body: { business_id: currentBiz },
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    renderPlan(data);
+    clearMsg($("planMsg"));
+  } catch (e) {
+    msg($("planMsg"), "error", "تعذّر إنشاء الخطة: " + (e.message || e));
+  } finally { busy(btn, false, "أنشئ خطتي"); }
 };
 
 /* ---------------- تحليل المراجعات ---------------- */
@@ -623,7 +791,6 @@ function deltaTag(d) {
   if (d < 0) return `<span class="delta down">${d}</span>`;
   return `<span class="delta flat">—</span>`;
 }
-const fmtH = (h) => h === 0 ? "12ص" : h < 12 ? `${h}ص` : h === 12 ? "12م" : `${h - 12}م`;
 
 async function loadLastWatch() {
   const { data } = await sb.from("competitor_snapshots")
