@@ -318,17 +318,42 @@
       <p class="page-sub">قبل أن تستأجر: اعرف من ينافسك في المنطقة، وما يحيط بالموقع، وأين الفرص.</p>
 
       <div class="card">
+        <div class="field">
+          <label for="locAct">نوع النشاط</label>
+          <input id="locAct" class="input" placeholder="مثال: مقهى">
+        </div>
+
+        <div class="section-head" style="margin-top:var(--sp-5)"><h2>حدّد الموقع</h2></div>
+
         <div class="row">
           <div class="field" style="margin:0">
-            <label for="locAct">نوع النشاط</label>
-            <input id="locAct" class="input" placeholder="مثال: مقهى">
+            <label for="locCity">المدينة <span style="color:var(--bad)">*</span></label>
+            <input id="locCity" class="input" placeholder="مثال: أبو عريش">
           </div>
           <div class="field" style="margin:0">
-            <label for="locArea">اسم الحي</label>
-            <input id="locArea" class="input" placeholder="اختياري">
+            <label for="locDistrict">الحي <span style="color:var(--bad)">*</span></label>
+            <input id="locDistrict" class="input" placeholder="مثال: قنبورة">
           </div>
         </div>
+
         <div class="field sp-t">
+          <label for="locStreet">الشارع <span class="muted">— اختياري، يزيد الدقة</span></label>
+          <input id="locStreet" class="input" placeholder="مثال: طريق الملك عبدالله">
+        </div>
+
+        <button id="geoBtn" class="btn ghost block">ابحث عن الموقع</button>
+        <div id="geoMsg" class="msg"></div>
+
+        <div class="field sp-t">
+          <label for="locCoords">أو الصق إحداثيات قوقل <span class="muted">— اختياري</span></label>
+          <div class="row">
+            <input id="locCoords" class="input" placeholder="17.9654, 42.8341 أو رابط خرائط">
+            <button id="coordBtn" class="btn ghost" style="flex:0 0 auto">انتقل</button>
+          </div>
+          <div class="hint">من قوقل ماب: اضغط مطوّلاً على الموقع لتنسخ الإحداثيات، أو انسخ الرابط كاملاً.</div>
+        </div>
+
+        <div class="field">
           <label for="locRadius">نطاق التحليل</label>
           <select id="locRadius" class="select">
             <option value="1000">1 كيلومتر — الحي المباشر</option>
@@ -339,7 +364,7 @@
         </div>
 
         <div id="locMap" class="map short"></div>
-        <div class="hint">اضغط على الخريطة لتحديد موقع المشروع.</div>
+        <div class="hint">ابحث أعلاه، ثم اضغط على الخريطة لضبط الموقع بدقة.</div>
 
         <button id="locBtn" class="btn block sp-t" disabled>حلّل الموقع</button>
         <div id="locMsg" class="msg"></div>
@@ -428,3 +453,5 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script type="module" src="app.js"></script>
+</body>
+</html>
