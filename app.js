@@ -133,14 +133,18 @@ function initLocMap() {
     .setView(userLoc ? [userLoc.lat, userLoc.lng] : [21.5433, 39.1728], userLoc ? 14 : 12);
   baseLayer().addTo(locMap);
   locLayer = L.layerGroup().addTo(locMap);
-  locMap.on("click", (e) => {
-    locPick = { lat: e.latlng.lat, lng: e.latlng.lng };
-    drawPick();
-    $("locBtn").disabled = false;
-  });
+  locMap.on("click", (e) => setPick(e.latlng.lat, e.latlng.lng, false));
+}
+
+function setPick(lat, lng, fly = true, zoom = 16) {
+  locPick = { lat, lng };
+  drawPick();
+  $("locBtn").disabled = false;
+  if (fly && locMap) locMap.setView([lat, lng], zoom);
 }
 
 function drawPick() {
+  if (!locLayer) return;
   locLayer.clearLayers();
   L.marker([locPick.lat, locPick.lng], { icon: mePin() }).addTo(locLayer);
   L.circle([locPick.lat, locPick.lng], {
@@ -1121,6 +1125,78 @@ function fillPoints(boxId, listId, arr, cls) {
   $(boxId).className = "";
 }
 
+/* ---------------- تحديد موقع المشروع ---------------- */
+$("geoBtn").onclick = async () => {
+  const city = $("locCity").value.trim();
+  const district = $("locDistrict").value.trim();
+  const street = $("locStreet").value.trim();
+
+  if (city.length < 2) return msg($("geoMsg"), "error", "اكتب اسم المدينة.");
+  if (district.length < 2) return msg($("geoMsg"), "error", "اكتب اسم الحي.");
+
+  const btn = $("geoBtn");
+  busy(btn, true, "جارٍ البحث");
+  msg($("geoMsg"), "info", "نبحث عن الموقع…");
+
+  try {
+    const { data, error } = await sb.functions.invoke("geocode", {
+      body: { city, district, street: street || null },
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+
+    initLocMap();
+    setPick(data.lat, data.lng, true, data.approximate ? 13 : street ? 17 : 15);
+    setTimeout(() => locMap && locMap.invalidateSize(), 100);
+
+    if (data.approximate) {
+      msg($("geoMsg"), "info", data.note);
+    } else {
+      msg($("geoMsg"), "done",
+        `وُجد: ${data.label}${data.address ? " — " + data.address : ""}. اضغط على الخريطة لضبط الموقع بدقة.`);
+    }
+  } catch (e) {
+    msg($("geoMsg"), "error", "تعذّر البحث: " + (e.message || e));
+  } finally { busy(btn, false, "ابحث عن الموقع"); }
+};
+
+["locCity", "locDistrict", "locStreet"].forEach((id) =>
+  $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") $("geoBtn").click(); }));
+
+$("coordBtn").onclick = () => {
+  const raw = $("locCoords").value.trim();
+  if (!raw) return msg($("geoMsg"), "error", "الصق الإحداثيات أو رابط الخريطة.");
+
+  let lat = null, lng = null;
+
+  let m = raw.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (m) { lat = +m[1]; lng = +m[2]; }
+
+  if (lat == null) {
+    m = raw.match(/[?&]q=(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+    if (m) { lat = +m[1]; lng = +m[2]; }
+  }
+
+  if (lat == null) {
+    m = raw.match(/(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
+    if (m) { lat = +m[1]; lng = +m[2]; }
+  }
+
+  if (lat == null || isNaN(lat) || isNaN(lng)) {
+    return msg($("geoMsg"), "error", "لم نتعرّف على الإحداثيات. الصيغة المتوقعة: 17.9654, 42.8341");
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return msg($("geoMsg"), "error", "الإحداثيات خارج النطاق الصحيح.");
+  }
+
+  initLocMap();
+  setPick(lat, lng, true, 17);
+  setTimeout(() => locMap && locMap.invalidateSize(), 100);
+  msg($("geoMsg"), "done", `انتقلنا إلى ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+};
+
+$("locCoords").addEventListener("keydown", (e) => { if (e.key === "Enter") $("coordBtn").click(); });
+
 /* ---------------- تحليل موقع مشروع ---------------- */
 const ANCHOR_ICONS = {
   "مدارس": "graduation-cap", "مساجد": "mosque",
@@ -1141,17 +1217,20 @@ const IND_ICONS = {
 $("locBtn").onclick = async () => {
   const act = $("locAct").value.trim();
   if (act.length < 2) return msg($("locMsg"), "error", "اكتب نوع النشاط.");
-  if (!locPick) return msg($("locMsg"), "error", "اضغط على الخريطة لتحديد الموقع.");
+  if (!locPick) return msg($("locMsg"), "error", "ابحث عن الموقع أو اضغط على الخريطة لتحديده.");
 
   const btn = $("locBtn");
   busy(btn, true, "جارٍ التحليل");
   msg($("locMsg"), "info", "نمسح المنطقة ونقرأ المنافسين والمحيط. قد يستغرق دقيقتين.");
 
+  const areaLabel = [$("locDistrict").value.trim(), $("locCity").value.trim()]
+    .filter(Boolean).join("، ") || null;
+
   try {
     const { data, error } = await sb.functions.invoke("analyze-location", {
       body: {
         activity: act, lat: locPick.lat, lng: locPick.lng,
-        area_label: $("locArea").value.trim() || null,
+        area_label: areaLabel,
         radius_m: +$("locRadius").value,
       },
     });
