@@ -2,6 +2,7 @@
    فلك ٣٦٠ — شاشة «اشتراكي»
    تُحقن تلقائياً: تبويب + شاشة + شارة الأيام في الترويسة
    + بوابة الرصيد أمام تحليل «موقع مشروع» و«محل معروض للبيع»
+   + متابعة السداد تلقائياً بعد الرجوع من صفحة نيوليب
    ========================================================= */
 
 import { icon } from "./icons.js";
@@ -25,15 +26,10 @@ const daysLeftWord = (n) => n <= 0 ? "آخر يوم" : n === 1 ? "يوم متب�
   : n <= 10 ? "أيام متبقية" : "يوماً متبقياً";
 
 const REPORTS = {
-  location: {
-    title: "تحليل موقع مشروع", note: "لمن ينوي فتح محل جديد",
-    offers: [{ qty: 1, price: 199, label: "تقرير واحد" }, { qty: 3, price: 599, label: "3 تقارير" }],
-  },
-  acquisition: {
-    title: "تحليل محل معروض للبيع", note: "قبل أن تشتري (تقبّل) محلاً",
-    offers: [{ qty: 1, price: 349, label: "تقرير واحد" }],
-  },
+  location: { title: "تحليل موقع مشروع", note: "لمن ينوي فتح محل جديد" },
+  acquisition: { title: "تحليل محل معروض للبيع", note: "قبل أن تشتري (تقبّل) محلاً" },
 };
+const PAY_FLAG = "falakPayId";
 
 const METERS = [
   ["scans", "فحص الترتيب على الخريطة"],
@@ -53,8 +49,15 @@ const GATES = [
 ];
 
 let plansCache = [];
-let loading = false;
+let products = [];
+let loadP = null;
+let pendingIds = [];
+let watching = false;
 let credits = { location: null, acquisition: null };
+
+const offersOf = (kind) => products.filter((o) => o.kind === kind);
+const offerBtns = (kind, attr) => offersOf(kind).map((o, i) =>
+  `<button class="btn sm${i ? " ghost" : ""}" ${attr}="${kind}" data-qty="${o.qty}">${esc(o.label)} · ${o.price_sar} ر.س</button>`).join("");
 
 /* ---------------- الاتصال ---------------- */
 function token() {
@@ -189,11 +192,33 @@ function mount() {
   const app = $("app");
   if (app) {
     new MutationObserver(() => {
-      if (!app.classList.contains("hidden")) refreshBadge();
+      if (app.classList.contains("hidden")) return;
+      if (!products.length) loadProducts().then(paintGates);
+      refreshBadge();
+      resumeAfterPay();
     }).observe(app, { attributes: true, attributeFilter: ["class"] });
   }
   mountGates();
-  if (token()) refreshBadge();
+
+  // تذكّر أي طلب ذهب العميل ليسدده
+  document.addEventListener("click", (ev) => {
+    const a = ev.target.closest?.("a[data-pay]");
+    if (a) { try { sessionStorage.setItem(PAY_FLAG, JSON.stringify({ id: a.dataset.pay, at: Date.now() })); } catch { /* */ } }
+  }, true);
+  window.addEventListener("pageshow", resumeAfterPay);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) resumeAfterPay(); });
+
+  if (token()) {
+    loadProducts().then(paintGates);
+    refreshBadge();
+    resumeAfterPay();
+  }
+}
+
+async function loadProducts() {
+  try {
+    products = (await api("report_products?select=code,kind,qty,price_sar,label&order=sort_order")).data || [];
+  } catch { /* تبقى الأزرار مخفية */ }
 }
 
 function open() {
@@ -232,16 +257,20 @@ async function refreshBadge() {
 }
 
 /* ---------------- التحميل ---------------- */
-async function load() {
-  if (loading) return;
-  loading = true;
+function load() {
+  if (!loadP) loadP = doLoad().finally(() => { loadP = null; });
+  return loadP;
+}
+
+async function doLoad() {
   const body = $("accBody");
   if (!body.dataset.ready) {
     body.innerHTML = `<div class="card acc-loading"><span class="acc-spin"></span>جارٍ تحميل اشتراكك…</div>`;
   }
   try {
-    const [acc, plans, subs, pendCredits, bizCount] = await Promise.all([
+    const [acc, , plans, subs, pendCredits, bizCount] = await Promise.all([
       rpc("my_account"),
+      loadProducts(),
       api("plans?select=code,name,price_sar,tagline,max_businesses,max_keywords_per_business,scans_per_month,audits_per_month,reviews_per_month,competitors_per_month,monitors_per_month,features&is_active=eq.true&price_sar=gt.0&order=sort_order")
         .then((r) => r.data || []),
       api("subscriptions?select=id,plan_code,amount_sar,payment_link,created_at&status=eq.pending&order=created_at.desc")
@@ -254,6 +283,7 @@ async function load() {
     ]);
     if (acc?.error) throw new Error(acc.error);
     plansCache = plans;
+    pendingIds = [...subs.map((x) => x.id), ...pendCredits.map((x) => x.id)];
     render(acc, subs, pendCredits, bizCount);
     sync(acc);
     body.dataset.ready = "1";
@@ -262,7 +292,7 @@ async function load() {
       <h3>تعذّر تحميل اشتراكك</h3><p>${esc(e.message || e)}</p>
       <button class="btn" id="accRetry">حاول مرة أخرى</button></div>`;
     $("accRetry").onclick = load;
-  } finally { loading = false; }
+  }
 }
 
 /* ---------------- العرض ---------------- */
@@ -360,7 +390,7 @@ function render(acc, subs, pendCredits, bizCount) {
         <div class="acc-cval"><b>${bal[kind] ?? 0}</b><span>متاح</span></div>
       </div>
       <div class="acc-cbtns">
-        ${r.offers.map((o, i) => `<button class="btn sm${i ? " ghost" : ""}" data-report="${kind}" data-qty="${o.qty}">${o.label} · ${o.price} ر.س</button>`).join("")}
+        ${offerBtns(kind, "data-report")}
       </div>
     </div>`).join("");
 
@@ -372,11 +402,11 @@ function render(acc, subs, pendCredits, bizCount) {
   const pend = [
     ...subs.map((s) => ({
       title: `اشتراك ${planOf(s.plan_code)?.name ?? s.plan_code}`,
-      amount: s.amount_sar, link: safeUrl(s.payment_link), at: s.created_at,
+      amount: s.amount_sar, link: safeUrl(s.payment_link), at: s.created_at, id: s.id,
     })),
     ...pendCredits.map((c) => ({
       title: `${REPORTS[c.kind]?.title ?? "تقرير"}${c.total > 1 ? ` × ${c.total}` : ""}`,
-      amount: c.price_sar, link: safeUrl(c.payment_link), at: c.created_at,
+      amount: c.price_sar, link: safeUrl(c.payment_link), at: c.created_at, id: c.id,
     })),
   ];
   const pending = pend.length ? `
@@ -385,10 +415,10 @@ function render(acc, subs, pendCredits, bizCount) {
       <div class="list-row">
         <div><div>${esc(x.title)}</div><div class="meta"><span class="num">${x.amount ?? "—"}</span> ر.س · ${fmtDate(x.at)}</div></div>
         ${x.link
-          ? `<a class="btn sm" href="${esc(x.link)}">${icon("banknote", 15)}ادفع الآن</a>`
+          ? `<a class="btn sm" href="${esc(x.link)}" data-pay="${esc(x.id)}">${icon("banknote", 15)}ادفع الآن</a>`
           : `<span class="chip" style="margin:0">بانتظار رابط السداد</span>`}
       </div>`).join("")}
-    <div class="hint">رابط السداد صالح لمرة واحدة. بعد السداد نؤكّد الدفع ونفعّل طلبك — عادةً خلال ساعات العمل.</div>` : "";
+    <div class="hint">رابط السداد صالح لمرة واحدة. بعد السداد ارجع لهذه الصفحة — يُفعَّل طلبك تلقائياً خلال دقيقة.</div>` : "";
 
   /* —— الباقات —— */
   const pendingPlans = new Set(subs.map((s) => s.plan_code));
@@ -441,9 +471,10 @@ function render(acc, subs, pendCredits, bizCount) {
 function showPay(r, el = $("accMsg")) {
   if (!r?.ok) return msg(el, "error", r?.message || "تعذّر إنشاء الطلب");
   const link = safeUrl(r.payment_link);
+  const id = r.subscription_id || r.credit_id || "";
   el.className = "msg show done";
   el.innerHTML = `${icon("check-circle", 17)}<span>${esc(r.message)}${link
-    ? ` <a class="acc-paylink" href="${esc(link)}">افتح رابط السداد</a>` : ""}</span>`;
+    ? ` <a class="acc-paylink" href="${esc(link)}" data-pay="${esc(id)}">افتح رابط السداد</a>` : ""}</span>`;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
@@ -495,17 +526,14 @@ function paintGates() {
     const bal = credits[g.kind];
     if (!el) return;
     if (bal == null) { el.innerHTML = ""; return; }
-    const r = REPORTS[g.kind];
     if (bal > 0) {
       el.innerHTML = `<div class="acc-gate ok">${icon("check-circle", 16)}
         <span>رصيدك: ${reportsAr(bal)} — يُخصم تقرير واحد عند التحليل.</span></div>`;
       return;
     }
     el.innerHTML = `<div class="acc-gate">${icon("banknote", 16)}<div>
-      <div>هذا التحليل يُشترى بالتقرير ولا يحتاج اشتراكاً. اشترِ تقريراً، وبعد تأكيد الدفع يُضاف لرصيدك.</div>
-      <div class="acc-cbtns">${r.offers.map((o, i) =>
-        `<button class="btn sm${i ? " ghost" : ""}" data-gbuy="${g.kind}" data-qty="${o.qty}">${o.label} · ${o.price} ر.س</button>`).join("")}
-      </div></div></div>`;
+      <div>هذا التحليل يُشترى بالتقرير ولا يحتاج اشتراكاً. اشترِ تقريراً، ويُضاف لرصيدك تلقائياً خلال دقيقة من السداد.</div>
+      <div class="acc-cbtns">${offerBtns(g.kind, "data-gbuy")}</div></div></div>`;
     el.querySelectorAll("[data-gbuy]").forEach((b) => b.onclick = () => buyFromGate(g, b));
   });
 }
@@ -541,6 +569,44 @@ async function buyFromGate(g, btn) {
   } catch (e) {
     msg($(g.msgEl), "error", e.message || String(e));
   } finally { if (btn.isConnected) busy(btn, false); }
+}
+
+/* ---------------- المتابعة بعد السداد ---------------- */
+function readPayFlag() {
+  try {
+    const f = JSON.parse(sessionStorage.getItem(PAY_FLAG) || "null");
+    return f && Date.now() - f.at < 2 * 3600e3 ? f : null;
+  } catch { return null; }
+}
+const clearPayFlag = () => { try { sessionStorage.removeItem(PAY_FLAG); } catch { /* */ } };
+
+async function resumeAfterPay() {
+  const flag = readPayFlag();
+  if (!flag || watching || !token() || $("app")?.classList.contains("hidden")) return;
+  watching = true;
+  open();
+  msg($("accMsg"), "info", "نتحقق من سدادك تلقائياً — يستغرق عادةً أقل من دقيقة.");
+
+  const started = Date.now();
+  try {
+    while (true) {
+      await load();
+      if (!flag.id || !pendingIds.includes(flag.id)) {
+        msg($("accMsg"), "done", "وصل سدادك وتم تفعيل طلبك.");
+        refreshBadge();
+        break;
+      }
+      if (Date.now() - started > 4 * 60e3) {
+        msg($("accMsg"), "info",
+          "لم يصلنا السداد بعد. إذا أتممت الدفع سيُفعّل طلبك تلقائياً فور وصوله، وإن لم تكمله اضغط «ادفع الآن».");
+        break;
+      }
+      await new Promise((res) => setTimeout(res, 8000));
+    }
+  } finally {
+    clearPayFlag();
+    watching = false;
+  }
 }
 
 /* ---------------- للشاشات الأخرى ---------------- */
