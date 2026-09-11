@@ -179,16 +179,22 @@
       <button class="adm-tab active" data-view="overview">نظرة عامة</button>
       <button class="adm-tab" data-view="users">العملاء <span class="n" id="nUsers"></span></button>
       <button class="adm-tab" data-view="sectors">القطاعات <span class="n" id="nUnc"></span></button>
+      <button class="adm-tab" data-view="suppliers">الموردون <span class="n" id="nSup"></span></button>
       <button class="adm-tab" data-view="pending">الطلبات <span class="n" id="nPending"></span></button>
       <button class="adm-tab" data-view="stock">المخزون</button>
       <button class="adm-tab" data-view="links">الروابط <span class="n" id="nIssues"></span></button>
       <button class="adm-tab" data-view="recent">آخر المدفوعات</button>
+      <button class="adm-tab" data-view="content">المحتوى</button>
     </div>
 
     <div id="topMsg" class="msg" style="margin:0 0 var(--sp-4)"></div>
 
     <!-- نظرة عامة -->
     <section id="view-overview" class="screen active"><div id="ovBody"></div></section>
+
+    <!-- الموردون والمحتوى (admin-more.js) -->
+    <section id="view-suppliers" class="screen"><div id="supPage"></div></section>
+    <section id="view-content" class="screen"><div id="contentPage"></div></section>
 
     <!-- العملاء -->
     <section id="view-users" class="screen">
@@ -310,7 +316,7 @@ const ago = (iso) => {
 const tail = (u) => { const s = String(u || ""); return s.length > 46 ? "…" + s.slice(-44) : s; };
 const localPhone = (p) => { const d = String(p || "").replace(/\D/g, ""); return /^9665\d{8}$/.test(d) ? "0" + d.slice(3) : d; };
 
-const PURPOSE = { subscription: "اشتراك", report: "تقرير", website: "موقع" };
+const PURPOSE = { subscription: "اشتراك", report: "تقرير", website: "موقع", supplier: "مورّد" };
 const PLAN_AR = { trial: "تجربة", basic: "أساسية", growth: "نمو", pro: "احترافية", agency: "وكالة", none: "بلا اشتراك", grace: "مهلة سماح" };
 const SRC_AR = { business: "محل مسجّل", location: "ينوي فتح محل", acquisition: "يدرس شراء محل" };
 
@@ -374,7 +380,28 @@ function showView(v) {
   if (v === "users") loadUsers();
   if (v === "sectors") loadSectors();
   if (v === "links") loadLinks();
+  if (v === "suppliers") openMore("openSuppliers", "supPage");
+  if (v === "content") openMore("openContent", "contentPage");
+  if (v !== "suppliers" && v !== "user") window.falakAdmin.onTick = null;
   if (["pending", "stock", "recent"].includes(v)) loadDash();
+}
+
+/* الموردون والمحتوى — ملف منفصل يُحمَّل عند الحاجة */
+async function openMore(fn, elId) {
+  const el = $(elId);
+  try {
+    const mod = await import("./admin-more.js");
+    await mod[fn](el);
+  } catch (e) {
+    el.innerHTML = empty("alert-triangle", "تعذّر تحميل القسم", "تأكد من رفع ملف admin-more.js إلى المستودع.");
+  }
+}
+
+async function loadSupCounts() {
+  try {
+    const c = await rpc("admin_supplier_counts");
+    $("nSup").textContent = (c.pending + c.reports) || "";
+  } catch { /* صامت */ }
 }
 document.querySelectorAll(".adm-tab").forEach((t) => t.onclick = () => showView(t.dataset.view));
 
@@ -474,7 +501,7 @@ function renderOverview() {
       <div class="kpi"><b>${sar(R.total)}</b><span>منذ الإطلاق</span><small>${nf(R.count_total)} عملية · متوسط ${sar(R.avg_payment)}</small></div>
       <div class="kpi"><b>${nf(R.active_subs_count)}</b><span>اشتراك مدفوع ساري</span><small>قيمتها ${sar(R.active_subs_value)}</small></div>
     </div>
-    <div class="ov-note">من الاشتراكات ${sar(R.subs_total)} · من التقارير ${sar(R.reports_total)}${Number(R.test_count) ? ` · مدفوعات تجريبية مستبعدة: ${sar(R.test_total)} (${nf(R.test_count)} عملية)` : ""}</div>`;
+    <div class="ov-note">من الاشتراكات ${sar(R.subs_total)} · من التقارير ${sar(R.reports_total)}${Number(R.suppliers_total) ? ` · من الموردين ${sar(R.suppliers_total)}` : ""}${Number(R.test_count) ? ` · مدفوعات تجريبية مستبعدة: ${sar(R.test_total)} (${nf(R.test_count)} عملية)` : ""}</div>`;
 
   const chart = `<div class="card" style="margin-top:var(--sp-4)">${chartHtml()}</div>`;
 
@@ -1127,8 +1154,9 @@ async function tick() {
     else if (currentView === "users") await loadUsers(true);
     else if (currentView === "sectors") { if (!document.getElementById("secEditor")) await loadSectors(true); }
     else if (currentView === "links") await loadLinks(true);
-    else if (currentView === "user") await window.falakAdmin.onTick?.();
+    else if (currentView === "user" || currentView === "suppliers") await window.falakAdmin.onTick?.();
     await loadDash(true);
+    if (currentView !== "suppliers") await loadSupCounts();
   } catch { /* صامت */ }
 }
 setInterval(tick, 30000);
@@ -1167,7 +1195,8 @@ $("refreshBtn").onclick = async () => {
   else if (currentView === "users") await loadUsers();
   else if (currentView === "sectors") await loadSectors();
   else if (currentView === "links") await loadLinks();
-  else if (currentView === "user") await window.falakAdmin.onTick?.();
+  else if (currentView === "user" || currentView === "suppliers") await window.falakAdmin.onTick?.();
+  else if (currentView === "content") await openMore("openContent", "contentPage");
   await loadDash(true);
   busy(b, false);
 };
@@ -1194,12 +1223,10 @@ async function boot() {
   loadSectorsData().catch(() => {});
   loadDash(true);
   loadLinks(true);
+  loadSupCounts();
 
   const m = location.hash.match(/^#u\/([0-9a-f-]{36})$/i);
   if (m) openUser(m[1]);
   else await loadOverview();
 }
 boot();
-</script>
-</body>
-</html>
