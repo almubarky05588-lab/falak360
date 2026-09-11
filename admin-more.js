@@ -62,6 +62,33 @@ const STYLE = `
 .cx-def{font-size:12px;color:var(--ink-3);margin-top:5px}
 .cx-switch{display:flex;align-items:center;gap:10px;font-size:14px}
 .cx-switch input{width:40px;height:22px;accent-color:var(--brand)}
+
+.cx-tabs{display:flex;gap:6px;margin-bottom:var(--sp-4);flex-wrap:wrap}
+.cx-tab{height:36px;padding:0 16px;border-radius:var(--r-full);border:1px solid var(--line-2);background:var(--surface);
+  font:inherit;font-size:13.5px;color:var(--ink-2);cursor:pointer}
+.cx-tab.on{background:var(--brand);border-color:var(--brand);color:#fff}
+
+.pz-mode{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:var(--r);margin-bottom:var(--sp-4);
+  background:var(--warn-tint);color:var(--warn);font-size:13.5px;line-height:1.7}
+.pz-mode.off{background:var(--ok-tint);color:var(--ok)}
+.pz-mode svg{width:17px;height:17px;flex:0 0 auto;margin-top:3px}
+.pz-mode .btn{flex:0 0 auto;margin-inline-start:auto}
+.pz-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.pz-card.feat{border-color:var(--brand)}
+.pz-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
+.pz-head b{font-size:14.5px}
+.pz-head .pr{margin-inline-start:auto;font-family:var(--font-num);font-weight:600;font-size:15px;white-space:nowrap}
+.pz-body{border-top:1px solid var(--line);padding:14px;background:var(--surface-2)}
+.pz-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:620px){.pz-2{grid-template-columns:1fr}}
+.pz-lims{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px}
+.pz-lims label{display:block;font-size:12px;color:var(--ink-3);margin-bottom:3px}
+.pz-lims .input{height:36px;font-size:13px}
+.pz-bul{width:100%;min-height:120px;padding:10px 12px;font:inherit;font-size:13.5px;line-height:1.9;
+  border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);resize:vertical}
+.pz-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.pz-acts label{display:flex;align-items:center;gap:6px;font-size:13px}
+.pz-acts input[type=checkbox]{width:17px;height:17px;accent-color:var(--brand)}
 `;
 
 function ensureCss() {
@@ -312,7 +339,8 @@ async function act(btn, fn, args) {
 /* =========================================================
    المحتوى
    ========================================================= */
-let cx = { root: null, list: null, openGroups: new Set(["التنقل"]), q: "" };
+let cx = { root: null, list: null, openGroups: new Set(["التنقل"]), q: "", tab: "app", pricing: null, open: new Set() };
+const LANDING = "الصفحة التعريفية";
 
 export async function openContent(el) {
   F = window.falakAdmin; ensureCss();
@@ -321,9 +349,31 @@ export async function openContent(el) {
   if (!cx.list) el.innerHTML = F.loadingBox();
   try {
     cx.list = await F.rpc("admin_content_list");
-    renderContent();
+    if (cx.tab === "pricing") cx.pricing = await F.rpc("admin_pricing");
+    renderTab();
     F.stamp();
   } catch (e) { el.innerHTML = ""; F.topMsg("error", e.message); }
+}
+
+function tabsHtml() {
+  const t = [["app", "نصوص التطبيق"], ["landing", "الصفحة التعريفية"], ["pricing", "الأسعار والباقات"]];
+  return `<div class="cx-tabs">${t.map(([k, l]) =>
+    `<button type="button" class="cx-tab ${cx.tab === k ? "on" : ""}" data-ct="${k}">${l}</button>`).join("")}</div>`;
+}
+
+function renderTab() {
+  if (cx.tab === "pricing") renderPricing();
+  else renderContent();
+  cx.root.querySelectorAll("[data-ct]").forEach((b) => b.onclick = async () => {
+    cx.tab = b.dataset.ct;
+    cx.q = "";
+    if (cx.tab === "pricing" && !cx.pricing) {
+      cx.root.innerHTML = tabsHtml() + F.loadingBox();
+      cx.root.querySelectorAll("[data-ct]").forEach((x) => x.onclick = null);
+      try { cx.pricing = await F.rpc("admin_pricing"); } catch (e) { return F.topMsg("error", e.message); }
+    }
+    renderTab();
+  });
 }
 
 function itemHtml(it) {
@@ -349,20 +399,23 @@ function itemHtml(it) {
 
 function renderContent() {
   const q = cx.q.toLowerCase();
-  const list = (cx.list || []).filter((it) => !q || [it.label, it.value, it.key, it.screen].some((x) => String(x).toLowerCase().includes(q)));
+  const scope = (cx.list || []).filter((it) => cx.tab === "landing" ? it.screen === LANDING : it.screen !== LANDING);
+  const list = scope.filter((it) => !q || [it.label, it.value, it.key, it.screen].some((x) => String(x).toLowerCase().includes(q)));
   const groups = [];
   list.forEach((it) => {
     let g = groups.find((x) => x.name === it.screen);
     if (!g) groups.push(g = { name: it.screen, items: [] });
     g.items.push(it);
   });
-  const edited = (cx.list || []).filter((x) => x.custom).length;
+  const edited = scope.filter((x) => x.custom).length;
 
-  cx.root.innerHTML = `
+  cx.root.innerHTML = tabsHtml() + `
     <div class="card" style="margin-bottom:var(--sp-4)">
-      <div style="font-size:14px;line-height:1.8">عدّل أي نص في المنصة، ويظهر لكل العملاء فوراً بدون تحديث الملفات.
-        زر «الأصلي» يرجع النص كما كان. ومفاتيح «إظهار» تخفي التبويب مؤقتاً بدون حذف الميزة.</div>
-      <div class="hint">${F.nf((cx.list || []).length)} نصاً · المعدّل منها ${F.nf(edited)}</div>
+      <div style="font-size:14px;line-height:1.8">${cx.tab === "landing"
+        ? "عدّل نصوص الصفحة التعريفية، وتظهر للزوار فوراً. الأسعار تُدار من تبويب «الأسعار والباقات»."
+        : "عدّل أي نص في التطبيق، ويظهر لكل العملاء فوراً بدون تحديث الملفات."}
+        زر «الأصلي» يرجع النص كما كان. ومفاتيح «إظهار» تخفي القسم مؤقتاً بدون حذفه.</div>
+      <div class="hint">${F.nf(scope.length)} نصاً · المعدّل منها ${F.nf(edited)}</div>
     </div>
     <div class="sx-tools"><input id="cxSearch" class="input" type="search" placeholder="ابحث في النصوص" value="${E(cx.q)}"></div>
     ${groups.map((g) => {
@@ -377,6 +430,173 @@ function renderContent() {
   wireContent();
 }
 
+/* ---------- الأسعار والباقات ---------- */
+const LIMS = [["keywords", "كلمات لكل محل"], ["businesses", "عدد المحلات"], ["scans", "فحص شهرياً"],
+  ["audits", "تدقيق شهرياً"], ["reviews", "تحليل مراجعات"], ["competitors", "تحليل منافسين"],
+  ["plans", "خطط النمو"], ["monitors", "مراقبة المنافسين"]];
+
+function renderPricing() {
+  const d = cx.pricing;
+  const sar = (n) => `${F.nf(n)} ر.س`;
+
+  cx.root.innerHTML = tabsHtml() + `
+    <div class="pz-mode ${d.test_mode ? "" : "off"}">
+      ${F.icon(d.test_mode ? "alert-triangle" : "check-circle", 17)}
+      <div>${d.test_mode
+        ? "<b>وضع التجربة شغال</b> — كل الأسعار تظهر للعملاء بريال واحد. الأسعار الحقيقية أدناه محفوظة وتُطبَّق فور الإيقاف."
+        : "<b>الأسعار الحقيقية مفعّلة</b> — ما تعدّله هنا يظهر للعملاء مباشرة."}</div>
+      <button class="btn ${d.test_mode ? "" : "ghost"} sm" id="pzMode">${d.test_mode ? "أوقف وضع التجربة" : "شغّل وضع التجربة"}</button>
+    </div>
+
+    <div class="section-head" style="margin-top:0"><h2>باقات الاشتراك</h2><span class="note">تظهر في الصفحة التعريفية وداخل المنصة</span></div>
+    ${(d.plans || []).map((p) => {
+      const open = cx.open.has("p:" + p.code);
+      return `<div class="pz-card ${p.featured ? "feat" : ""}">
+        <div class="pz-head" data-open="p:${F.esc(p.code)}">
+          <b>${F.esc(p.name)}</b>
+          ${p.public ? `<span class="badge ok">في الصفحة</span>` : `<span class="badge mute">مخفية</span>`}
+          ${p.featured ? `<span class="badge info">مميزة</span>` : ""}
+          <span class="pr">${p.price ? sar(p.price) : "مجانية"}${d.test_mode && p.price ? ` <small style="color:var(--warn)">· الآن ${sar(p.live_price)}</small>` : ""}</span>
+        </div>
+        ${open ? `<div class="pz-body">
+          <div class="pz-2">
+            <div class="field" style="margin:0"><label>اسم الباقة</label>
+              <input class="input" data-pf="${F.esc(p.code)}|name" value="${F.esc(p.name)}"></div>
+            <div class="field" style="margin:0"><label>السعر الحقيقي (ر.س شهرياً)</label>
+              <input class="input" type="number" min="0" data-pf="${F.esc(p.code)}|price" value="${p.price ?? 0}"></div>
+          </div>
+          <div class="field sp-t" style="margin:0"><label>لمن تناسب (يظهر في الصفحة التعريفية)</label>
+            <input class="input" data-pf="${F.esc(p.code)}|tagline" value="${F.esc(p.tagline || "")}"></div>
+          <div class="field sp-t" style="margin:0"><label>المزايا — ميزة في كل سطر</label>
+            <textarea class="pz-bul" data-pf="${F.esc(p.code)}|bullets">${F.esc((p.bullets || []).join("\n"))}</textarea></div>
+          <div class="pz-lims">${LIMS.map(([k, l]) =>
+            `<div><label>${l}</label><input class="input" type="number" min="0" data-pf="${F.esc(p.code)}|${k}" value="${p.limits?.[k] ?? 0}"></div>`).join("")}</div>
+          <div class="pz-acts">
+            <label><input type="checkbox" data-pf="${F.esc(p.code)}|public" ${p.public ? "checked" : ""}> تظهر في الصفحة التعريفية</label>
+            <label><input type="checkbox" data-pf="${F.esc(p.code)}|featured" ${p.featured ? "checked" : ""}> باقة مميزة</label>
+            <button class="btn sm" data-psave="${F.esc(p.code)}" style="margin-inline-start:auto">احفظ</button>
+          </div>
+        </div>` : ""}
+      </div>`;
+    }).join("")}
+
+    <div class="section-head"><h2>التقارير المنفصلة</h2><span class="note">تُشترى مرة واحدة</span></div>
+    ${(d.reports || []).map((r) => `
+      <div class="pz-card"><div class="pz-body" style="border-top:0">
+        <div class="pz-2">
+          <div class="field" style="margin:0"><label>${r.kind === "location" ? "تقرير موقع مشروع" : "تقرير محل معروض للبيع"} — الوصف</label>
+            <input class="input" data-rf="${F.esc(r.code)}|label" value="${F.esc(r.label)}"></div>
+          <div class="field" style="margin:0"><label>السعر الحقيقي (ر.س)</label>
+            <input class="input" type="number" min="1" data-rf="${F.esc(r.code)}|price" value="${r.price}"></div>
+        </div>
+        <div class="field sp-t" style="margin:0"><label>شرح التقرير في الصفحة التعريفية</label>
+          <textarea class="pz-bul" style="min-height:70px" data-rf="${F.esc(r.code)}|tagline">${F.esc(r.tagline || "")}</textarea></div>
+        <div class="pz-acts">
+          <span class="hint" style="margin:0">${d.test_mode ? `يظهر الآن بـ ${sar(r.live_price)}` : ""}</span>
+          <button class="btn sm" data-rsave="${F.esc(r.code)}" style="margin-inline-start:auto">احفظ</button>
+        </div>
+      </div></div>`).join("")}
+
+    <div class="section-head"><h2>باقات الموردين</h2><span class="note">اشتراك شهري للمورّدين</span></div>
+    ${(d.supplier_plans || []).map((s) => `
+      <div class="pz-card"><div class="pz-body" style="border-top:0">
+        <div class="pz-2">
+          <div class="field" style="margin:0"><label>الاسم</label>
+            <input class="input" data-sf="${F.esc(s.code)}|name" value="${F.esc(s.name)}"></div>
+          <div class="field" style="margin:0"><label>السعر الحقيقي (ر.س شهرياً)</label>
+            <input class="input" type="number" min="1" data-sf="${F.esc(s.code)}|price" value="${s.price}"></div>
+        </div>
+        <div class="pz-acts">
+          <span class="hint" style="margin:0">${s.max_sectors} نشاط · ${s.max_products} منتجاً${d.test_mode ? ` · يظهر الآن بـ ${sar(s.live_price)}` : ""}</span>
+          <button class="btn sm" data-ssave="${F.esc(s.code)}" style="margin-inline-start:auto">احفظ</button>
+        </div>
+      </div></div>`).join("")}`;
+
+  wirePricing();
+}
+
+function field(sel, key) {
+  const el = cx.root.querySelector(`[data-${sel}="${CSS.escape(key)}"]`);
+  if (!el) return null;
+  return el.type === "checkbox" ? el.checked : el.value;
+}
+
+async function reloadPricing(btn) {
+  try {
+    cx.pricing = await F.rpc("admin_pricing");
+    const y = window.scrollY;
+    renderPricing();
+    window.scrollTo(0, y);
+  } catch (e) { F.topMsg("error", e.message); if (btn?.isConnected) F.busy(btn, false); }
+}
+
+function wirePricing() {
+  const root = cx.root;
+  root.querySelectorAll("[data-open]").forEach((h) => h.onclick = () => {
+    const k = h.dataset.open;
+    cx.open.has(k) ? cx.open.delete(k) : cx.open.add(k);
+    renderPricing();
+  });
+
+  root.querySelectorAll("[data-psave]").forEach((b) => b.onclick = async () => {
+    const code = b.dataset.psave;
+    const g = (f) => field("pf", `${code}|${f}`);
+    const payload = {
+      code, name: g("name"), price: g("price"), tagline: g("tagline"),
+      bullets: String(g("bullets") || "").split("\n").map((x) => x.trim()).filter(Boolean),
+      public: g("public"), featured: g("featured"),
+    };
+    LIMS.forEach(([k]) => payload[k] = g(k));
+    F.busy(b, true);
+    try {
+      const r = await F.rpc("admin_save_plan", { p: payload });
+      F.topMsg(r.ok ? "done" : "error", r.message);
+      F.invalidate();
+      if (r.ok) await reloadPricing(b); else F.busy(b, false);
+    } catch (e) { F.topMsg("error", e.message); F.busy(b, false); }
+  });
+
+  root.querySelectorAll("[data-rsave]").forEach((b) => b.onclick = async () => {
+    const code = b.dataset.rsave;
+    F.busy(b, true);
+    try {
+      const r = await F.rpc("admin_save_report_price", {
+        p_code: code, p_price: Number(field("rf", `${code}|price`)),
+        p_label: field("rf", `${code}|label`), p_tagline: field("rf", `${code}|tagline`),
+      });
+      F.topMsg(r.ok ? "done" : "error", r.message);
+      if (r.ok) await reloadPricing(b); else F.busy(b, false);
+    } catch (e) { F.topMsg("error", e.message); F.busy(b, false); }
+  });
+
+  root.querySelectorAll("[data-ssave]").forEach((b) => b.onclick = async () => {
+    const code = b.dataset.ssave;
+    F.busy(b, true);
+    try {
+      const r = await F.rpc("admin_save_supplier_plan", {
+        p_code: code, p_price: Number(field("sf", `${code}|price`)), p_name: field("sf", `${code}|name`),
+      });
+      F.topMsg(r.ok ? "done" : "error", r.message);
+      if (r.ok) await reloadPricing(b); else F.busy(b, false);
+    } catch (e) { F.topMsg("error", e.message); F.busy(b, false); }
+  });
+
+  const mode = document.getElementById("pzMode");
+  if (mode) mode.onclick = async () => {
+    const on = !cx.pricing.test_mode;
+    if (!confirm(on
+      ? "تشغيل وضع التجربة؟ كل الأسعار ستظهر للعملاء بريال واحد."
+      : "إيقاف وضع التجربة؟ ستظهر الأسعار الحقيقية للعملاء فوراً.")) return;
+    F.busy(mode, true);
+    try {
+      const r = await F.rpc("admin_test_mode", { p_on: on });
+      F.topMsg("done", r.message);
+      F.invalidate();
+      await reloadPricing(mode);
+    } catch (e) { F.topMsg("error", e.message); F.busy(mode, false); }
+  };
+}
+
 async function saveKey(key, value, btn) {
   if (btn) F.busy(btn, true);
   try {
@@ -385,7 +605,7 @@ async function saveKey(key, value, btn) {
     if (r.ok) {
       cx.list = await F.rpc("admin_content_list");
       const y = window.scrollY;
-      renderContent();
+      renderTab();
       window.scrollTo(0, y);
     } else if (btn) F.busy(btn, false);
   } catch (e) { F.topMsg("error", e.message); if (btn?.isConnected) F.busy(btn, false); }
@@ -395,11 +615,11 @@ function wireContent() {
   const root = cx.root;
   const s = $("cxSearch");
   s.oninput = () => {
-    cx.q = s.value.trim(); renderContent();
+    cx.q = s.value.trim(); renderTab();
     const n = $("cxSearch"); n.focus(); n.setSelectionRange(n.value.length, n.value.length);
   };
   root.querySelectorAll("[data-g]").forEach((h) => h.onclick = () => {
-    const g = h.dataset.g; cx.openGroups.has(g) ? cx.openGroups.delete(g) : cx.openGroups.add(g); renderContent();
+    const g = h.dataset.g; cx.openGroups.has(g) ? cx.openGroups.delete(g) : cx.openGroups.add(g); renderTab();
   });
   root.querySelectorAll("[data-save]").forEach((b) => b.onclick = () => {
     const k = b.dataset.save;
