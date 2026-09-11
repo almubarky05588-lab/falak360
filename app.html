@@ -29,9 +29,9 @@
   @media (min-width:900px){
     body{padding-bottom:var(--sp-7)}
     .navbar{display:none}
-    .rail{display:block;position:fixed;inset-inline-start:auto;inset-inline-end:0;top:var(--header-h);
+    .rail{display:block;position:fixed;inset-inline-start:0;top:var(--header-h);
       width:var(--rail-w);height:calc(100vh - var(--header-h));overflow-y:auto;
-      border-inline-start:1px solid var(--line);background:var(--surface);padding:var(--sp-4) var(--sp-3)}
+      border-inline-end:1px solid var(--line);background:var(--surface);padding:var(--sp-4) var(--sp-3)}
     .rail-g{margin-bottom:var(--sp-4)}
     .rail-g > b{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink-3);
       padding:0 8px 8px}
@@ -42,7 +42,7 @@
     .rail a.on{background:var(--brand-tint);color:var(--brand);font-weight:600}
     .rail a .dot{min-width:18px;height:18px;border-radius:999px;background:var(--bad);color:#fff;
       font-family:var(--font-num);font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 5px}
-    .page{margin-inline-end:var(--rail-w);max-width:760px}
+    .page{margin-inline-start:var(--rail-w);max-width:760px}
     .tabs{display:none}
   }
 
