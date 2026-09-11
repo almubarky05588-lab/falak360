@@ -101,8 +101,12 @@ h1 em{font-style:normal;color:var(--brand)}
 .dash{flex:0 0 auto;margin-top:5px;width:15px;height:15px;color:var(--line-2)}
 .feats li.off{color:var(--ink-3)}
 
-.extra{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px}
+.extra{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:22px}
 @media(max-width:900px){.extra{grid-template-columns:1fr}}
+.ex .btn{margin-top:14px}
+.plan .feats li svg{flex:0 0 auto;margin-top:5px;width:15px;height:15px;color:var(--ok)}
+.pz-load{color:var(--ink-3);font-size:14px;text-align:center;padding:30px 0}
+[hidden]{display:none!important}
 .ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px}
 .ex h4{font-family:var(--f-d);font-size:16.5px;font-weight:600}
 .ex .p{font-family:var(--f-n);font-size:22px;font-weight:600;margin:10px 0 3px;color:var(--brand)}
@@ -140,34 +144,34 @@ footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:va
       فلك <span>٣٦٠</span>
     </div>
     <nav class="nav-links">
-      <a href="#how">كيف تعمل</a>
-      <a href="#pricing">الأسعار</a>
-      <a href="#faq">أسئلة</a>
+      <a href="#how" data-c="site.nav_how">كيف تعمل</a>
+      <a href="#pricing" data-c="site.nav_pricing">الأسعار</a>
+      <a href="#faq" data-c="site.nav_faq">أسئلة</a>
     </nav>
-    <a class="btn sm" href="app.html">ابدأ الآن</a>
+    <a class="btn sm" href="app.html" data-c="site.nav_cta">ابدأ الآن</a>
   </div>
 </header>
 
 <section class="wrap hero">
   <div class="hero-grid">
     <div>
-      <div class="eyebrow">منصة سعودية للسيو المحلي</div>
-      <h1>محلك رقم <em>1</em> عند بابك.<br>ورقم <em>14</em> في الحي المجاور.</h1>
-      <p class="lead">
+      <div class="eyebrow" data-c="site.eyebrow">منصة سعودية للسيو المحلي</div>
+      <h1 data-c="site.h1" data-html>محلك رقم <em>1</em> عند بابك.<br>ورقم <em>14</em> في الحي المجاور.</h1>
+      <p class="lead" data-c="site.lead">
         ترتيبك في قوقل ماب ليس رقماً واحداً — يتغيّر مع كل شارع.
         فلك ٣٦٠ يقيسه من عشرات النقاط حول محلك، ويكشف لك أين تختفي، ومن يأخذ مكانك، ولماذا.
       </p>
       <div class="hero-cta">
-        <a class="btn" href="app.html">افحص محلك</a>
-        <a class="btn ghost" href="#pricing">شاهد الباقات</a>
+        <a class="btn" href="app.html" data-c="site.cta1">افحص محلك</a>
+        <a class="btn ghost" href="#pricing" data-c="site.cta2">شاهد الباقات</a>
       </div>
-      <div class="hero-note">بيانات حقيقية من قوقل ماب · تقرير خلال دقيقة</div>
+      <div class="hero-note" data-c="site.hero_note">قياس فعلي من كل نقطة · تقرير خلال دقيقة</div>
     </div>
 
     <div class="demo">
       <div class="demo-head">
-        <b>مقهى في حي النهضة</b>
-        <span>كلمة: «مقهى»</span>
+        <b data-c="site.demo_title">مقهى في حي النهضة</b>
+        <span data-c="site.demo_kw">كلمة: «مقهى»</span>
       </div>
       <div class="gridmap" id="gridmap"></div>
       <div class="demo-legend">
@@ -180,196 +184,203 @@ footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:va
   </div>
 </section>
 
-<section class="band">
+<section class="band" data-sec="show.site_problems">
   <div class="wrap">
     <div class="sec-head center">
-      <h2>ثلاثة أسئلة يعجز صاحب المحل عن إجابتها</h2>
-      <p>وكلها تُقاس اليوم، بلا تخمين.</p>
+      <h2 data-c="site.problems_title">ثلاثة أسئلة يعجز صاحب المحل عن إجابتها</h2>
+      <p data-c="site.problems_sub">وكلها تُقاس اليوم، بلا تخمين.</p>
     </div>
     <div class="problem">
       <div class="p-card">
-        <div class="q">لماذا لا يجدني الناس؟</div>
-        <div class="a">تظهر جيداً أمام محلك، وتختفي على بعد كيلومتر. ما لم تقس ذلك، لن تعرف حجم ما تخسره.</div>
+        <div class="q" data-c="site.p1_q">لماذا لا يجدني الناس؟</div>
+        <div class="a" data-c="site.p1_a">تظهر جيداً أمام محلك، وتختفي على بعد كيلومتر. ما لم تقس ذلك، لن تعرف حجم ما تخسره.</div>
       </div>
       <div class="p-card">
-        <div class="q">لماذا يتقدّم عليّ جاري؟</div>
-        <div class="a">التقييم وحده لا يكفي. عدد المراجعات والتصنيفات واكتمال الملف تصنع الفارق — ونحن نقارنها بمنافسيك واحداً واحداً.</div>
+        <div class="q" data-c="site.p2_q">لماذا يتقدّم عليّ جاري؟</div>
+        <div class="a" data-c="site.p2_a">التقييم وحده لا يكفي. عدد المراجعات والتصنيفات واكتمال الملف تصنع الفارق — ونحن نقارنها بمنافسيك واحداً واحداً.</div>
       </div>
       <div class="p-card">
-        <div class="q">ماذا أفعل غداً؟</div>
-        <div class="a">لا نكتفي بعرض الأرقام. كل تقرير ينتهي بخطوات محددة مرتبة بحسب أثرها على ترتيبك.</div>
+        <div class="q" data-c="site.p3_q">ماذا أفعل غداً؟</div>
+        <div class="a" data-c="site.p3_a">لا نكتفي بعرض الأرقام. كل تقرير ينتهي بخطوات محددة مرتبة بحسب أثرها على ترتيبك.</div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="wrap pillars" id="how">
+<section class="wrap pillars" id="how" data-sec="show.site_how">
   <div class="sec-head">
-    <h2>أربعة أعمدة تقيس وضعك بالكامل</h2>
-    <p>كل عمود يجيب على سؤال، وينتهي بخطوة عملية.</p>
+    <h2 data-c="site.how_title">أربعة أعمدة تقيس وضعك بالكامل</h2>
+    <p data-c="site.how_sub">كل عمود يجيب على سؤال، وينتهي بخطوة عملية.</p>
   </div>
 
   <div class="pill">
     <div class="n">1</div>
     <div>
-      <h3>الترتيب على الخريطة</h3>
-      <p>نوزّع شبكة نقاط حول محلك، ونسأل قوقل من كل نقطة: من يظهر لمن يبحث هنا؟ فتحصل على خريطة ملوّنة تكشف نطاق ظهورك الحقيقي.</p>
-      <div class="out">النتيجة: تعرف الأحياء التي تخسر فيها العملاء قبل أن يصلوك.</div>
+      <h3 data-c="site.h1_title">الترتيب على الخريطة</h3>
+      <p data-c="site.h1_body">نوزّع شبكة نقاط حول محلك، ونقيس من كل نقطة من يظهر لمن يبحث هناك، فتحصل على خريطة ملوّنة تكشف نطاق ظهورك الحقيقي.</p>
+      <div class="out" data-c="site.h1_out">النتيجة: تعرف الأحياء التي تخسر فيها العملاء قبل أن يصلوك.</div>
     </div>
   </div>
 
   <div class="pill">
     <div class="n">2</div>
     <div>
-      <h3>تدقيق الملف التجاري</h3>
-      <p>نقرأ ملفك في قوقل ونفحص أحد عشر عنصراً — التصنيفات، الصور، الأوقات، الوصف، الخدمات، الموقع الإلكتروني — ونعطيك درجة اكتمال وقائمة نواقص مرتّبة بحسب أثرها.</p>
-      <div class="out">النتيجة: قائمة إصلاحات تنفّذها بنفسك اليوم.</div>
+      <h3 data-c="site.h2_title">تدقيق الملف التجاري</h3>
+      <p data-c="site.h2_body">نحلّل ملفك التجاري ونفحص أحد عشر عنصراً — التصنيفات، الصور، الأوقات، الوصف، الخدمات، الموقع الإلكتروني — ونعطيك درجة اكتمال وقائمة نواقص مرتّبة بحسب أثرها.</p>
+      <div class="out" data-c="site.h2_out">النتيجة: قائمة إصلاحات تنفّذها بنفسك اليوم.</div>
     </div>
   </div>
 
   <div class="pill">
     <div class="n">3</div>
     <div>
-      <h3>تحليل المراجعات</h3>
-      <p>نسحب مراجعاتك، نفرز السلبي عن الإيجابي، ونستخرج ما يتكرر فيها: ما الذي يمدحه عملاؤك، وما الشكوى التي تعود كل شهر — بنسبة كل موضوع.</p>
-      <div class="out">النتيجة: تعرف مشكلتك التشغيلية الأولى، لا انطباعاً عاماً.</div>
+      <h3 data-c="site.h3_title">تحليل المراجعات</h3>
+      <p data-c="site.h3_body">نقرأ مراجعاتك، نفرز السلبي عن الإيجابي، ونستخرج ما يتكرر فيها: ما الذي يمدحه عملاؤك، وما الشكوى التي تعود كل شهر — بنسبة كل موضوع.</p>
+      <div class="out" data-c="site.h3_out">النتيجة: تعرف مشكلتك التشغيلية الأولى، لا انطباعاً عاماً.</div>
     </div>
   </div>
 
   <div class="pill">
     <div class="n">4</div>
     <div>
-      <h3>تحليل المنافسين</h3>
-      <p>نحدد من ينافسك فعلياً من نتائج فحصك — لا من تظنهم — ثم نقرأ مراجعاتهم لنكشف أين يقوون وأين يضعفون، وننتهي بخطة مواجهة مرتّبة بالأولوية.</p>
-      <div class="out">النتيجة: تعرف أين تهاجم وأين تحمي نفسك.</div>
+      <h3 data-c="site.h4_title">تحليل المنافسين</h3>
+      <p data-c="site.h4_body">نحدد من ينافسك فعلياً من نتائج فحصك — لا من تظنهم — ثم نقرأ مراجعاتهم لنكشف أين يقوون وأين يضعفون، وننتهي بخطة مواجهة مرتّبة بالأولوية.</p>
+      <div class="out" data-c="site.h4_out">النتيجة: تعرف أين تهاجم وأين تحمي نفسك.</div>
     </div>
   </div>
 </section>
 
-<section class="band" id="pricing">
+<section class="band" id="pricing" data-sec="show.site_pricing">
   <div class="wrap">
     <div class="sec-head center">
-      <h2>باقات واضحة، بلا التزام طويل</h2>
-      <p>اشتراك شهري يُلغى في أي وقت. الأسعار لا تشمل ضريبة القيمة المضافة.</p>
+      <h2 data-c="site.pricing_title">باقات واضحة، بلا التزام طويل</h2>
+      <p data-c="site.pricing_sub">اشتراك شهري يُلغى في أي وقت. الأسعار لا تشمل ضريبة القيمة المضافة.</p>
     </div>
-
-    <div class="plans">
-      <div class="plan">
-        <h3>الأساسية</h3>
-        <div class="who">لمحل واحد يريد أن يعرف موقعه ويبدأ التحسين.</div>
-        <div class="price"><span class="v">129</span><span class="u">ريال / شهرياً</span></div>
-        <div class="vat">لمحل واحد</div>
-        <a class="btn ghost block" href="app.html">ابدأ</a>
-        <ul class="feats">
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span><b>3 كلمات</b> مفتاحية · فحص أسبوعي</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>خريطة الترتيب الكاملة</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تدقيق الملف التجاري <b>مرتين شهرياً</b></span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تحليل المراجعات <b>مرة شهرياً</b></span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تحليل المنافسين <b>مرة شهرياً</b></span></li>
-          <li class="off"><svg class="dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 12h12"/></svg><span>تنبيهات فورية</span></li>
-        </ul>
-      </div>
-
-      <div class="plan featured">
-        <div class="plan-tag">الأكثر ملاءمة</div>
-        <h3>النمو</h3>
-        <div class="who">لمحل جاد في المنافسة ويتابع تقدّمه أسبوعياً.</div>
-        <div class="price"><span class="v">299</span><span class="u">ريال / شهرياً</span></div>
-        <div class="vat">لمحل واحد</div>
-        <a class="btn block" href="app.html">ابدأ</a>
-        <ul class="feats">
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span><b>8 كلمات</b> مفتاحية · فحص كل 3 أيام</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>سجل التطور ومقارنة قبل / بعد</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تحليل المراجعات والمنافسين <b>4 مرات شهرياً</b></span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تنبيه عند تراجع ترتيبك أو وصول مراجعة سلبية</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>أدوات طلب التقييم (رابط و QR)</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تقرير شهري جاهز للمشاركة</span></li>
-        </ul>
-      </div>
-
-      <div class="plan">
-        <h3>الاحترافية</h3>
-        <div class="who">لأصحاب الفروع المتعددة ومن يديرون علامة كاملة.</div>
-        <div class="price"><span class="v">599</span><span class="u">ريال / شهرياً</span></div>
-        <div class="vat">حتى 3 فروع</div>
-        <a class="btn ghost block" href="app.html">ابدأ</a>
-        <ul class="feats">
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span><b>10 كلمات لكل فرع</b> · فحص كل 3 أيام</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>لوحة موحّدة تقارن الفروع وترتّبها بالأداء</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>رصد الفرع المتراجع تلقائياً</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>فحص اتساق أسماء الفروع في قوقل</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>تحليلات موسّعة · حتى 20 شهرياً</span></li>
-          <li><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span>دعم مباشر</span></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="extra">
-      <div class="ex">
-        <h4>للوكالات</h4>
-        <div class="p">89 ريال</div>
-        <div class="s">لكل محل · بحد أدنى 10 محلات</div>
-        <p class="d">أدر حسابات عملائك من لوحة واحدة، وأصدر التقارير بشعار وكالتك. كل محل بمستوى باقة النمو.</p>
-      </div>
-      <div class="ex">
-        <h4>للفرنشايز</h4>
-        <div class="p">149 ريال</div>
-        <div class="s">لكل فرع · بحد أدنى 5 فروع</div>
-        <p class="d">ترتيب الفروع بالأداء، ورصد المتراجع منها، وتحليل شكاوى موحّد يفرّق بين خلل الفرع وخلل النظام.</p>
-      </div>
-      <div class="ex">
-        <h4>تقرير موقع مشروع</h4>
-        <div class="p">199 ريال</div>
-        <div class="s">للتقرير الواحد · بلا اشتراك</div>
-        <p class="d">قبل أن تستأجر: المنافسون في النطاق، ومولّدات الحركة حولك، وثغرات السوق، ودرجة جاذبية الموقع. ثلاثة تقارير بـ 449 ريال.</p>
-      </div>
+    <div class="plans" id="plansBox">
+      <div class="pz-load">جارٍ تحميل الباقات…</div>
     </div>
   </div>
 </section>
 
-<section class="wrap faq" id="faq">
-  <div class="sec-head"><h2>أسئلة قبل أن تبدأ</h2></div>
+<section class="wrap pillars" id="reports" data-sec="show.site_reports" style="padding-top:56px">
+  <div class="sec-head center">
+    <h2 data-c="site.reports_title">تقارير تُشترى مرة واحدة</h2>
+    <p data-c="site.reports_sub">بلا اشتراك — تدفع مقابل التقرير فقط.</p>
+  </div>
+  <div class="extra" id="reportsBox"></div>
+</section>
+
+<section class="wrap faq" id="faq" data-sec="show.site_faq">
+  <div class="sec-head"><h2 data-c="site.faq_title">أسئلة قبل أن تبدأ</h2></div>
 
   <div class="q-item">
-    <div class="qq">هل الترتيب الذي تعرضونه حقيقي؟</div>
-    <div class="aa">نعم. لا نخمّن ولا نحسب ترتيباً خاصاً بنا — نستعلم من قوقل بإحداثيات كل نقطة، فتحصل على النتيجة كما تظهر لمن يبحث من هناك.</div>
+    <div class="qq" data-c="site.q1">هل الترتيب الذي تعرضونه حقيقي؟</div>
+    <div class="aa" data-c="site.a1">نعم. لا نخمّن ولا نحسب ترتيباً خاصاً بنا — نقيس من إحداثيات كل نقطة، فتحصل على النتيجة كما تظهر لمن يبحث من هناك.</div>
   </div>
 
   <div class="q-item">
-    <div class="qq">هل ترفعون ترتيبي؟</div>
-    <div class="aa">لا أحد يستطيع ضمان ذلك، ومن يَعِدك به فهو يبالغ. ما نقدّمه: قياس دقيق لوضعك، وتشخيص لأسباب تأخّرك، وخطوات مثبتة الأثر تنفّذها بنفسك — وقياس النتيجة بعدها.</div>
+    <div class="qq" data-c="site.q2">هل ترفعون ترتيبي؟</div>
+    <div class="aa" data-c="site.a2">لا أحد يستطيع ضمان ذلك، ومن يَعِدك به فهو يبالغ. ما نقدّمه: قياس دقيق لوضعك، وتشخيص لأسباب تأخّرك، وخطوات مثبتة الأثر تنفّذها بنفسك — وقياس النتيجة بعدها.</div>
   </div>
 
   <div class="q-item">
-    <div class="qq">هل تحذفون المراجعات السلبية؟</div>
-    <div class="aa">لا يمكن لأحد حذف مراجعة لأنها سلبية فحسب. ما نفعله: نرصدها فور وصولها، ونحلل ما يتكرر فيها، ونساعدك على الرد ومعالجة سببها — وعلى زيادة المراجعات الإيجابية حتى يتحسّن متوسطك.</div>
+    <div class="qq" data-c="site.q3">هل تحذفون المراجعات السلبية؟</div>
+    <div class="aa" data-c="site.a3">لا يمكن لأحد حذف مراجعة لأنها سلبية فحسب. ما نفعله: نرصدها فور وصولها، ونحلل ما يتكرر فيها، ونساعدك على الرد ومعالجة سببها — وعلى زيادة المراجعات الإيجابية حتى يتحسّن متوسطك.</div>
   </div>
 
   <div class="q-item">
-    <div class="qq">هل أحتاج خبرة تقنية؟</div>
-    <div class="aa">لا. تبحث عن اسم محلك، تختاره، وتضغط زراً واحداً. التقارير مكتوبة بالعربية وبلغة صاحب المحل لا بلغة المبرمجين.</div>
+    <div class="qq" data-c="site.q4">هل أحتاج خبرة تقنية؟</div>
+    <div class="aa" data-c="site.a4">لا. تبحث عن اسم محلك، تختاره، وتضغط زراً واحداً. التقارير مكتوبة بالعربية وبلغة صاحب المحل لا بلغة المبرمجين.</div>
   </div>
 
   <div class="q-item">
-    <div class="qq">ماذا لو ألغيت الاشتراك؟</div>
-    <div class="aa">الاشتراك شهري ويُلغى متى شئت. بياناتك وتقاريرك تبقى متاحة لك حتى نهاية المدة المدفوعة.</div>
+    <div class="qq" data-c="site.q5">ماذا لو ألغيت الاشتراك؟</div>
+    <div class="aa" data-c="site.a5">الاشتراك شهري ويُلغى متى شئت. بياناتك وتقاريرك تبقى متاحة لك حتى نهاية المدة المدفوعة.</div>
   </div>
 </section>
 
 <div class="wrap">
   <div class="cta">
-    <h2>اعرف ترتيبك اليوم</h2>
-    <p>أضف محلك، واختر كلمة يبحث بها عملاؤك، واحصل على خريطة ظهورك خلال دقيقة.</p>
-    <a class="btn" href="app.html">ابدأ الآن</a>
+    <h2 data-c="site.cta_title">اعرف ترتيبك اليوم</h2>
+    <p data-c="site.cta_body">أضف محلك، واختر كلمة يبحث بها عملاؤك، واحصل على خريطة ظهورك خلال دقيقة.</p>
+    <a class="btn" href="app.html" data-c="site.cta_btn">ابدأ الآن</a>
   </div>
 
   <footer>
-    <div>فلك ٣٦٠ — منصة سعودية للسيو المحلي</div>
-    <div>البيانات من قوقل ماب · التحليلات لا تغني عن دراسة الجدوى</div>
+    <div data-c="site.foot_1">فلك ٣٦٠ — منصة سعودية للسيو المحلي</div>
+    <div data-c="site.foot_2">التحليلات إرشادية ولا تغني عن دراسة الجدوى</div>
   </footer>
 </div>
 
-<script>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const sb = createClient("https://dpkvkwcofxeptpzdsjre.supabase.co", "sb_publishable_Krja6qX-HGdklghDfTJmjQ_XpmIgBPe");
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const tick = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>`;
+
+/* النصوص من لوحة التحكم — الأصلية مكتوبة في الصفحة، وهذه تحدّثها فقط */
+async function applyTexts() {
+  try {
+    const { data } = await sb.rpc("site_texts");
+    const t = data?.t;
+    if (!t) return;
+    if (t["site.title"]) document.title = t["site.title"];
+    if (t["site.desc"]) document.querySelector('meta[name=description]')?.setAttribute("content", t["site.desc"]);
+    document.querySelectorAll("[data-c]").forEach((el) => {
+      const v = t[el.dataset.c];
+      if (!v) return;
+      if (el.hasAttribute("data-html")) el.innerHTML = esc(v).replace(/\n/g, "<br>");
+      else el.textContent = v;
+    });
+    document.querySelectorAll("[data-sec]").forEach((el) => {
+      if (t[el.dataset.sec] === "off") el.hidden = true;
+    });
+  } catch { /* تبقى النصوص الأصلية */ }
+}
+
+/* الباقات والتقارير من قاعدة البيانات */
+async function applyPricing() {
+  const box = document.getElementById("plansBox");
+  const rep = document.getElementById("reportsBox");
+  try {
+    const { data } = await sb.rpc("public_pricing");
+    if (!data) throw 0;
+    const cta = document.querySelector('[data-c="site.plan_cta"]')?.textContent || "ابدأ";
+
+    box.innerHTML = (data.plans || []).map((p) => `
+      <div class="plan${p.featured ? " featured" : ""}">
+        ${p.featured ? `<div class="plan-tag">الأكثر ملاءمة</div>` : ""}
+        <h3>${esc(p.name)}</h3>
+        <div class="who">${esc(p.tagline || "")}</div>
+        <div class="price"><span class="v">${p.price}</span><span class="u">ريال / شهرياً</span></div>
+        <div class="vat">${data.test_mode ? "عرض تجريبي" : "لمحل واحد"}</div>
+        <a class="btn${p.featured ? "" : " ghost"} block" href="app.html">${esc(cta)}</a>
+        <ul class="feats">${(p.bullets || []).map((f) => `<li>${tick}<span>${esc(f)}</span></li>`).join("")}</ul>
+      </div>`).join("") || "";
+
+    const one = (kind) => (data.reports || []).filter((r) => r.kind === kind).sort((a, b) => a.qty - b.qty);
+    const rcta = document.querySelector('[data-c="site.report_cta"]')?.textContent || "اطلب التقرير";
+    rep.innerHTML = [["location", "تقرير موقع مشروع"], ["acquisition", "تقرير محل معروض للبيع"]].map(([k, title]) => {
+      const list = one(k);
+      if (!list.length) return "";
+      const first = list[0];
+      const more = list.slice(1).map((r) => `${r.label} بـ ${r.price} ريال`).join(" · ");
+      return `<div class="ex">
+        <h4>${title}</h4>
+        <div class="p">${first.price} ريال</div>
+        <div class="s">${esc(first.label)} · بلا اشتراك${more ? ` · ${esc(more)}` : ""}</div>
+        <p class="d">${esc(first.tagline || "")}</p>
+        <a class="btn ghost block" href="app.html">${esc(rcta)}</a>
+      </div>`;
+    }).join("");
+  } catch {
+    box.innerHTML = `<div class="pz-load">تعذّر تحميل الباقات — حدّث الصفحة.</div>`;
+  }
+}
+
+applyTexts();
+applyPricing();
+
 const ranks = [
   12, 8, 6, 9, 14,
    7, 4, 2, 5, 10,
