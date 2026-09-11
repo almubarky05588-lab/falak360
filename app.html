@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#263A63">
-<title>فلك ٣٦٠ — موقعك في نتائج قوقل ماب</title>
+<title>فلك ٣٦٠ — ظهور محلك وتحليل مشروعك</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -15,7 +15,7 @@
     <div class="auth-head">
       <div id="authLogo"></div>
       <h1>فلك ٣٦٠</h1>
-      <p>اعرف موقعك في نتائج قوقل ماب، وما الذي يرفعه.</p>
+      <p>اعرف أين يظهر محلك لعملائك، وما الذي يرفعه.</p>
     </div>
     <div class="field">
       <label for="email">البريد الإلكتروني</label>
@@ -65,9 +65,9 @@
 
         <div id="addBizWrap" class="sp-t">
           <div class="field">
-            <label for="searchQ">ابحث عن محلك في قوقل ماب</label>
+            <label for="searchQ">ابحث عن محلك باسمه</label>
             <div class="row">
-              <input id="searchQ" class="input" placeholder="اكتب اسم المحل كما هو في قوقل">
+              <input id="searchQ" class="input" placeholder="اكتب اسم المحل كما هو على لوحته">
               <button id="searchBtn" class="btn" style="flex:0 0 auto">بحث</button>
             </div>
             <div class="hint">نبحث حول موقعك الحالي. اضغط على محلك من النتائج لإضافته ببياناته كاملة.</div>
@@ -179,7 +179,7 @@
 
     <section id="screen-profile" class="screen">
       <h1 class="page-title">الملف التجاري</h1>
-      <p class="page-sub">نقرأ ملفك في قوقل ونحدد النواقص التي تُضعف ظهورك، ثم نعطيك خطة جاهزة للتنفيذ.</p>
+      <p class="page-sub">نحلّل ملفك التجاري ونحدد النواقص التي تُضعف ظهورك، ثم نعطيك خطة جاهزة للتنفيذ.</p>
 
       <div id="profileGate"></div>
 
@@ -208,7 +208,7 @@
         </div>
 
         <div class="plan-hero sp-t">
-          <h3>خطة رفع ظهور متجرك على قوقل</h3>
+          <h3>خطة رفع ظهور متجرك</h3>
           <div class="lede">هذه الميزة تساعدك في جلب عملاء أكثر لمتجرك — محتوى جاهز تنسخه وتلصقه في ملفك، لا نصائح عامة.</div>
           <button id="planBtn" class="btn block sp-t">أنشئ خطتي</button>
           <div id="planMsg" class="msg"></div>
@@ -329,11 +329,11 @@
         <div class="row">
           <div class="field" style="margin:0">
             <label for="locCity">المدينة <span style="color:var(--bad)">*</span></label>
-            <input id="locCity" class="input" placeholder="مثال: أبو عريش">
+            <input id="locCity" class="input" placeholder="مثال: الرياض">
           </div>
           <div class="field" style="margin:0">
             <label for="locDistrict">الحي <span style="color:var(--bad)">*</span></label>
-            <input id="locDistrict" class="input" placeholder="مثال: قنبورة">
+            <input id="locDistrict" class="input" placeholder="مثال: الملقا">
           </div>
         </div>
 
@@ -346,12 +346,12 @@
         <div id="geoMsg" class="msg"></div>
 
         <div class="field sp-t">
-          <label for="locCoords">أو الصق إحداثيات قوقل <span class="muted">— اختياري</span></label>
+          <label for="locCoords">أو الصق الإحداثيات <span class="muted">— اختياري</span></label>
           <div class="row">
-            <input id="locCoords" class="input" placeholder="17.9654, 42.8341 أو رابط خرائط">
+            <input id="locCoords" class="input" placeholder="24.7136, 46.6753 أو رابط خرائط">
             <button id="coordBtn" class="btn ghost" style="flex:0 0 auto">انتقل</button>
           </div>
-          <div class="hint">من قوقل ماب: اضغط مطوّلاً على الموقع لتنسخ الإحداثيات، أو انسخ الرابط كاملاً.</div>
+          <div class="hint">من تطبيق الخرائط: اضغط مطوّلاً على الموقع لتنسخ الإحداثيات، أو انسخ الرابط كاملاً.</div>
         </div>
 
         <div class="field">
@@ -453,12 +453,12 @@
 
       <div class="card">
         <div class="field">
-          <label for="buyQ">ابحث عن المحل في قوقل ماب</label>
+          <label for="buyQ">ابحث عن المحل باسمه</label>
           <div class="row">
-            <input id="buyQ" class="input" placeholder="اسم المحل كما هو في قوقل">
+            <input id="buyQ" class="input" placeholder="اسم المحل كما هو على لوحته">
             <button id="buySearchBtn" class="btn" style="flex:0 0 auto">بحث</button>
           </div>
-          <div class="hint">اكتب اسم المحل مع المدينة إن كان الاسم شائعاً — مثال: مقهى الواحة، أبو عريش</div>
+          <div class="hint">اكتب اسم المحل مع المدينة إن كان الاسم شائعاً — مثال: مقهى الواحة، الرياض</div>
         </div>
         <div id="buySearchMsg" class="msg"></div>
         <div id="buyResults"></div>
