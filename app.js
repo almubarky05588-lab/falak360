@@ -2093,8 +2093,8 @@ function mapsCard(s) {
     ${s.address || s.website ? `<div class="sup-body">${s.address ? esc(s.address) : ""}
       ${s.website ? `<div><a href="${esc(s.website)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|website">الموقع الإلكتروني ↗</a></div>` : ""}</div>` : ""}
     ${acts.length ? `<div class="sup-acts">${acts.join("")}</div>` : ""}
-    <a class="sup-claim" href="supplier.html?claim=${esc(s.id)}" target="_blank" rel="noopener">
-      ${icon("building", 15)}${esc(T("suppliers.claim", "هل هذا نشاطك؟ وثّقه واظهر في المقدمة"))}</a>
+    ${s.claimable ? `<a class="sup-claim" href="supplier.html?claim=${esc(s.id)}" target="_blank" rel="noopener">
+      ${icon("building", 15)}${esc(T("suppliers.claim", "هل هذا نشاطك؟ وثّقه واظهر في المقدمة"))}</a>` : ""}
     <button class="sup-more" data-report="${esc(s.id)}">إبلاغ عن بيانات غير صحيحة</button>
   </div>`;
 }
