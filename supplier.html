@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#263A63">
+<title>فلك ٣٦٠ — للموردين</title>
+<meta name="description" content="سجّل منشأتك في فلك ٣٦٠، وثّق سجلك التجاري، واظهر لأصحاب المحلات الذين يبحثون عن موردين لنشاطهم في مدينتك.">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .sp-page{max-width:1080px;margin:0 auto;padding:var(--sp-5) var(--sp-4) var(--sp-7)}
+  .sp-who{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-2)}
+  .brand-name small{font-family:var(--font-body);font-weight:500;font-size:13px;color:var(--ink-3);margin-inline-start:6px}
+
+  /* الواجهة */
+  .sp-hero{padding:var(--sp-6) 0 var(--sp-5)}
+  .sp-hero h1{font-family:var(--font-display);font-size:clamp(26px,4.4vw,40px);line-height:1.25;font-weight:600;max-width:17ch;color:var(--ink)}
+  .sp-hero p{margin-top:var(--sp-3);font-size:16px;color:var(--ink-2);max-width:56ch}
+
+  .sp-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--sp-5);align-items:start}
+  @media(max-width:900px){.sp-grid{grid-template-columns:1fr}.sp-aside{order:-1}}
+  .sp-aside{position:sticky;top:calc(var(--header-h) + 16px)}
+  @media(max-width:900px){.sp-aside{position:static}}
+
+  .sp-switch{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:4px;margin-bottom:var(--sp-4)}
+  .sp-switch button{flex:1;height:38px;border:0;background:none;border-radius:var(--r-sm);font:inherit;font-size:14px;color:var(--ink-2);cursor:pointer}
+  .sp-switch button.on{background:var(--surface);color:var(--brand);font-weight:600;box-shadow:var(--shadow-1)}
+
+  .sp-block{border-top:1px solid var(--line);padding-top:var(--sp-4);margin-top:var(--sp-4)}
+  .sp-block:first-child{border-top:0;padding-top:0;margin-top:0}
+  .sp-block h3{font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:var(--sp-3)}
+  .sp-2{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
+  @media(max-width:560px){.sp-2{grid-template-columns:1fr}}
+  .sp-2 .field{margin-bottom:0}
+  textarea.input{height:auto;min-height:96px;padding-top:10px;padding-bottom:10px;line-height:1.7;resize:vertical}
+  .input[dir=ltr]{text-align:right}
+
+  .pick{display:flex;flex-wrap:wrap;gap:6px}
+  .pick button{height:34px;padding:0 12px;border-radius:var(--r-full);border:1px solid var(--line-2);background:var(--surface);
+    font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer}
+  .pick button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .pick button:disabled{opacity:.45;cursor:not-allowed}
+  .toggle{display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;user-select:none;margin-top:var(--sp-3)}
+  .toggle input{width:18px;height:18px;accent-color:var(--brand)}
+
+  .file-drop{display:flex;align-items:center;gap:12px;border:1.5px dashed var(--line-2);border-radius:var(--r);padding:14px;
+    background:var(--surface-2);cursor:pointer}
+  .file-drop svg{width:22px;height:22px;color:var(--ink-3);flex:0 0 auto}
+  .file-drop b{display:block;font-size:14px;font-weight:600}
+  .file-drop span{font-size:12.5px;color:var(--ink-3)}
+  .file-drop.has{border-style:solid;border-color:var(--ok);background:var(--ok-tint)}
+  .file-drop.has svg{color:var(--ok)}
+
+  .claim-bar{display:flex;gap:12px;align-items:flex-start;background:var(--brand-tint);border:1px solid #D7DEEB;border-radius:var(--r);
+    padding:14px;margin-bottom:var(--sp-4);font-size:14px}
+  .claim-bar svg{width:20px;height:20px;color:var(--brand);flex:0 0 auto;margin-top:2px}
+
+  /* معاينة البطاقة — كما يراها صاحب المحل */
+  .prev-lbl{font-size:12.5px;color:var(--ink-3);margin-bottom:8px}
+  .scard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-2)}
+  .scard-top{display:flex;gap:12px;align-items:center;padding:16px}
+  .scard-logo{width:52px;height:52px;border-radius:14px;background:var(--brand-tint);color:var(--brand);flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:22px;font-weight:600;overflow:hidden}
+  .scard-logo img{width:100%;height:100%;object-fit:cover}
+  .scard-name{font-family:var(--font-display);font-size:16.5px;font-weight:600;line-height:1.35}
+  .scard-city{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+  .vbadge{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 9px;border-radius:var(--r-full);
+    background:var(--ok-tint);color:var(--ok);font-size:12px;font-weight:600}
+  .vbadge svg{width:13px;height:13px}
+  .vbadge.wait{background:var(--warn-tint);color:var(--warn)}
+  .fbadge{display:inline-flex;margin-top:6px;margin-inline-start:4px;padding:3px 9px;border-radius:var(--r-full);background:var(--brand);color:#fff;font-size:12px;font-weight:600}
+  .scard-body{padding:0 16px 14px;font-size:13.5px;color:var(--ink-2);line-height:1.75}
+  .scard-body p{margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .scard-body .muted{color:var(--ink-3)}
+  .scard-acts{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+  .scard-acts span{display:flex;align-items:center;justify-content:center;gap:6px;height:44px;font-size:13px;color:var(--brand);font-weight:600}
+  .scard-acts span+span{border-inline-start:1px solid var(--line)}
+  .scard-acts svg{width:15px;height:15px}
+
+  /* لوحة المورد */
+  .status{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);
+    border-radius:var(--r-lg);overflow:hidden;margin-bottom:var(--sp-5)}
+  @media(max-width:700px){.status{grid-template-columns:1fr}}
+  .st{background:var(--surface);padding:16px}
+  .st .k{font-size:12.5px;color:var(--ink-3)}
+  .st .v{font-family:var(--font-display);font-size:16px;font-weight:600;margin-top:4px;display:flex;align-items:center;gap:7px}
+  .st .v i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .st .d{font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.6}
+  .st.ok .v i{background:var(--ok)} .st.warn .v i{background:var(--warn)} .st.bad .v i{background:var(--bad)} .st.mute .v i{background:var(--ink-3)}
+
+  .dtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:var(--sp-4);overflow-x:auto;scrollbar-width:none}
+  .dtabs::-webkit-scrollbar{display:none}
+  .dtabs button{flex:0 0 auto;height:42px;padding:0 14px;border:0;border-bottom:2px solid transparent;background:none;
+    font:inherit;font-size:14px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
+  .dtabs button.on{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+  .dpane{display:none}.dpane.on{display:block}
+
+  .logo-row{display:flex;align-items:center;gap:14px}
+  .logo-row .scard-logo{width:64px;height:64px}
+
+  .prod{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+  .prod:last-child{border-bottom:0}
+  .prod .t{font-weight:600;font-size:14.5px}
+  .prod .d{font-size:13px;color:var(--ink-2);margin-top:2px;line-height:1.7}
+  .prod .p{font-size:12.5px;color:var(--brand);margin-top:4px;font-weight:600}
+  .prod .acts{margin-inline-start:auto;display:flex;gap:6px;flex:0 0 auto}
+
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
+  @media(max-width:620px){.plans{grid-template-columns:1fr}}
+  .plan{border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;background:var(--surface);display:flex;flex-direction:column}
+  .plan.featured{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand) inset}
+  .plan h4{font-family:var(--font-display);font-size:17px;font-weight:600}
+  .plan .price{margin:8px 0 12px;font-size:14px;color:var(--ink-2)}
+  .plan .price b{font-family:var(--font-display);font-size:30px;color:var(--ink);font-weight:600}
+  .plan ul{list-style:none;display:grid;gap:7px;margin-bottom:16px;font-size:13.5px}
+  .plan li{display:flex;gap:8px;align-items:flex-start}
+  .plan li svg{width:16px;height:16px;color:var(--ok);flex:0 0 auto;margin-top:3px}
+  .plan .btn{margin-top:auto}
+  .plan .cur{font-size:12.5px;color:var(--ok);font-weight:600;margin-bottom:8px}
+
+  .pay-box{border:1px solid var(--line);border-radius:var(--r);padding:16px;background:var(--surface-2);margin-top:var(--sp-4)}
+  .pay-box .btn{margin-top:10px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--sp-3)}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+  .kpi b{display:block;font-family:var(--font-num);font-size:26px;font-weight:600;line-height:1.1}
+  .kpi span{font-size:12.5px;color:var(--ink-3)}
+  .upsell{margin-top:var(--sp-4);padding:14px;border-radius:var(--r);background:var(--brand-tint);color:var(--brand);font-size:13.5px}
+
+  .loading{display:flex;justify-content:center;padding:80px 0}
+  .loading .spinner{width:26px;height:26px;border-width:3px;border-color:var(--line-2);border-top-color:var(--brand)}
+  :focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  a.btn{text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <a class="brand" href="index.html" style="text-decoration:none;color:inherit">
+    <div id="headerLogo" class="brand-mark"></div>
+    <div class="brand-name">فلك <span>٣٦٠</span><small>للموردين</small></div>
+  </a>
+  <div class="sp-who" id="whoBox"></div>
+</header>
+
+<main class="sp-page">
+  <div id="vLoading" class="loading"><span class="spinner"></span></div>
+
+  <!-- ===================== التسجيل ===================== -->
+  <section id="vJoin" class="hidden">
+    <div class="sp-hero">
+      <h1 data-c="supplier.hero_title">اعرض منشأتك لأصحاب المحلات في قطاعك</h1>
+      <p data-c="supplier.hero_sub">سجّل منشأتك، وثّق سجلك التجاري، واظهر لأصحاب المحلات الذين يبحثون عن موردين لنشاطهم في مدينتك.</p>
+    </div>
+
+    <div class="sp-grid">
+      <div>
+        <div id="claimBar"></div>
+
+        <div class="card">
+          <div class="sp-switch" id="authSwitch">
+            <button type="button" class="on" data-mode="join">سجّل منشأتك</button>
+            <button type="button" data-mode="login">لدي حساب</button>
+          </div>
+
+          <!-- الدخول -->
+          <div id="loginBox" class="hidden">
+            <div class="field"><label for="liEmail">البريد الإلكتروني</label>
+              <input id="liEmail" class="input" type="email" dir="ltr" autocomplete="email"></div>
+            <div class="field"><label for="liPass">كلمة المرور</label>
+              <input id="liPass" class="input" type="password" autocomplete="current-password"></div>
+            <button id="liBtn" class="btn block" type="button">دخول</button>
+            <div id="liMsg" class="msg"></div>
+          </div>
+
+          <!-- التسجيل -->
+          <div id="joinBox">
+            <div class="sp-block" id="acctBlock">
+              <h3>حسابك</h3>
+              <div class="sp-2">
+                <div class="field"><label for="jEmail">البريد الإلكتروني</label>
+                  <input id="jEmail" class="input" type="email" dir="ltr" autocomplete="email"></div>
+                <div class="field"><label for="jPass">كلمة المرور</label>
+                  <input id="jPass" class="input" type="password" autocomplete="new-password" placeholder="٨ أحرف على الأقل"></div>
+              </div>
+            </div>
+
+            <div class="sp-block">
+              <h3>منشأتك</h3>
+              <div class="field"><label for="jName">اسم المنشأة</label>
+                <input id="jName" class="input" maxlength="120" placeholder="كما في السجل التجاري"></div>
+              <div class="sp-2">
+                <div class="field"><label for="jPhone">رقم الجوال</label>
+                  <input id="jPhone" class="input" inputmode="tel" dir="ltr" placeholder="05xxxxxxxx"></div>
+                <div class="field"><label for="jCity">المدينة</label>
+                  <select id="jCity" class="select"></select></div>
+              </div>
+              <div class="field sp-t"><label>النشاط الذي تخدمه <span class="muted" id="jSecCount"></span></label>
+                <div class="pick" id="jSectors"></div>
+                <div class="hint">اختر حتى ٥ أنشطة. الباقة الأساسية تُظهرك في أول نشاط تختاره.</div>
+              </div>
+              <div class="field"><label>مدن التوصيل <span class="muted">— اختياري</span></label>
+                <div class="pick" id="jCov"></div>
+                <label class="toggle"><input type="checkbox" id="jAll"> أوصل لكل مدن المملكة</label>
+              </div>
+              <div class="field"><label for="jMaps">رابط منشأتك على قوقل ماب <span class="muted">— اختياري</span></label>
+                <input id="jMaps" class="input" dir="ltr" placeholder="https://maps.app.goo.gl/..."></div>
+            </div>
+
+            <div class="sp-block">
+              <h3>السجل التجاري</h3>
+              <div class="sp-2">
+                <div class="field"><label for="jCr">رقم السجل</label>
+                  <input id="jCr" class="input" inputmode="numeric" dir="ltr" maxlength="15" placeholder="10 أرقام"></div>
+                <div class="field"><label for="jCrExp">تاريخ انتهاء السجل</label>
+                  <input id="jCrExp" class="input" type="date" dir="ltr"></div>
+              </div>
+              <label class="file-drop sp-t" id="jCrDrop">
+                <input type="file" id="jCrFile" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>
+                <div><b id="jCrName">ارفع صورة السجل التجاري</b><span>صورة أو PDF — حتى ٥ ميجابايت</span></div>
+              </label>
+              <div class="hint" data-c="supplier.cr_note">نراجع السجل التجاري يدوياً خلال يوم عمل، وتظهر شارة التوثيق بعد الموافقة.</div>
+            </div>
+
+            <button id="jBtn" class="btn block sp-t" type="button">سجّل منشأتك</button>
+            <div id="jMsg" class="msg"></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="sp-aside">
+        <div class="prev-lbl">بطاقتك كما يراها صاحب المحل</div>
+        <div id="joinPreview"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===================== لوحة المورد ===================== -->
+  <section id="vDash" class="hidden">
+    <h1 class="page-title" id="dTitle">منشأتك</h1>
+    <p class="page-sub">حدّث بياناتك ومنتجاتك، وتابع ظهورك لأصحاب المحلات.</p>
+
+    <div class="status" id="dStatus"></div>
+
+    <nav class="dtabs" id="dTabs">
+      <button type="button" class="on" data-pane="profile">ملف المنشأة</button>
+      <button type="button" data-pane="products">المنتجات والخدمات</button>
+      <button type="button" data-pane="plan">الاشتراك</button>
+      <button type="button" data-pane="stats">الإحصائيات</button>
+      <button type="button" data-pane="cr">السجل التجاري</button>
+    </nav>
+
+    <!-- ملف المنشأة -->
+    <div class="dpane on" id="pane-profile">
+      <div class="sp-grid">
+        <div class="card">
+          <div class="sp-block">
+            <h3>الهوية</h3>
+            <div class="logo-row">
+              <div class="scard-logo" id="pLogoPrev"></div>
+              <div>
+                <label class="btn ghost sm" for="pLogo" style="cursor:pointer">رفع الشعار</label>
+                <input type="file" id="pLogo" accept="image/jpeg,image/png,image/webp" hidden>
+                <div class="hint" style="margin-top:6px">مربّع، حتى ٢ ميجابايت.</div>
+              </div>
+            </div>
+            <div class="field sp-t"><label for="pName">اسم المنشأة</label>
+              <input id="pName" class="input" maxlength="120"></div>
+            <div class="field"><label for="pBio">نبذة تعريفية</label>
+              <textarea id="pBio" class="input" maxlength="1500" placeholder="من أنتم، وماذا توردون، ولمن؟"></textarea>
+              <div class="hint"><span id="pBioN">0</span> / 1500</div></div>
+            <div class="field"><label for="pMin">الحد الأدنى للطلب <span class="muted">— اختياري</span></label>
+              <input id="pMin" class="input" maxlength="120" placeholder="مثال: ٥٠٠ ريال أو ١٠ كراتين"></div>
+          </div>
+
+          <div class="sp-block">
+            <h3>النشاط والتغطية</h3>
+            <div class="field"><label>النشاط الذي تخدمه <span class="muted" id="pSecCount"></span></label>
+              <div class="pick" id="pSectors"></div>
+              <div class="hint" id="pSecHint"></div></div>
+            <div class="field"><label for="pCity">المدينة</label>
+              <select id="pCity" class="select"></select></div>
+            <div class="field"><label>مدن التوصيل</label>
+              <div class="pick" id="pCov"></div>
+              <label class="toggle"><input type="checkbox" id="pAll"> أوصل لكل مدن المملكة</label></div>
+          </div>
+
+          <div class="sp-block">
+            <h3>التواصل</h3>
+            <div class="sp-2">
+              <div class="field"><label for="pPhone">الجوال</label>
+                <input id="pPhone" class="input" inputmode="tel" dir="ltr"></div>
+              <div class="field"><label for="pWa">واتساب</label>
+                <input id="pWa" class="input" inputmode="tel" dir="ltr"></div>
+            </div>
+            <div class="sp-2 sp-t">
+              <div class="field"><label for="pEmail">البريد للتواصل</label>
+                <input id="pEmail" class="input" type="email" dir="ltr"></div>
+              <div class="field"><label for="pWeb">الموقع الإلكتروني</label>
+                <input id="pWeb" class="input" dir="ltr" placeholder="https://"></div>
+            </div>
+            <div class="field sp-t"><label for="pMaps">رابطك على قوقل ماب</label>
+              <input id="pMaps" class="input" dir="ltr" placeholder="https://maps.app.goo.gl/..."></div>
+          </div>
+
+          <button id="pSave" class="btn block sp-t" type="button">احفظ التعديلات</button>
+          <div id="pMsg" class="msg"></div>
+        </div>
+
+        <aside class="sp-aside">
+          <div class="prev-lbl">بطاقتك كما يراها صاحب المحل</div>
+          <div id="dashPreview"></div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- المنتجات -->
+    <div class="dpane" id="pane-products">
+      <div class="card">
+        <div class="section-head" style="margin-top:0"><h2>منتجاتك وخدماتك</h2><span class="note" id="prodCount"></span></div>
+        <div id="prodList"></div>
+      </div>
+      <div class="card">
+        <h3 style="font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:12px" id="prodFormTitle">أضف منتجاً أو خدمة</h3>
+        <div class="field"><label for="prName">الاسم</label>
+          <input id="prName" class="input" maxlength="120"></div>
+        <div class="field"><label for="prDesc">الوصف <span class="muted">— اختياري</span></label>
+          <textarea id="prDesc" class="input" maxlength="600"></textarea></div>
+        <div class="field"><label for="prPrice">السعر أو الوحدة <span class="muted">— اختياري</span></label>
+          <input id="prPrice" class="input" maxlength="60" placeholder="مثال: ٤٥ ريال للكيلو"></div>
+        <div class="row">
+          <button id="prSave" class="btn" type="button">أضف</button>
+          <button id="prCancel" class="btn ghost hidden" type="button">إلغاء التعديل</button>
+        </div>
+        <div id="prMsg" class="msg"></div>
+      </div>
+    </div>
+
+    <!-- الاشتراك -->
+    <div class="dpane" id="pane-plan">
+      <div class="section-head" style="margin-top:0"><h2 data-c="supplier.plans_title">اختر باقتك</h2></div>
+      <div class="plans" id="plansBox"></div>
+      <div id="payBox"></div>
+    </div>
+
+    <!-- الإحصائيات -->
+    <div class="dpane" id="pane-stats">
+      <div class="section-head" style="margin-top:0"><h2>آخر ٣٠ يوماً</h2></div>
+      <div class="kpis" id="statsBox"></div>
+      <div id="statsNote"></div>
+    </div>
+
+    <!-- السجل التجاري -->
+    <div class="dpane" id="pane-cr">
+      <div class="card">
+        <div id="crState"></div>
+        <div class="sp-2 sp-t">
+          <div class="field"><label for="cNum">رقم السجل</label>
+            <input id="cNum" class="input" inputmode="numeric" dir="ltr" maxlength="15"></div>
+          <div class="field"><label for="cExp">تاريخ الانتهاء</label>
+            <input id="cExp" class="input" type="date" dir="ltr"></div>
+        </div>
+        <label class="file-drop sp-t" id="cDrop">
+          <input type="file" id="cFile" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>
+          <div><b id="cName">ارفع نسخة جديدة من السجل</b><span>صورة أو PDF — حتى ٥ ميجابايت</span></div>
+        </label>
+        <div class="hint">أي تعديل على السجل يعيده للمراجعة، وتختفي الشارة مؤقتاً حتى نوافق عليه.</div>
+        <button id="cSave" class="btn block sp-t" type="button">أرسل للمراجعة</button>
+        <div id="cMsg" class="msg"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { icon, logoMark } from "./icons.js";
+
+const sb = createClient("https://dpkvkwcofxeptpzdsjre.supabase.co", "sb_publishable_Krja6qX-HGdklghDfTJmjQ_XpmIgBPe");
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const show = (id, on) => $(id).classList.toggle("hidden", !on);
+
+let TX = {}, SECTORS = [], CITIES = [], me = null, claim = null, user = null;
+let editingProduct = null, payTimer = null;
+const joinSel = { sectors: [], cov: [] };
+const profSel = { sectors: [], cov: [] };
+
+/* ---------------- أدوات ---------------- */
+const T = (k, fb) => TX[k] ?? fb;
+function applyTexts() {
+  document.querySelectorAll("[data-c]").forEach((el) => { if (TX[el.dataset.c]) el.textContent = TX[el.dataset.c]; });
+}
+function msg(el, kind, text) {
+  const ic = kind === "error" ? "alert-triangle" : kind === "done" ? "check-circle" : "info";
+  el.className = `msg show ${kind}`;
+  el.innerHTML = `${icon(ic, 17)}<span>${esc(text)}</span>`;
+}
+const clearMsg = (el) => { el.className = "msg"; el.innerHTML = ""; };
+function busy(btn, on, label) {
+  if (on) { btn.dataset.label = btn.textContent; btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>${esc(label || "جارٍ الحفظ")}`; }
+  else { btn.disabled = false; btn.textContent = btn.dataset.label || label || ""; }
+}
+// رسائل مفهومة بدل الأخطاء التقنية
+function friendly(e) {
+  const m = String(e?.message ?? e ?? "");
+  if (/already registered|already been registered/i.test(m)) return "هذا البريد مسجّل لدينا — استخدم «لدي حساب» للدخول.";
+  if (/Invalid login credentials/i.test(m)) return "البريد أو كلمة المرور غير صحيحة.";
+  if (/Password should be|at least 6|weak/i.test(m)) return "كلمة المرور قصيرة — ٨ أحرف على الأقل.";
+  if (/rate limit|too many/i.test(m)) return "محاولات كثيرة — انتظر دقيقة ثم حاول.";
+  if (/الحد الأقصى|وصلت/.test(m)) return m.replace(/^.*?(وصلت)/, "$1");
+  if (/[\u0600-\u06FF]/.test(m) && !/HTTP|Claude|DataForSEO|JWT|violates|constraint/i.test(m)) return m;
+  return "تعذّر إكمال العملية الآن — حاول بعد قليل.";
+}
+function normPhone(v) {
+  let d = String(v || "").replace(/[^\d]/g, "");
+  d = d.replace(/^00/, "");
+  if (d.startsWith("05") && d.length === 10) d = "966" + d.slice(1);
+  else if (d.startsWith("5") && d.length === 9) d = "966" + d;
+  return /^9665\d{8}$/.test(d) ? d : null;
+}
+const localPhone = (p) => (p && /^9665\d{8}$/.test(p) ? "0" + p.slice(3) : p || "");
+const fmtDate = (iso) => iso ? new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso)) : "—";
+const sectorName = (c) => SECTORS.find((s) => s.code === c)?.name ?? c;
+const isUrl = (v) => !v || /^https?:\/\/\S+\.\S+/.test(v);
+const fileOk = (f, maxMb) => {
+  if (!f) return "اختر ملفاً";
+  if (f.size > maxMb * 1024 * 1024) return `حجم الملف أكبر من ${maxMb} ميجابايت`;
+  return null;
+};
+
+/* ---------------- اختيار متعدد ---------------- */
+function renderPick(boxId, items, sel, max, countId, onChange) {
+  const box = $(boxId);
+  box.innerHTML = items.map((it) => `<button type="button" data-v="${esc(it.v)}" class="${sel.includes(it.v) ? "on" : ""}"
+    ${!sel.includes(it.v) && max && sel.length >= max ? "disabled" : ""}>${esc(it.t)}</button>`).join("");
+  if (countId) $(countId).textContent = max ? `(${sel.length} من ${max})` : "";
+  box.querySelectorAll("button").forEach((b) => b.onclick = () => {
+    const v = b.dataset.v, i = sel.indexOf(v);
+    if (i >= 0) sel.splice(i, 1); else if (!max || sel.length < max) sel.push(v);
+    renderPick(boxId, items, sel, max, countId, onChange);
+    onChange && onChange();
+  });
+}
+function fillCities(selId, value) {
+  $(selId).innerHTML = `<option value="">اختر المدينة</option>` +
+    CITIES.map((c) => `<option ${c.name === value ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+}
+
+/* ---------------- معاينة البطاقة ---------------- */
+function cardHtml(d) {
+  const initial = String(d.name || "م").trim().charAt(0);
+  const cov = d.covers_all_ksa ? "يوصل لكل المملكة"
+    : (d.coverage_cities || []).length ? `يوصل إلى: ${(d.coverage_cities || []).slice(0, 4).join("، ")}${d.coverage_cities.length > 4 ? "…" : ""}` : "";
+  const badge = d.verified
+    ? `<span class="vbadge">${icon("check-circle", 13)}${esc(T("suppliers.verified_badge", "سجل تجاري موثّق"))}</span>`
+    : `<span class="vbadge wait">${icon("clock", 13)}بانتظار التوثيق</span>`;
+  return `<div class="scard">
+    <div class="scard-top">
+      <div class="scard-logo">${d.logo_url ? `<img src="${esc(d.logo_url)}" alt="">` : esc(initial)}</div>
+      <div style="min-width:0">
+        <div class="scard-name">${esc(d.name || "اسم منشأتك")}</div>
+        <div class="scard-city">${esc(d.city || "المدينة")}${d.sectors?.length ? ` — ${esc(d.sectors.map(sectorName).slice(0, 2).join("، "))}` : ""}</div>
+        ${badge}${d.featured ? `<span class="fbadge">مميز</span>` : ""}
+      </div>
+    </div>
+    <div class="scard-body">
+      <p>${d.bio ? esc(d.bio) : `<span class="muted">نبذتك التعريفية تظهر هنا — اكتب ماذا توردون ولمن.</span>`}</p>
+      ${d.min_order ? `<div>الحد الأدنى للطلب: ${esc(d.min_order)}</div>` : ""}
+      ${cov ? `<div class="muted">${esc(cov)}</div>` : ""}
+    </div>
+    <div class="scard-acts">
+      <span>${icon("message-square", 15)}واتساب</span>
+      <span>${icon("phone", 15)}اتصال</span>
+      <span>${icon("map-pin", 15)}الموقع</span>
+    </div>
+  </div>`;
+}
+function joinPreview() {
+  $("joinPreview").innerHTML = cardHtml({
+    name: $("jName").value.trim(), city: $("jCity").value, sectors: joinSel.sectors,
+    coverage_cities: joinSel.cov, covers_all_ksa: $("jAll").checked, verified: false,
+  });
+}
+function dashPreview() {
+  if (!me) return;
+  const s = me.supplier;
+  $("dashPreview").innerHTML = cardHtml({
+    name: $("pName").value.trim(), city: $("pCity").value, sectors: profSel.sectors, bio: $("pBio").value.trim(),
+    min_order: $("pMin").value.trim(), coverage_cities: profSel.cov, covers_all_ksa: $("pAll").checked,
+    logo_url: s.logo_url, verified: s.verification_status === "verified",
+    featured: me.active_plan === "supplier_featured",
+  });
+}
+
+/* ---------------- الإقلاع ---------------- */
+async function boot() {
+  $("headerLogo").innerHTML = logoMark(30);
+  const [tx, sec, cit] = await Promise.all([
+    sb.rpc("site_texts").then((r) => r.data).catch(() => null),
+    sb.from("sectors").select("code, name").eq("is_active", true).order("sort_order"),
+    sb.from("cities").select("name").order("sort_order"),
+  ]);
+  TX = tx?.t || {};
+  applyTexts();
+  SECTORS = sec.data || [];
+  CITIES = cit.data || [];
+
+  const claimId = new URLSearchParams(location.search).get("claim");
+  if (claimId) {
+    const { data } = await sb.rpc("supplier_claim_info", { p_id: claimId });
+    if (data && !data.error) claim = data;
+  }
+
+  const { data: { session } } = await sb.auth.getSession();
+  user = session?.user ?? null;
+  await route();
+}
+
+async function route() {
+  show("vLoading", false);
+  renderWho();
+  if (!user) return showJoin(false);
+  const { data, error } = await sb.rpc("supplier_me");
+  if (error) { showJoin(true); return msg($("jMsg"), "error", friendly(error)); }
+  me = data;
+  if (!me?.registered) return showJoin(true);
+  showDash();
+}
+
+function renderWho() {
+  $("whoBox").innerHTML = user
+    ? `<span class="num" style="direction:ltr">${esc(user.email)}</span><button class="btn ghost sm" id="outBtn" type="button">خروج</button>`
+    : "";
+  if (user) $("outBtn").onclick = async () => { await sb.auth.signOut(); location.href = location.pathname; };
+}
+
+/* ---------------- شاشة التسجيل ---------------- */
+function showJoin(loggedIn) {
+  show("vJoin", true); show("vDash", false);
+  show("authSwitch", !loggedIn); show("acctBlock", !loggedIn);
+  if (loggedIn) { show("loginBox", false); show("joinBox", true); }
+
+  if (claim) {
+    $("claimBar").innerHTML = `<div class="claim-bar">${icon("building", 20)}<div>
+      تسجّل كمالك لـ <b>${esc(claim.name)}</b>${claim.city ? ` في ${esc(claim.city)}` : ""}.
+      بعد توثيق السجل تتحول بطاقتك إلى بطاقة موثّقة وتظهر في المقدمة.</div></div>`;
+    if (!$("jName").value) $("jName").value = claim.name || "";
+    if (!$("jPhone").value && claim.phone) $("jPhone").value = localPhone(normPhone(claim.phone));
+    if (!joinSel.sectors.length) joinSel.sectors.push(...(claim.sectors || []).slice(0, 5));
+    if (!$("jMaps").value && claim.maps_url) $("jMaps").value = claim.maps_url;
+  }
+  fillCities("jCity", claim?.city || $("jCity").value);
+  renderPick("jSectors", SECTORS.map((s) => ({ v: s.code, t: s.name })), joinSel.sectors, 5, "jSecCount", joinPreview);
+  renderPick("jCov", CITIES.map((c) => ({ v: c.name, t: c.name })), joinSel.cov, 0, null, joinPreview);
+  $("jName").oninput = joinPreview; $("jCity").onchange = joinPreview; $("jAll").onchange = joinPreview;
+  joinPreview();
+}
+
+$("authSwitch").querySelectorAll("button").forEach((b) => b.onclick = () => {
+  $("authSwitch").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+  const login = b.dataset.mode === "login";
+  show("loginBox", login); show("joinBox", !login);
+});
+
+$("jCrFile").onchange = () => {
+  const f = $("jCrFile").files[0];
+  $("jCrName").textContent = f ? f.name : "ارفع صورة السجل التجاري";
+  $("jCrDrop").classList.toggle("has", !!f);
+};
+
+$("liBtn").onclick = async () => {
+  const btn = $("liBtn"); clearMsg($("liMsg"));
+  busy(btn, true, "جارٍ الدخول");
+  const { data, error } = await sb.auth.signInWithPassword({ email: $("liEmail").value.trim(), password: $("liPass").value });
+  busy(btn, false, "دخول");
+  if (error) return msg($("liMsg"), "error", friendly(error));
+  user = data.user; await route();
+};
+
+async function uploadCr(file) {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${user.id}/cr-${Date.now()}.${ext}`;
+  const { error } = await sb.storage.from("supplier-docs").upload(path, file, { upsert: false, contentType: file.type });
+  if (error) throw error;
+  return path;
+}
+
+$("jBtn").onclick = async () => {
+  const btn = $("jBtn"); const out = $("jMsg"); clearMsg(out);
+  const name = $("jName").value.trim();
+  const phone = normPhone($("jPhone").value);
+  const file = $("jCrFile").files[0];
+  const cr = $("jCr").value.replace(/\D/g, "");
+  if (!user) {
+    const email = $("jEmail").value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) return msg(out, "error", "اكتب بريداً إلكترونياً صحيحاً.");
+    if ($("jPass").value.length < 8) return msg(out, "error", "كلمة المرور ٨ أحرف على الأقل.");
+  }
+  if (name.length < 2) return msg(out, "error", "اكتب اسم المنشأة.");
+  if (!phone) return msg(out, "error", "اكتب رقم جوال سعودي صحيح يبدأ بـ 05.");
+  if (!$("jCity").value) return msg(out, "error", "اختر المدينة.");
+  if (!joinSel.sectors.length) return msg(out, "error", "اختر نشاطاً واحداً على الأقل.");
+  if (cr.length < 10) return msg(out, "error", "اكتب رقم السجل التجاري (١٠ أرقام).");
+  if (!$("jCrExp").value) return msg(out, "error", "اكتب تاريخ انتهاء السجل.");
+  if (new Date($("jCrExp").value) < new Date(new Date().toDateString())) return msg(out, "error", "السجل منتهي — ارفع سجلاً سارياً.");
+  const fErr = fileOk(file, 5); if (fErr) return msg(out, "error", fErr === "اختر ملفاً" ? "ارفع صورة السجل التجاري." : fErr);
+  if (!isUrl($("jMaps").value.trim())) return msg(out, "error", "رابط قوقل ماب غير صحيح.");
+
+  busy(btn, true, "جارٍ التسجيل");
+  try {
+    if (!user) {
+      const { data, error } = await sb.auth.signUp({
+        email: $("jEmail").value.trim(), password: $("jPass").value,
+        options: { data: { full_name: name, phone } },
+      });
+      if (error) throw error;
+      if (!data.session) {
+        busy(btn, false, "سجّل منشأتك");
+        return msg(out, "info", "أرسلنا رمز التحقق إلى بريدك. أكّد بريدك ثم ادخل من «لدي حساب» لإكمال تسجيل منشأتك.");
+      }
+      user = data.user;
+    }
+    const path = await uploadCr(file);
+    const { data: r, error } = await sb.rpc("register_supplier", { p: {
+      name, phone, city: $("jCity").value, sectors: joinSel.sectors, coverage_cities: joinSel.cov,
+      covers_all_ksa: $("jAll").checked, maps_url: $("jMaps").value.trim() || null,
+      email: user.email, cr_number: cr, cr_expiry: $("jCrExp").value, cr_file_path: path,
+      claim_id: claim?.id ?? null,
+    } });
+    if (error) throw error;
+    if (!r?.ok) { busy(btn, false, "سجّل منشأتك"); return msg(out, "error", r?.message || "تعذّر التسجيل"); }
+    history.replaceState(null, "", location.pathname);
+    claim = null;
+    await route();
+    msg($("pMsg"), "done", r.message);
+    selectPane("plan");
+  } catch (e) {
+    msg(out, "error", friendly(e));
+    busy(btn, false, "سجّل منشأتك");
+  }
+};
+
+/* ---------------- لوحة المورد ---------------- */
+function showDash() {
+  show("vJoin", false); show("vDash", true);
+  const s = me.supplier;
+  $("dTitle").textContent = s.name;
+  renderStatus(); renderProfile(); renderProducts(); renderPlans(); renderStats(); renderCr();
+}
+
+function renderStatus() {
+  const s = me.supplier, sub = me.subscription;
+  const exp = s.cr_expiry ? new Date(s.cr_expiry) : null;
+  const expired = exp && exp < new Date(new Date().toDateString());
+  const soon = exp && !expired && (exp - new Date()) / 86400000 <= 30;
+
+  let v;
+  if (s.verification_status === "verified" && !expired) v = ["ok", "موثّق", soon ? `السجل ينتهي ${fmtDate(s.cr_expiry)} — جدّده قبلها.` : "شارة التوثيق ظاهرة على بطاقتك."];
+  else if (expired) v = ["bad", "السجل منتهي", "ارفع سجلاً سارياً من تبويب «السجل التجاري»."];
+  else if (s.verification_status === "pending") v = ["warn", "قيد المراجعة", "نراجع سجلك التجاري خلال يوم عمل."];
+  else if (s.verification_status === "rejected") v = ["bad", "لم يُقبل السجل", s.verification_note || "ارفع نسخة واضحة وسارية من السجل."];
+  else v = ["mute", "غير موثّق", "ارفع السجل التجاري لتظهر شارة التوثيق."];
+
+  let p;
+  if (me.active_plan) p = ["ok", `باقة ${me.plan?.name ?? ""}`, `ساري حتى ${fmtDate(me.active_ends_at)}`];
+  else if (sub?.status === "pending") p = ["warn", "بانتظار السداد", "أكمل السداد من تبويب «الاشتراك»."];
+  else p = ["mute", "بلا اشتراك", "اشترك لتظهر لأصحاب المحلات."];
+
+  const vis = me.visible
+    ? ["ok", "ظاهر للعملاء", "أصحاب المحلات في قطاعك يرون بطاقتك الآن."]
+    : ["mute", "غير ظاهر بعد", "تظهر بعد التوثيق وتفعيل الاشتراك."];
+  if (s.status === "suspended") vis.splice(0, 3, "bad", "موقوف", "تواصل معنا لمعرفة السبب.");
+
+  $("dStatus").innerHTML = [["التوثيق", v], ["الاشتراك", p], ["الظهور", vis]].map(([k, [c, t, d]]) =>
+    `<div class="st ${c}"><div class="k">${k}</div><div class="v"><i></i>${esc(t)}</div><div class="d">${esc(d)}</div></div>`).join("");
+}
+
+function maxSectors() { return me.plan?.max_sectors ?? 1; }
+
+function renderProfile() {
+  const s = me.supplier;
+  $("pName").value = s.name || ""; $("pBio").value = s.bio || ""; $("pMin").value = s.min_order || "";
+  $("pPhone").value = localPhone(s.phone); $("pWa").value = localPhone(s.whatsapp);
+  $("pEmail").value = s.email || ""; $("pWeb").value = s.website || ""; $("pMaps").value = s.maps_url || "";
+  $("pAll").checked = !!s.covers_all_ksa;
+  $("pBioN").textContent = $("pBio").value.length;
+  fillCities("pCity", s.city);
+  profSel.sectors.splice(0, profSel.sectors.length, ...(s.sectors || []));
+  profSel.cov.splice(0, profSel.cov.length, ...(s.coverage_cities || []));
+  renderPick("pSectors", SECTORS.map((x) => ({ v: x.code, t: x.name })), profSel.sectors, 5, "pSecCount", dashPreview);
+  renderPick("pCov", CITIES.map((c) => ({ v: c.name, t: c.name })), profSel.cov, 0, null, dashPreview);
+  $("pSecHint").textContent = maxSectors() >= 5
+    ? "باقتك تُظهرك في كل الأنشطة التي تختارها (حتى ٥)."
+    : "باقتك الحالية تُظهرك في أول نشاط فقط — الباقة المميزة تُظهرك في ٥ أنشطة.";
+  $("pLogoPrev").innerHTML = s.logo_url ? `<img src="${esc(s.logo_url)}" alt="">` : esc(String(s.name || "م").charAt(0));
+  ["pName", "pBio", "pMin"].forEach((id) => $(id).oninput = () => { $("pBioN").textContent = $("pBio").value.length; dashPreview(); });
+  $("pCity").onchange = dashPreview; $("pAll").onchange = dashPreview;
+  dashPreview();
+}
+
+$("pSave").onclick = async () => {
+  const btn = $("pSave"), out = $("pMsg"); clearMsg(out);
+  const phone = normPhone($("pPhone").value);
+  const wa = $("pWa").value.trim() ? normPhone($("pWa").value) : phone;
+  if ($("pName").value.trim().length < 2) return msg(out, "error", "اكتب اسم المنشأة.");
+  if (!phone) return msg(out, "error", "رقم الجوال غير صحيح.");
+  if (!wa) return msg(out, "error", "رقم الواتساب غير صحيح.");
+  if (!profSel.sectors.length) return msg(out, "error", "اختر نشاطاً واحداً على الأقل.");
+  if (!isUrl($("pWeb").value.trim()) || !isUrl($("pMaps").value.trim())) return msg(out, "error", "تحقق من صيغة الروابط (تبدأ بـ https://).");
+  busy(btn, true);
+  const { error } = await sb.from("suppliers").update({
+    name: $("pName").value.trim(), bio: $("pBio").value.trim() || null, min_order: $("pMin").value.trim() || null,
+    sectors: profSel.sectors, city: $("pCity").value || null, coverage_cities: profSel.cov, covers_all_ksa: $("pAll").checked,
+    phone, whatsapp: wa, email: $("pEmail").value.trim() || null,
+    website: $("pWeb").value.trim() || null, maps_url: $("pMaps").value.trim() || null,
+  }).eq("id", me.supplier.id);
+  busy(btn, false, "احفظ التعديلات");
+  if (error) return msg(out, "error", friendly(error));
+  await reloadMe();
+  msg(out, "done", "حُفظت التعديلات.");
+};
+
+$("pLogo").onchange = async () => {
+  const f = $("pLogo").files[0]; if (!f) return;
+  const err = fileOk(f, 2); if (err) return msg($("pMsg"), "error", err);
+  msg($("pMsg"), "info", "جارٍ رفع الشعار…");
+  try {
+    const ext = (f.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const path = `${user.id}/logo-${Date.now()}.${ext}`;
+    const up = await sb.storage.from("supplier-logos").upload(path, f, { contentType: f.type });
+    if (up.error) throw up.error;
+    const url = sb.storage.from("supplier-logos").getPublicUrl(path).data.publicUrl;
+    const { error } = await sb.from("suppliers").update({ logo_url: url }).eq("id", me.supplier.id);
+    if (error) throw error;
+    await reloadMe();
+    msg($("pMsg"), "done", "تم تحديث الشعار.");
+  } catch (e) { msg($("pMsg"), "error", friendly(e)); }
+  $("pLogo").value = "";
+};
+
+/* المنتجات */
+function renderProducts() {
+  const list = me.products || [];
+  const max = me.plan?.max_products ?? 10;
+  $("prodCount").textContent = `${list.length} من ${max}`;
+  $("prodList").innerHTML = list.length ? list.map((p) => `
+    <div class="prod">
+      <div style="min-width:0">
+        <div class="t">${esc(p.name)}</div>
+        ${p.description ? `<div class="d">${esc(p.description)}</div>` : ""}
+        ${p.price_text ? `<div class="p">${esc(p.price_text)}</div>` : ""}
+      </div>
+      <div class="acts">
+        <button class="btn ghost sm" type="button" data-edit="${esc(p.id)}">تعديل</button>
+        <button class="btn ghost sm" type="button" data-del="${esc(p.id)}">حذف</button>
+      </div>
+    </div>`).join("") : `<div class="hint" style="margin:0">لم تضف منتجات بعد. أصحاب المحلات يتواصلون أكثر مع الموردين الذين يعرضون ما يوردونه.</div>`;
+  $("prodList").querySelectorAll("[data-edit]").forEach((b) => b.onclick = () => {
+    const p = list.find((x) => x.id === b.dataset.edit); editingProduct = p;
+    $("prName").value = p.name; $("prDesc").value = p.description || ""; $("prPrice").value = p.price_text || "";
+    $("prFormTitle").textContent = "عدّل المنتج"; $("prSave").textContent = "احفظ"; show("prCancel", true);
+    $("prName").focus();
+  });
+  $("prodList").querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => {
+    if (!confirm("حذف هذا المنتج؟")) return;
+    const { error } = await sb.from("supplier_products").delete().eq("id", b.dataset.del);
+    if (error) return msg($("prMsg"), "error", friendly(error));
+    await reloadMe(); msg($("prMsg"), "done", "حُذف المنتج.");
+  });
+}
+function resetProductForm() {
+  editingProduct = null; $("prName").value = ""; $("prDesc").value = ""; $("prPrice").value = "";
+  $("prFormTitle").textContent = "أضف منتجاً أو خدمة"; $("prSave").textContent = "أضف"; show("prCancel", false);
+}
+$("prCancel").onclick = resetProductForm;
+$("prSave").onclick = async () => {
+  const btn = $("prSave"), out = $("prMsg"); clearMsg(out);
+  const row = { name: $("prName").value.trim(), description: $("prDesc").value.trim() || null, price_text: $("prPrice").value.trim() || null };
+  if (row.name.length < 2) return msg(out, "error", "اكتب اسم المنتج.");
+  busy(btn, true);
+  const q = editingProduct
+    ? sb.from("supplier_products").update(row).eq("id", editingProduct.id)
+    : sb.from("supplier_products").insert({ ...row, supplier_id: me.supplier.id, sort_order: (me.products || []).length + 1 });
+  const { error } = await q;
+  busy(btn, false, editingProduct ? "احفظ" : "أضف");
+  if (error) return msg(out, "error", friendly(error));
+  const was = !!editingProduct;
+  resetProductForm(); await reloadMe();
+  msg(out, "done", was ? "حُفظ المنتج." : "أُضيف المنتج.");
+};
+
+/* الاشتراك */
+function renderPlans() {
+  const plans = me.plans || [];
+  const sub = me.subscription;
+  $("plansBox").innerHTML = plans.map((p) => {
+    const cur = me.active_plan === p.code;
+    const feats = [
+      p.max_sectors > 1 ? `الظهور في ${p.max_sectors} أنشطة` : "الظهور في نشاط واحد",
+      `حتى ${p.max_products} منتجاً وخدمة`,
+      p.featured ? "بطاقتك في مقدمة القائمة مع شارة «مميز»" : "بطاقتك ضمن قائمة قطاعك",
+      p.full_stats ? "إحصائيات كاملة: مشاهدات، واتساب، اتصال، الموقع" : "عدد مشاهدات بطاقتك",
+    ];
+    return `<div class="plan ${p.featured ? "featured" : ""}">
+      ${cur ? `<div class="cur">باقتك الحالية — حتى ${fmtDate(me.active_ends_at)}</div>` : ""}
+      <h4>${esc(p.name)}</h4>
+      <div class="price"><b class="num">${p.price_sar}</b> ريال شهرياً</div>
+      <ul>${feats.map((f) => `<li>${icon("check-circle", 16)}<span>${esc(f)}</span></li>`).join("")}</ul>
+      <button class="btn block ${p.featured ? "" : "ghost"}" type="button" data-plan="${esc(p.code)}">${cur ? "جدّد الاشتراك" : `اشترك في ${esc(p.name)}`}</button>
+    </div>`;
+  }).join("");
+  $("plansBox").querySelectorAll("[data-plan]").forEach((b) => b.onclick = () => subscribe(b.dataset.plan, b));
+
+  if (sub?.status === "pending") showPay(sub.payment_link, sub.amount_sar);
+  else $("payBox").innerHTML = "";
+}
+
+function showPay(link, amount) {
+  $("payBox").innerHTML = link
+    ? `<div class="pay-box"><b>رابط السداد جاهز</b>
+        <div class="hint" style="margin:6px 0 0">المبلغ ${esc(amount)} ريال. بعد السداد يتفعّل اشتراكك تلقائياً خلال دقيقة.</div>
+        <a class="btn block" href="${esc(link)}" target="_blank" rel="noopener">ادفع الآن</a></div>`
+    : `<div class="pay-box"><b>سجّلنا طلبك</b>
+        <div class="hint" style="margin:6px 0 0">سنرسل لك رابط السداد خلال وقت قصير — يظهر هنا تلقائياً.</div></div>`;
+  clearInterval(payTimer);
+  payTimer = setInterval(async () => {
+    const was = me.active_plan, hadLink = !!me.subscription?.payment_link;
+    await reloadMe(true);
+    if (me.active_plan && me.active_plan !== was) {
+      clearInterval(payTimer); showDash(); selectPane("plan");
+      $("payBox").innerHTML = `<div class="msg show done">${icon("check-circle", 17)}<span>تم تفعيل اشتراكك.</span></div>`;
+    } else if (!hadLink && me.subscription?.payment_link) {
+      showPay(me.subscription.payment_link, me.subscription.amount_sar);
+    }
+  }, 20000);
+}
+
+async function subscribe(code, btn) {
+  busy(btn, true, "جارٍ التجهيز");
+  const { data, error } = await sb.rpc("request_supplier_subscription", { p_plan_code: code });
+  busy(btn, false);
+  if (error || !data?.ok) return ($("payBox").innerHTML = `<div class="msg show error">${icon("alert-triangle", 17)}<span>${esc(error ? friendly(error) : data?.message)}</span></div>`);
+  await reloadMe(true);
+  showPay(data.payment_link, data.amount_sar);
+  $("payBox").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+/* الإحصائيات */
+function renderStats() {
+  const st = me.stats || {};
+  const c = st.clicks_30d;
+  const items = [["مشاهدة لبطاقتك", st.views_30d ?? 0]];
+  if (c) items.push(["ضغطة واتساب", c.whatsapp ?? 0], ["اتصال", c.call ?? 0], ["فتح الموقع", c.map ?? 0], ["زيارة الموقع الإلكتروني", c.website ?? 0]);
+  $("statsBox").innerHTML = items.map(([l, n]) => `<div class="kpi"><b>${n}</b><span>${l}</span></div>`).join("");
+  $("statsNote").innerHTML = c ? "" : `<div class="upsell">الباقة المميزة تُظهر لك كم صاحب محل ضغط واتساب أو اتصل بك أو فتح موقعك.</div>`;
+}
+
+/* السجل التجاري */
+function renderCr() {
+  const s = me.supplier;
+  $("cNum").value = s.cr_number || ""; $("cExp").value = s.cr_expiry || "";
+  const st = { verified: ["ok", "موثّق"], pending: ["warn", "قيد المراجعة"], rejected: ["bad", "لم يُقبل"], none: ["mute", "لم يُرفع"] }[s.verification_status] || ["mute", "—"];
+  $("crState").innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div><span class="badge ${st[0]}">${st[1]}</span>
+        ${s.cr_expiry ? `<span class="hint" style="margin-inline-start:8px">ينتهي ${fmtDate(s.cr_expiry)}</span>` : ""}</div>
+      ${s.cr_file_path ? `<button class="btn ghost sm" type="button" id="crView">عرض السجل المرفوع</button>` : ""}
+    </div>
+    ${s.verification_status === "rejected" && s.verification_note ? `<div class="msg show error">${icon("alert-triangle", 17)}<span>${esc(s.verification_note)}</span></div>` : ""}`;
+  if ($("crView")) $("crView").onclick = async () => {
+    const { data, error } = await sb.storage.from("supplier-docs").createSignedUrl(s.cr_file_path, 120);
+    if (error) return msg($("cMsg"), "error", friendly(error));
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+}
+$("cFile").onchange = () => {
+  const f = $("cFile").files[0];
+  $("cName").textContent = f ? f.name : "ارفع نسخة جديدة من السجل";
+  $("cDrop").classList.toggle("has", !!f);
+};
+$("cSave").onclick = async () => {
+  const btn = $("cSave"), out = $("cMsg"); clearMsg(out);
+  const num = $("cNum").value.replace(/\D/g, ""), exp = $("cExp").value, f = $("cFile").files[0];
+  if (num.length < 10) return msg(out, "error", "اكتب رقم السجل (١٠ أرقام).");
+  if (!exp) return msg(out, "error", "اكتب تاريخ الانتهاء.");
+  if (new Date(exp) < new Date(new Date().toDateString())) return msg(out, "error", "التاريخ منتهٍ — ارفع سجلاً سارياً.");
+  if (!f && !me.supplier.cr_file_path) return msg(out, "error", "ارفع صورة السجل.");
+  if (f) { const err = fileOk(f, 5); if (err) return msg(out, "error", err); }
+  busy(btn, true, "جارٍ الإرسال");
+  try {
+    const path = f ? await uploadCr(f) : me.supplier.cr_file_path;
+    const { error } = await sb.from("suppliers").update({ cr_number: num, cr_expiry: exp, cr_file_path: path }).eq("id", me.supplier.id);
+    if (error) throw error;
+    $("cFile").value = ""; $("cDrop").classList.remove("has"); $("cName").textContent = "ارفع نسخة جديدة من السجل";
+    await reloadMe();
+    msg(out, "done", "أُرسل السجل للمراجعة.");
+  } catch (e) { msg(out, "error", friendly(e)); }
+  busy(btn, false, "أرسل للمراجعة");
+};
+
+/* ---------------- تنقل اللوحة ---------------- */
+function selectPane(name) {
+  $("dTabs").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.pane === name));
+  document.querySelectorAll(".dpane").forEach((p) => p.classList.toggle("on", p.id === `pane-${name}`));
+}
+$("dTabs").querySelectorAll("button").forEach((b) => b.onclick = () => selectPane(b.dataset.pane));
+
+async function reloadMe(quiet) {
+  const { data } = await sb.rpc("supplier_me");
+  if (!data?.registered) return;
+  me = data;
+  if (quiet) { renderStatus(); return; }
+  const pane = $("dTabs").querySelector("button.on")?.dataset.pane || "profile";
+  showDash(); selectPane(pane);
+}
+
+sb.auth.onAuthStateChange((ev, session) => {
+  if (ev === "SIGNED_OUT") { user = null; me = null; }
+  else if (session?.user) user = session.user;
+});
+
+boot().catch(() => {
+  show("vLoading", false); show("vJoin", true);
+  msg($("jMsg"), "error", "تعذّر تحميل الصفحة — حدّثها بعد قليل.");
+});
+</script>
+</body>
+</html>
