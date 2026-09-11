@@ -122,7 +122,7 @@ function initMap() {
   if (map) return;
   if (!$("map")) return;
   map = L.map("map", { scrollWheelZoom: false })
-    .setView(userLoc ? [userLoc.lat, userLoc.lng] : [21.5433, 39.1728], 13);
+    .setView(userLoc ? [userLoc.lat, userLoc.lng] : [24.7136, 46.6753], 13);
   baseLayer().addTo(map);
   layer = L.layerGroup().addTo(map);
 }
@@ -131,7 +131,7 @@ function initLocMap() {
   if (locMap) return;
   if (!$("locMap")) return;
   locMap = L.map("locMap", { scrollWheelZoom: false })
-    .setView(userLoc ? [userLoc.lat, userLoc.lng] : [21.5433, 39.1728], userLoc ? 14 : 12);
+    .setView(userLoc ? [userLoc.lat, userLoc.lng] : [24.7136, 46.6753], userLoc ? 14 : 12);
   baseLayer().addTo(locMap);
   locLayer = L.layerGroup().addTo(locMap);
   locMap.on("click", (e) => setPick(e.latlng.lat, e.latlng.lng, false));
@@ -233,6 +233,7 @@ $("bizSelect").onchange = async (e) => {
     await loadLastWatch();
   }
   refreshGates();
+  await loadHistory();
 };
 
 async function renderOverview() {
@@ -303,7 +304,7 @@ $("searchBtn").onclick = async () => {
   if (q.length < 2) return msg($("searchMsg"), "error", "اكتب حرفين على الأقل.");
   const btn = $("searchBtn");
   busy(btn, true, "بحث");
-  msg($("searchMsg"), "info", "نبحث في قوقل ماب…");
+  msg($("searchMsg"), "info", "نبحث عن المحل…");
   $("searchResults").innerHTML = "";
 
   try {
@@ -312,7 +313,7 @@ $("searchBtn").onclick = async () => {
     });
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
-    if (!data.results.length) return msg($("searchMsg"), "error", "لا نتائج. جرّب الاسم كما هو مكتوب في قوقل.");
+    if (!data.results.length) return msg($("searchMsg"), "error", "لا نتائج. اكتب الاسم كما هو على لوحة المحل، أو أضف اسم المدينة.");
 
     clearMsg($("searchMsg"));
     $("searchResults").innerHTML = data.results.map((r, i) => `
@@ -520,13 +521,23 @@ $("scanBtn").onclick = async () => {
 $("auditBtn").onclick = async () => {
   const btn = $("auditBtn");
   busy(btn, true, "جارٍ الفحص");
-  msg($("auditMsg"), "info", "نقرأ ملفك من قوقل…");
+  msg($("auditMsg"), "info", "نحلّل ملفك التجاري…");
 
   try {
     const { data, error } = await sb.functions.invoke("audit-profile", { body: { business_id: currentBiz } });
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
 
+    renderAudit(data);
+    savedNote("audit", null);
+    clearMsg($("auditMsg"));
+    refreshHistory("audit");
+  } catch (e) {
+    msg($("auditMsg"), "error", "تعذّر الفحص: " + (e.message || e));
+  } finally { busy(btn, false, btnLabel("audit")); }
+};
+
+function renderAudit(data) {
     $("auditRing").innerHTML = orbitRing(data.score, 100, scoreColor(data.score), 108, "اكتمال");
     const failed = data.checks.filter((c) => !c.pass).length;
     $("auditVerdict").textContent =
@@ -558,11 +569,7 @@ $("auditBtn").onclick = async () => {
     } else $("auditCompBox").className = "hidden";
 
     $("auditResult").className = "";
-    clearMsg($("auditMsg"));
-  } catch (e) {
-    msg($("auditMsg"), "error", "تعذّر الفحص: " + (e.message || e));
-  } finally { busy(btn, false, "افحص ملفي"); }
-};
+}
 
 /* ---------------- ملصق طلب التقييم ---------------- */
 const SIZES = {
@@ -619,7 +626,7 @@ function renderSticker() {
   const html = stickerHtml();
 
   if (!html) {
-    box.innerHTML = `<div class="hint">لا يتوفر معرّف قوقل لهذا المحل — أعد إضافته من شاشة «نظرة عامة» عبر البحث ليُحفظ معرّفه.</div>`;
+    box.innerHTML = `<div class="hint">لا يتوفر رابط التقييم لهذا المحل — أعد إضافته من شاشة «نظرة عامة» عبر البحث ليُحفظ رابطه.</div>`;
     return;
   }
 
@@ -636,7 +643,7 @@ function renderSticker() {
       <button class="btn ghost" id="copyLink">${icon("external-link", 17)}انسخ رابط التقييم</button>
     </div>
     <div class="hint">اطبعه وضعه على طاولة الكاشير، أو أرفق نسخة صغيرة مع كل طلب — بحسب طبيعة نشاطك.</div>
-    <div class="policy-note">${icon("alert-triangle", 15)}<span>اطلب الرأي بلا مقابل. تقديم خصم أو هدية مقابل التقييم مخالف لسياسات قوقل وقد يُعرّض ملفك للتعليق.</span></div>`;
+    <div class="policy-note">${icon("alert-triangle", 15)}<span>اطلب الرأي بلا مقابل. تقديم خصم أو هدية مقابل التقييم مخالف لسياسات منصات التقييم وقد يُعرّض ملفك للتعليق.</span></div>`;
 
   box.querySelectorAll("[data-size]").forEach((b) =>
     b.onclick = () => { stickerSize = b.dataset.size; renderSticker(); });
@@ -679,7 +686,15 @@ function bindCopy(root, store) {
   });
 }
 
+const STEP_ALIAS = {
+  review_target: "reviews", review: "reviews", ask_text: "reviews",
+  description_text: "description", photo_plan: "photos", keyword_ideas: "keywords",
+};
+let lastPlan = null;
+
 function renderPlan(d) {
+  d = { ...d, steps: (d.steps || []).map((s) => ({ ...s, content_key: STEP_ALIAS[s.content_key] || s.content_key })) };
+  lastPlan = d;
   const store = {};
 
   $("planSummary").innerHTML = d.summary
@@ -819,10 +834,12 @@ $("planBtn").onclick = async () => {
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
     renderPlan(data);
+    savedNote("plan", data.existing ? data.created_at : null);
     clearMsg($("planMsg"));
+    refreshHistory("plan");
   } catch (e) {
     msg($("planMsg"), "error", "تعذّر إنشاء الخطة: " + (e.message || e));
-  } finally { busy(btn, false, "أنشئ خطتي"); }
+  } finally { busy(btn, false, btnLabel("plan")); }
 };
 
 /* ---------------- تحليل المراجعات ---------------- */
@@ -838,6 +855,16 @@ $("revBtn").onclick = async () => {
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
 
+    renderReviews(data);
+    savedNote("rev", null);
+    clearMsg($("revMsg"));
+    refreshHistory("rev");
+  } catch (e) {
+    msg($("revMsg"), "error", "تعذّر التحليل: " + (e.message || e));
+  } finally { busy(btn, false, btnLabel("rev")); }
+};
+
+function renderReviews(data) {
     $("rvTotal").textContent = data.total_reviews;
     $("rvPos").textContent = data.positive;
     $("rvNeg").textContent = data.negative;
@@ -878,11 +905,7 @@ $("revBtn").onclick = async () => {
     } else $("negBox").className = "hidden";
 
     $("revResult").className = "";
-    clearMsg($("revMsg"));
-  } catch (e) {
-    msg($("revMsg"), "error", "تعذّر التحليل: " + (e.message || e));
-  } finally { busy(btn, false, "حلّل المراجعات"); }
-};
+}
 
 /* ---------------- مراقبة المنافسين ---------------- */
 function deltaTag(d) {
@@ -1069,6 +1092,16 @@ $("compBtn").onclick = async () => {
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
 
+    renderComp(data);
+    savedNote("comp", null);
+    clearMsg($("compMsg"));
+    refreshHistory("comp");
+  } catch (e) {
+    msg($("compMsg"), "error", "تعذّر التحليل: " + (e.message || e));
+  } finally { busy(btn, false, btnLabel("comp")); }
+};
+
+function renderComp(data) {
     renderDuel(data.top_rival, data.my_stats || {});
     $("positioning").textContent = data.positioning || "—";
 
@@ -1114,11 +1147,7 @@ $("compBtn").onclick = async () => {
     fillPoints("thrBox", "thrList", data.threats, "bad");
 
     $("compResult").className = "";
-    clearMsg($("compMsg"));
-  } catch (e) {
-    msg($("compMsg"), "error", "تعذّر التحليل: " + (e.message || e));
-  } finally { busy(btn, false, "حلّل المنافسين بعمق"); }
-};
+}
 
 function fillPoints(boxId, listId, arr, cls) {
   if (!(arr || []).length) { $(boxId).className = "hidden"; return; }
@@ -1132,7 +1161,7 @@ $("buySearchBtn").onclick = async () => {
   if (q.length < 2) return msg($("buySearchMsg"), "error", "اكتب اسم المحل.");
   const btn = $("buySearchBtn");
   busy(btn, true, "بحث");
-  msg($("buySearchMsg"), "info", "نبحث في قوقل ماب…");
+  msg($("buySearchMsg"), "info", "نبحث عن المحل…");
   $("buyResults").innerHTML = "";
 
   try {
@@ -1393,7 +1422,7 @@ $("coordBtn").onclick = () => {
   }
 
   if (lat == null || isNaN(lat) || isNaN(lng)) {
-    return msg($("geoMsg"), "error", "لم نتعرّف على الإحداثيات. الصيغة المتوقعة: 17.9654, 42.8341");
+    return msg($("geoMsg"), "error", "لم نتعرّف على الإحداثيات. الصيغة المتوقعة: 24.7136, 46.6753");
   }
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
     return msg($("geoMsg"), "error", "الإحداثيات خارج النطاق الصحيح.");
@@ -1565,6 +1594,262 @@ $("locBtn").onclick = async () => {
     msg($("locMsg"), "error", "تعذّر التحليل: " + (e.message || e));
   } finally { busy(btn, false, "حلّل الموقع"); }
 };
+
+/* ---------------- النتائج المحفوظة (خطة · تدقيق · مراجعات · منافسون) ---------------- */
+const fmtDay = (iso) => iso
+  ? new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso))
+  : "";
+const fmtDayTime = (iso) => iso
+  ? new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso))
+  : "";
+
+const HIST = {
+  plan: {
+    table: "growth_plans", cols: "id, created_at, visibility_pct", btn: "planBtn", result: "planResult", msgEl: "planMsg",
+    first: "أنشئ خطتي", again: "أنشئ خطة جديدة", view: "اعرض خطتي السابقة",
+    tag: (r) => r.visibility_pct != null ? `ظهور ${r.visibility_pct}%` : "",
+    show: async (row) => renderPlan(row),
+  },
+  audit: {
+    table: "profile_audits", cols: "id, created_at, score", btn: "auditBtn", result: "auditResult", msgEl: "auditMsg",
+    first: "افحص ملفي", again: "افحص ملفي من جديد", view: "اعرض آخر فحص",
+    tag: (r) => r.score != null ? `${r.score}/100` : "",
+    show: async (row) => renderAudit({
+      score: row.score ?? 0, checks: row.checks || [], competitors: row.competitors || [],
+      my_stats: {
+        name: currentBizData?.name ?? "محلك",
+        rating: currentBizData?.google_rating ?? null,
+        reviews: currentBizData?.google_reviews_count ?? 0,
+      },
+    }),
+  },
+  rev: {
+    table: "review_analyses", cols: "id, created_at, total_reviews, avg_rating", btn: "revBtn", result: "revResult", msgEl: "revMsg",
+    first: "حلّل المراجعات", again: "حلّل المراجعات من جديد", view: "اعرض آخر تحليل",
+    tag: (r) => r.total_reviews != null ? `${r.total_reviews} مراجعة` : "",
+    show: async (row) => {
+      const [neg, noRep] = await Promise.all([
+        sb.from("reviews").select("author, rating, text, owner_replied")
+          .eq("business_id", row.business_id).lte("rating", 2)
+          .order("review_date", { ascending: false }).limit(5),
+        sb.from("reviews").select("id", { count: "exact", head: true })
+          .eq("business_id", row.business_id).lte("rating", 2).eq("owner_replied", false),
+      ]);
+      renderReviews({
+        total_reviews: row.total_reviews ?? 0,
+        positive: row.positive_count ?? 0,
+        negative: row.negative_count ?? 0,
+        negative_without_reply: noRep.count ?? "—",
+        summary: row.summary,
+        strengths: row.strengths || [], weaknesses: row.weaknesses || [],
+        recommendations: row.recommendations || [],
+        negative_samples: (neg.data || []).map((r) => ({ author: r.author, rating: r.rating, text: r.text, replied: r.owner_replied })),
+      });
+    },
+  },
+  comp: {
+    table: "competitor_analyses", cols: "id, created_at", btn: "compBtn", result: "compResult", msgEl: "compMsg",
+    first: "حلّل المنافسين بعمق", again: "حلّل المنافسين من جديد", view: "اعرض آخر تحليل",
+    tag: () => "",
+    show: async (row) => {
+      const x = row.extra || {};
+      renderComp({
+        positioning: row.positioning, battle_plan: row.battle_plan || [], competitors: row.competitors || [],
+        top_rival: x.top_rival ?? null, my_stats: x.my_stats ?? {},
+        opportunities: x.opportunities ?? [], threats: x.threats ?? [],
+      });
+    },
+  },
+};
+Object.values(HIST).forEach((h) => { h.rows = []; });
+
+const btnLabel = (k) => (HIST[k].rows.length ? HIST[k].again : HIST[k].first);
+
+function histInit() {
+  Object.entries(HIST).forEach(([k, h]) => {
+    const btn = $(h.btn);
+    if (!btn || $(`${k}Hist`)) return;
+    btn.insertAdjacentHTML("afterend", `<div id="${k}Hist" class="hist hidden"></div>`);
+    $(h.result).insertAdjacentHTML("afterbegin", `<div id="${k}Saved" class="saved-note hidden"></div>`);
+  });
+  $("planResult").insertAdjacentHTML("afterbegin", `
+    <div class="plan-tools">
+      <button class="btn ghost" id="planPdf">${icon("file-text", 16)}تنزيل PDF</button>
+    </div>`);
+  $("planPdf").onclick = printPlan;
+}
+
+function renderHistBar(k) {
+  const h = HIST[k];
+  const box = $(`${k}Hist`);
+  const btn = $(h.btn);
+  if (btn && !btn.disabled) btn.textContent = btnLabel(k);
+  if (!box) return;
+  if (!h.rows.length) { box.className = "hist hidden"; box.innerHTML = ""; return; }
+  const r0 = h.rows[0];
+  box.className = "hist";
+  box.innerHTML = `
+    <button class="btn ghost block" data-open="${esc(r0.id)}">${icon("clock", 16)}${h.view}
+      <span class="hist-date">${fmtDay(r0.created_at)}</span></button>
+    ${h.rows.length > 1 ? `
+      <select class="select hist-sel" aria-label="النتائج السابقة">
+        <option value="">النتائج السابقة (${h.rows.length})</option>
+        ${h.rows.map((r) => `<option value="${esc(r.id)}">${fmtDayTime(r.created_at)}${h.tag(r) ? ` · ${esc(h.tag(r))}` : ""}</option>`).join("")}
+      </select>` : ""}`;
+  box.querySelector("[data-open]").onclick = (e) => openHist(k, r0.id, e.currentTarget);
+  const sel = box.querySelector(".hist-sel");
+  if (sel) sel.onchange = () => { if (sel.value) openHist(k, sel.value, null); sel.value = ""; };
+}
+
+async function refreshHistory(k) {
+  const h = HIST[k];
+  if (!currentBiz) { h.rows = []; renderHistBar(k); return; }
+  const biz = currentBiz;
+  const { data } = await sb.from(h.table).select(h.cols)
+    .eq("business_id", biz).order("created_at", { ascending: false }).limit(30);
+  if (biz !== currentBiz) return;
+  h.rows = data || [];
+  renderHistBar(k);
+}
+
+async function loadHistory() {
+  await Promise.all(Object.keys(HIST).map((k) => refreshHistory(k).catch(() => {})));
+}
+
+function savedNote(k, iso) {
+  const el = $(`${k}Saved`);
+  if (!el) return;
+  if (!iso) { el.className = "saved-note hidden"; el.innerHTML = ""; return; }
+  el.className = "saved-note";
+  el.innerHTML = `${icon("clock", 15)}<span>نتيجة محفوظة من ${fmtDayTime(iso)}</span>`;
+}
+
+async function openHist(k, id, btn) {
+  const h = HIST[k];
+  if (btn) busy(btn, true, "جارٍ الفتح");
+  try {
+    const { data, error } = await sb.from(h.table).select("*").eq("id", id).single();
+    if (error) throw error;
+    await h.show(data);
+    savedNote(k, data.created_at);
+    clearMsg($(h.msgEl));
+    $(h.result).scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (e) {
+    msg($(h.msgEl), "error", "تعذّر فتح النتيجة: " + (e.message || e));
+  } finally {
+    if (btn) { busy(btn, false, ""); renderHistBar(k); }
+  }
+}
+
+/* ---------------- تنزيل الخطة PDF (طباعة المتصفح) ---------------- */
+function planPrintHtml(d) {
+  const b = currentBizData || {};
+  const li = (arr) => (arr || []).filter(Boolean).map((x) => `<li>${esc(x)}</li>`).join("");
+  const t = d.review_target || {};
+  const block = (key) => {
+    if ((key === "primary_category" || key === "extra_categories") && (d.primary_category || (d.extra_categories || []).length)) {
+      return `<div class="pp-box"><b>التصنيف الرئيسي:</b> ${esc(d.primary_category || "—")}
+        ${(d.extra_categories || []).length ? `<br><b>التصنيفات الفرعية:</b> ${esc(d.extra_categories.join("، "))}` : ""}</div>`;
+    }
+    if (key === "description" && d.description_text) return `<div class="pp-box pp-copy">${esc(d.description_text)}</div>`;
+    if (key === "services" && (d.services || []).length) return `<div class="pp-box"><ul>${li(d.services)}</ul></div>`;
+    if (key === "photos" && d.photo_plan?.breakdown?.length) {
+      return `<div class="pp-box"><ul>${d.photo_plan.breakdown.map((p) =>
+        `<li><b>${esc(p.count)} × ${esc(p.type)}</b>${p.tip ? ` — ${esc(p.tip)}` : ""}</li>`).join("")}</ul></div>`;
+    }
+    if (key === "reviews") {
+      return `<div class="pp-box">
+        ${t.target ? `<b>الهدف:</b> ${esc(t.target)} مراجعة خلال ${esc(t.weeks ?? "—")} أسبوعاً (${esc(t.per_week ?? "—")} أسبوعياً)<br>` : ""}
+        ${t.how ? `${esc(t.how)}<br>` : ""}
+        ${t.ask_text ? `<div class="pp-copy" style="margin-top:6px">${esc(t.ask_text)}</div>` : ""}
+        <div style="margin-top:6px">ملصق التقييم في آخر صفحة.</div></div>`;
+    }
+    if (key === "posts" && (d.posts || []).length) {
+      return d.posts.map((p, i) => `<div class="pp-box"><b>${esc(p.title || `المنشور ${i + 1}`)}</b><div class="pp-copy">${esc(p.text)}</div></div>`).join("");
+    }
+    if (key === "keywords" && (d.keyword_ideas || []).length) {
+      return `<div class="pp-box"><ul>${d.keyword_ideas.map((k) => `<li><b>${esc(k.term)}</b>${k.why ? ` — ${esc(k.why)}` : ""}</li>`).join("")}</ul></div>`;
+    }
+    return "";
+  };
+  const sticker = stickerHtml();
+  return `<div class="pp">
+    <div class="pp-head">
+      <div class="pp-brand">${logoMark(34)}<span>فلك ٣٦٠</span></div>
+      <div class="pp-meta">${fmtDay(d.created_at || new Date().toISOString())}</div>
+    </div>
+    <h1>خطة رفع ظهور ${esc(b.name || "متجرك")}</h1>
+    ${b.address ? `<div class="pp-sub">${esc(b.address)}</div>` : ""}
+    ${d.visibility_pct != null || d.realistic_range_m ? `<div class="pp-stats">
+      ${d.visibility_pct != null ? `<div><b>${esc(d.visibility_pct)}%</b><span>ظهورك الحالي</span></div>` : ""}
+      ${d.realistic_range_m ? `<div><b>${esc(d.realistic_range_m)} م</b><span>نطاقك الواقعي</span></div>` : ""}
+      <div><b>${(d.steps || []).length}</b><span>خطوات</span></div></div>` : ""}
+    ${d.summary ? `<h2>الخلاصة</h2><p>${esc(d.summary)}</p>` : ""}
+    ${(d.blockers || []).length ? `<h2>ما يعيق ظهورك</h2><ol>${d.blockers.map((x) =>
+      `<li><b>${esc(x.issue)}</b>${x.why ? ` — ${esc(x.why)}` : ""}</li>`).join("")}</ol>` : ""}
+    <h2>الخطوات بالترتيب</h2>
+    ${(d.steps || []).map((s) => `<div class="pp-step">
+      <div class="pp-step-h"><span class="pp-n">${esc(s.order)}</span><b>${esc(s.title)}</b>
+        <small>أثر ${esc(s.impact || "—")}${s.timeframe ? ` · ${esc(s.timeframe)}` : ""}</small></div>
+      ${s.detail ? `<p>${esc(s.detail)}</p>` : ""}
+      ${s.where ? `<div class="pp-where">أين: ${esc(s.where)}</div>` : ""}
+      ${block(s.content_key)}
+    </div>`).join("")}
+    <div class="pp-foot">falak360.net · التحليلات إرشادية ولا تضمن ترتيباً معيناً</div>
+    ${sticker ? `<div class="pp-page">${sticker}</div>` : ""}
+  </div>`;
+}
+
+function printPlan() {
+  if (!lastPlan) return;
+  $("printArea").innerHTML = planPrintHtml(lastPlan);
+  document.body.classList.add("printing-plan");
+  const done = () => { document.body.classList.remove("printing-plan"); window.removeEventListener("afterprint", done); };
+  window.addEventListener("afterprint", done);
+  setTimeout(() => window.print(), 50);
+}
+
+const HIST_CSS = `
+.hist{display:grid;gap:8px;margin-top:10px}
+.hist .btn{justify-content:center}
+.hist-date{font-size:12px;color:var(--ink-3);font-weight:400;margin-inline-start:6px}
+.hist-sel{height:40px;font-size:13.5px}
+.saved-note{display:flex;align-items:center;gap:8px;padding:9px 12px;margin-bottom:12px;border-radius:var(--r);
+  background:var(--info-tint,#eef3fb);color:var(--info,#2f5d9b);font-size:13px}
+.saved-note svg{width:15px;height:15px;flex:0 0 auto}
+.plan-tools{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}
+#printArea .pp{display:none}
+@media print{
+  body.printing-plan #printArea{position:static!important;display:block!important;inset:auto;background:#fff}
+  body.printing-plan #printArea .pp{display:block}
+  @page{size:A4;margin:14mm}
+  .pp{font-family:inherit;color:#101820;direction:rtl;font-size:12.5px;line-height:1.75;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pp-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #263A63;padding-bottom:8px;margin-bottom:14px}
+  .pp-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:#263A63}
+  .pp-meta{color:#666;font-size:12px}
+  .pp h1{font-size:20px;margin:0 0 4px;color:#101820}
+  .pp-sub{color:#666;font-size:12px;margin-bottom:10px}
+  .pp h2{font-size:15px;color:#263A63;margin:16px 0 6px;border-bottom:1px solid #e3e6ec;padding-bottom:4px}
+  .pp p{margin:4px 0}
+  .pp ol,.pp ul{margin:4px 0;padding-inline-start:20px}
+  .pp-stats{display:flex;gap:10px;margin:10px 0}
+  .pp-stats div{flex:1;border:1px solid #e3e6ec;border-radius:8px;padding:8px;text-align:center}
+  .pp-stats b{display:block;font-size:17px;color:#263A63}
+  .pp-stats span{font-size:11px;color:#666}
+  .pp-step{border:1px solid #e3e6ec;border-radius:8px;padding:10px 12px;margin:8px 0;break-inside:avoid}
+  .pp-step-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pp-step-h small{color:#666;font-size:11px}
+  .pp-n{width:22px;height:22px;border-radius:50%;background:#263A63;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+  .pp-where{font-size:11.5px;color:#555;margin-top:4px}
+  .pp-box{background:#f5f6f8;border-radius:6px;padding:8px 10px;margin-top:6px}
+  .pp-copy{white-space:pre-line}
+  .pp-foot{margin-top:16px;font-size:10.5px;color:#888;text-align:center}
+  .pp-page{break-before:page;display:flex;justify-content:center;padding-top:30mm}
+  .pp-page .sticker{box-shadow:none}
+}`;
+(() => { const st = document.createElement("style"); st.textContent = HIST_CSS; document.head.appendChild(st); })();
+histInit();
 
 /* ---------------- الإقلاع ---------------- */
 async function boot() {
