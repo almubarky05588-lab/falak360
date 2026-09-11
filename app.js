@@ -14,6 +14,31 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 let currentBiz = null, currentBizData = null, currentKw = null, userLoc = null;
+let TX = {};
+const T = (k, fb) => TX[k] ?? fb;
+const shown = (k) => TX[k] !== "off";
+
+async function loadTexts() {
+  try {
+    const cached = sessionStorage.getItem("falakTexts");
+    if (cached) TX = JSON.parse(cached);
+  } catch { /* */ }
+  applyTexts();
+  try {
+    const { data } = await sb.rpc("site_texts");
+    if (data?.t) {
+      TX = data.t;
+      applyTexts();
+      try { sessionStorage.setItem("falakTexts", JSON.stringify(TX)); } catch { /* */ }
+    }
+  } catch { /* تبقى النصوص الأصلية */ }
+}
+function applyTexts() {
+  document.querySelectorAll("[data-c]").forEach((el) => {
+    const v = TX[el.dataset.c];
+    if (v) el.textContent = v;
+  });
+}
 let map, layer, locMap, locLayer, locPick = null;
 let buyTarget = null;
 
@@ -58,12 +83,82 @@ const timeAgo = (iso) => {
 
 const fmtH = (h) => h === 0 ? "12ص" : h < 12 ? `${h}ص` : h === 12 ? "12م" : `${h - 12}م`;
 
-/* ---------------- التنقّل ---------------- */
+/* ---------------- التنقّل: مجموعات + بار سفلي ---------------- */
+const NAV = [
+  { key: "my", icon: "building", label: ["nav.my", "محلي"], items: [
+    { id: "overview", icon: "compass", label: ["tab.overview", "نظرة عامة"] },
+    { id: "rank", icon: "map-pin", label: ["tab.rank", "الترتيب"], show: "show.rank" },
+    { id: "profile", icon: "clipboard-check", label: ["tab.profile", "الملف التجاري"], show: "show.profile" },
+    { id: "reviews", icon: "message-square", label: ["tab.reviews", "المراجعات"], show: "show.reviews" },
+    { id: "rivals", icon: "users", label: ["tab.rivals", "المنافسون"], show: "show.rivals" },
+  ] },
+  { key: "suppliers", icon: "shopping-cart", label: ["nav.suppliers", "الموردون"], items: [
+    { id: "suppliers", icon: "shopping-cart", label: ["tab.suppliers", "موردون لنشاطك"], show: "show.suppliers" },
+  ] },
+  { key: "studies", icon: "telescope", label: ["nav.studies", "الدراسات"], items: [
+    { id: "site", icon: "telescope", label: ["tab.site", "موقع مشروع"], show: "show.site" },
+    { id: "buy", icon: "briefcase", label: ["tab.buy", "محل معروض للبيع"], show: "show.buy" },
+  ] },
+  { key: "account", icon: "banknote", label: ["nav.account", "حسابي"], items: [
+    { id: "account", icon: "banknote", label: ["tab.account", "اشتراكي"] },
+  ] },
+];
+let currentScreen = "overview";
+
+const groupItems = (g) => g.items.filter((it) => !it.show || shown(it.show));
+const liveGroups = () => NAV.filter((g) => groupItems(g).length);
+const groupOf = (id) => liveGroups().find((g) => groupItems(g).some((it) => it.id === id));
+
+function renderNav() {
+  const groups = liveGroups();
+  const cur = groupOf(currentScreen) || groups[0];
+
+  $("navbar").innerHTML = groups.map((g) => `
+    <button type="button" class="navbtn ${g === cur ? "on" : ""}" data-group="${g.key}">
+      ${icon(g.icon, 21)}<span>${esc(T(...g.label))}</span>
+    </button>`).join("");
+  $("navbar").querySelectorAll("[data-group]").forEach((b) =>
+    b.onclick = () => openGroup(b.dataset.group));
+
+  $("rail").innerHTML = groups.map((g) => `
+    <div class="rail-g">
+      <b>${icon(g.icon, 16)}${esc(T(...g.label))}</b>
+      ${groupItems(g).map((it) => `
+        <a role="button" tabindex="0" class="${it.id === currentScreen ? "on" : ""}" data-screen="${it.id}">
+          ${esc(T(...it.label))}</a>`).join("")}
+    </div>`).join("");
+  $("rail").querySelectorAll("[data-screen]").forEach((a) => {
+    a.onclick = () => showScreen(a.dataset.screen);
+    a.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showScreen(a.dataset.screen); } };
+  });
+
+  const items = cur ? groupItems(cur) : [];
+  const tabs = $("tabs");
+  tabs.innerHTML = items.length > 1 ? items.map((it) => `
+    <button class="tab ${it.id === currentScreen ? "active" : ""}" data-screen="${it.id}">
+      ${icon(it.icon, 17)}${esc(T(...it.label))}</button>`).join("") : "";
+  tabs.style.display = items.length > 1 ? "" : "none";
+  tabs.querySelectorAll(".tab").forEach((t) => t.onclick = () => showScreen(t.dataset.screen));
+}
+
+function openGroup(key) {
+  const g = liveGroups().find((x) => x.key === key);
+  if (!g) return;
+  const items = groupItems(g);
+  const stay = items.some((it) => it.id === currentScreen);
+  showScreen(stay ? currentScreen : items[0].id);
+}
+
 function showScreen(name) {
+  currentScreen = name;
+  if (name === "account") {
+    renderNav();
+    if (window.falakAccount?.open) return window.falakAccount.open();
+  }
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
-  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.screen === name));
   const el = $(`screen-${name}`);
   if (el) el.classList.add("active");
+  renderNav();
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   if (name === "rank") {
@@ -74,15 +169,26 @@ function showScreen(name) {
     initLocMap();
     requestAnimationFrame(() => setTimeout(() => locMap && locMap.invalidateSize(), 80));
   }
+  if (name === "suppliers") loadSuppliers();
+}
+// account.js يبدّل الشاشات بنفسه — نراقب شاشته لنبقى متزامنين
+function watchAccountScreen() {
+  const tryWatch = () => {
+    const el = $("screen-account");
+    if (!el) return false;
+    new MutationObserver(() => {
+      if (el.classList.contains("active") && currentScreen !== "account") { currentScreen = "account"; renderNav(); }
+    }).observe(el, { attributes: true, attributeFilter: ["class"] });
+    return true;
+  };
+  if (!tryWatch()) setTimeout(tryWatch, 1500);
 }
 
 function initChrome() {
   $("authLogo").innerHTML = logoMark(44);
   $("headerLogo").innerHTML = logoMark(30);
-  document.querySelectorAll(".tab").forEach((t) => {
-    t.insertAdjacentHTML("afterbegin", icon(t.dataset.icon, 17));
-    t.onclick = () => showScreen(t.dataset.screen);
-  });
+  renderNav();
+  watchAccountScreen();
 }
 
 /* ---------------- المصادقة ---------------- */
@@ -233,6 +339,8 @@ $("bizSelect").onchange = async (e) => {
     await loadLastWatch();
   }
   refreshGates();
+  supCache = null;
+  if (currentScreen === "suppliers") loadSuppliers();
   await loadHistory();
 };
 
@@ -304,7 +412,7 @@ $("searchBtn").onclick = async () => {
   if (q.length < 2) return msg($("searchMsg"), "error", "اكتب حرفين على الأقل.");
   const btn = $("searchBtn");
   busy(btn, true, "بحث");
-  msg($("searchMsg"), "info", "نبحث عن المحل…");
+  msg($("searchMsg"), "info", T("msg.search", "نبحث عن المحل…"));
   $("searchResults").innerHTML = "";
 
   try {
@@ -521,7 +629,7 @@ $("scanBtn").onclick = async () => {
 $("auditBtn").onclick = async () => {
   const btn = $("auditBtn");
   busy(btn, true, "جارٍ الفحص");
-  msg($("auditMsg"), "info", "نحلّل ملفك التجاري…");
+  msg($("auditMsg"), "info", T("msg.audit", "نحلّل ملفك التجاري…"));
 
   try {
     const { data, error } = await sb.functions.invoke("audit-profile", { body: { business_id: currentBiz } });
@@ -826,7 +934,7 @@ function renderPlan(d) {
 $("planBtn").onclick = async () => {
   const btn = $("planBtn");
   busy(btn, true, "جارٍ الإنشاء");
-  msg($("planMsg"), "info", "نقرأ ملفك وفحوصاتك ومنافسيك ونكتب خطتك. قد يستغرق دقيقة.");
+  msg($("planMsg"), "info", T("msg.plan", "نقرأ ملفك وفحوصاتك ومنافسيك ونكتب خطتك. قد يستغرق دقيقة."));
   try {
     const { data, error } = await sb.functions.invoke("growth-plan", {
       body: { business_id: currentBiz },
@@ -846,7 +954,7 @@ $("planBtn").onclick = async () => {
 $("revBtn").onclick = async () => {
   const btn = $("revBtn");
   busy(btn, true, "جارٍ التحليل");
-  msg($("revMsg"), "info", "نسحب المراجعات ونحللها. قد يستغرق دقيقة.");
+  msg($("revMsg"), "info", T("msg.reviews", "نقرأ مراجعاتك ونحللها. قد يستغرق دقيقة."));
 
   try {
     const { data, error } = await sb.functions.invoke("analyze-reviews", {
@@ -1083,7 +1191,7 @@ function renderDuel(d, me) {
 $("compBtn").onclick = async () => {
   const btn = $("compBtn");
   busy(btn, true, "جارٍ التحليل");
-  msg($("compMsg"), "info", "نقرأ ملفات منافسيك ومراجعاتهم. قد يستغرق دقيقتين.");
+  msg($("compMsg"), "info", T("msg.rivals", "نقرأ ملفات منافسيك ومراجعاتهم. قد يستغرق دقيقتين."));
 
   try {
     const { data, error } = await sb.functions.invoke("analyze-competitors", {
@@ -1161,7 +1269,7 @@ $("buySearchBtn").onclick = async () => {
   if (q.length < 2) return msg($("buySearchMsg"), "error", "اكتب اسم المحل.");
   const btn = $("buySearchBtn");
   busy(btn, true, "بحث");
-  msg($("buySearchMsg"), "info", "نبحث عن المحل…");
+  msg($("buySearchMsg"), "info", T("msg.search", "نبحث عن المحل…"));
   $("buyResults").innerHTML = "";
 
   try {
@@ -1347,7 +1455,7 @@ $("buyBtn").onclick = async () => {
   if (!buyTarget) return msg($("buyMsg"), "error", "اختر المحل من نتائج البحث.");
   const btn = $("buyBtn");
   busy(btn, true, "جارٍ التحليل");
-  msg($("buyMsg"), "info", "نقيس حركته ونقرأ مراجعاته ونفحص موقعه ومنافسيه. قد يستغرق دقيقتين.");
+  msg($("buyMsg"), "info", T("msg.buy", "نقيس حركته ونقرأ مراجعاته ونفحص موقعه ومنافسيه. قد يستغرق دقيقتين."));
 
   try {
     const { data, error } = await sb.functions.invoke("analyze-acquisition", {
@@ -1460,7 +1568,7 @@ $("locBtn").onclick = async () => {
 
   const btn = $("locBtn");
   busy(btn, true, "جارٍ التحليل");
-  msg($("locMsg"), "info", "نمسح المنطقة ونقرأ المنافسين والمحيط. قد يستغرق دقيقتين.");
+  msg($("locMsg"), "info", T("msg.site", "نمسح المنطقة ونقرأ المنافسين والمحيط. قد يستغرق دقيقتين."));
 
   const areaLabel = [$("locDistrict").value.trim(), $("locCity").value.trim()]
     .filter(Boolean).join("، ") || null;
@@ -1606,13 +1714,15 @@ const fmtDayTime = (iso) => iso
 const HIST = {
   plan: {
     table: "growth_plans", cols: "id, created_at, visibility_pct", btn: "planBtn", result: "planResult", msgEl: "planMsg",
-    first: "أنشئ خطتي", again: "أنشئ خطة جديدة", view: "اعرض خطتي السابقة",
+    get first() { return T("plan.btn", "أنشئ خطتي"); },
+    get again() { return T("plan.btn_again", "أنشئ خطة جديدة"); },
+    get view() { return T("plan.view", "اعرض خطتي السابقة"); },
     tag: (r) => r.visibility_pct != null ? `ظهور ${r.visibility_pct}%` : "",
     show: async (row) => renderPlan(row),
   },
   audit: {
     table: "profile_audits", cols: "id, created_at, score", btn: "auditBtn", result: "auditResult", msgEl: "auditMsg",
-    first: "افحص ملفي", again: "افحص ملفي من جديد", view: "اعرض آخر فحص",
+    get first() { return T("profile.audit_btn", "افحص ملفي"); }, again: "افحص ملفي من جديد", view: "اعرض آخر فحص",
     tag: (r) => r.score != null ? `${r.score}/100` : "",
     show: async (row) => renderAudit({
       score: row.score ?? 0, checks: row.checks || [], competitors: row.competitors || [],
@@ -1851,8 +1961,249 @@ const HIST_CSS = `
 (() => { const st = document.createElement("style"); st.textContent = HIST_CSS; document.head.appendChild(st); })();
 histInit();
 
+/* =========================================================
+   موردون لنشاطك
+   ========================================================= */
+let supCache = null, supState = { q: "", city: "" }, supOpen = new Set();
+
+async function loadSuppliers(force) {
+  const gate = $("supGate"), body = $("supBody");
+  if (!currentBiz) {
+    body.innerHTML = "";
+    return emptyState(gate, "shopping-cart", "اختر محلك أولاً",
+      "نحتاج معرفة نشاط محلك لنعرض لك الموردين المناسبين.", "اذهب إلى نظرة عامة", "overview");
+  }
+  gate.innerHTML = "";
+  if (supCache && !force) return renderSuppliers();
+  body.innerHTML = `<div class="card" style="display:flex;align-items:center;gap:10px">
+    <span class="spinner" style="border-color:var(--line-2);border-top-color:var(--brand)"></span>نبحث عن موردين لنشاطك…</div>`;
+  try {
+    const { data, error } = await sb.rpc("suppliers_for_business", { p_business: currentBiz });
+    if (error) throw error;
+    supCache = data;
+    renderSuppliers();
+  } catch {
+    body.innerHTML = "";
+    msg2(body, "error", T("msg.error", "تعذّر إكمال العملية الآن — حاول بعد قليل."));
+  }
+}
+
+function msg2(box, kind, text) {
+  const d = document.createElement("div");
+  d.className = "msg";
+  box.appendChild(d);
+  msg(d, kind, text);
+}
+
+function renderSuppliers() {
+  const d = supCache, body = $("supBody");
+  if (!d) return;
+  if (d.error) { body.innerHTML = `<div class="hint">${esc(d.error)}</div>`; return; }
+  if (d.no_sector) {
+    body.innerHTML = "";
+    return emptyState(body, "shopping-cart", "نشاط محلك غير محدد بعد",
+      "أعد إضافة محلك من شاشة «نظرة عامة» عبر البحث ليُحدَّد نشاطه، فنعرض لك الموردين المناسبين.", "اذهب إلى نظرة عامة", "overview");
+  }
+  if (d.locked) return renderSupLock();
+
+  const reg = d.registered || [], maps = d.maps || [];
+  const q = supState.q.trim();
+  const match = (s) => (!q || (s.name || "").includes(q) || (s.category || "").includes(q))
+    && (!supState.city || s.city === supState.city);
+  const regF = reg.filter(match), mapsF = maps.filter(match);
+  const cities = [...new Set(maps.map((m) => m.city).filter(Boolean))];
+
+  body.innerHTML = `
+    <div class="sup-head">
+      <div class="sup-count">${esc(d.sector_name || "")}${d.city ? ` · ${esc(d.city)}` : ""} —
+        ${reg.length ? `${reg.length} مورد موثّق و` : ""}${maps.length} نشاط قريب</div>
+    </div>
+    ${d.tools ? `<div class="sup-tools">
+      <input id="supQ" class="input" type="search" placeholder="ابحث باسم المورد أو تخصصه" value="${esc(supState.q)}">
+      <select id="supCity" class="select">
+        <option value="">كل المدن</option>
+        ${cities.map((c) => `<option ${c === supState.city ? "selected" : ""}>${esc(c)}</option>`).join("")}
+      </select>
+    </div>` : ""}
+
+    ${regF.length ? `<div class="section-head" style="margin-top:0"><h2>${esc(T("suppliers.registered_head", "موردون موثّقون"))}</h2></div>
+      ${regF.map(supCard).join("")}
+      <div class="sup-note">${esc(T("suppliers.verified_note", "التوثيق يعني أننا تحققنا من السجل التجاري للمنشأة، ولا يعني ضمان جودة منتجاتها."))}</div>` : ""}
+
+    ${mapsF.length ? `<div class="section-head"><h2>${esc(T("suppliers.maps_head", "موردون آخرون في منطقتك"))}</h2>
+        ${d.maps_city && d.maps_city !== d.city ? `<span class="note">أقرب مدينة متوفرة: ${esc(d.maps_city)}</span>` : ""}</div>
+      ${mapsF.map(mapsCard).join("")}` : ""}
+
+    ${!regF.length && !mapsF.length ? `<div class="hint">${esc(q || supState.city
+      ? "لا نتائج مطابقة — جرّب كلمة أخرى."
+      : T("suppliers.empty", "لم نجد موردين لنشاطك في منطقتك بعد — نضيف موردين جدداً باستمرار."))}</div>` : ""}`;
+
+  wireSuppliers();
+}
+
+function supCard(s) {
+  const acts = [];
+  if (s.whatsapp) acts.push(`<a href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|whatsapp">${icon("message-square", 15)}واتساب</a>`);
+  if (s.phone) acts.push(`<a href="tel:+${esc(s.phone)}" data-track="${esc(s.id)}|call">${icon("phone", 15)}اتصال</a>`);
+  if (s.maps_url) acts.push(`<a href="${esc(s.maps_url)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|map">${icon("map-pin", 15)}قوقل ماب</a>`);
+  const open = supOpen.has(s.id);
+  const det = open ? (s.details || null) : null;
+
+  return `<div class="sup verified">
+    <div class="sup-top">
+      <div class="sup-logo">${s.logo_url ? `<img src="${esc(s.logo_url)}" alt="">` : esc(String(s.name || "م").charAt(0))}</div>
+      <div class="sup-t">
+        <div class="sup-name">${esc(s.name)}</div>
+        <div class="sup-meta">${esc(s.city || "")}${s.covers_all_ksa ? " · يوصل لكل المملكة"
+          : (s.coverage_cities || []).length ? ` · يوصل إلى ${esc(s.coverage_cities.slice(0, 3).join("، "))}` : ""}</div>
+        <div class="sup-badges">
+          <span class="vb">${icon("check-circle", 13)}${esc(T("suppliers.verified_badge", "سجل تجاري موثّق"))}</span>
+          ${s.featured ? `<span class="vb star">${icon("star", 13)}مميز</span>` : ""}
+        </div>
+      </div>
+    </div>
+    ${s.bio || s.min_order || s.website ? `<div class="sup-body">
+      ${s.bio ? `<div class="bio">${esc(open ? s.bio : String(s.bio).slice(0, 160) + (s.bio.length > 160 ? "…" : ""))}</div>` : ""}
+      ${s.min_order ? `<div>الحد الأدنى للطلب: ${esc(s.min_order)}</div>` : ""}
+      ${s.website ? `<div><a href="${esc(s.website)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|website">الموقع الإلكتروني ↗</a></div>` : ""}
+    </div>` : ""}
+    ${det?.products?.length ? `<div class="sup-prods">${det.products.map((p) => `
+      <div class="sup-prod"><b>${esc(p.name)}</b>
+        ${p.description ? `<div>${esc(p.description)}</div>` : ""}
+        ${p.price_text ? `<div class="p">${esc(p.price_text)}</div>` : ""}</div>`).join("")}</div>` : ""}
+    ${acts.length ? `<div class="sup-acts">${acts.join("")}</div>` : ""}
+    ${s.products_count || s.bio ? `<button class="sup-more" data-detail="${esc(s.id)}">${open ? "إخفاء التفاصيل" : `التفاصيل${s.products_count ? ` و${s.products_count} منتجاً` : ""}`}</button>` : ""}
+  </div>`;
+}
+
+function mapsCard(s) {
+  const acts = [];
+  if (s.phone) acts.push(`<a href="tel:${esc(s.phone)}" data-track="${esc(s.id)}|call">${icon("phone", 15)}اتصال</a>`);
+  if (s.maps_url) acts.push(`<a href="${esc(s.maps_url)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|map">${icon("map-pin", 15)}قوقل ماب</a>`);
+  return `<div class="sup">
+    <div class="sup-top">
+      <div class="sup-logo">${esc(String(s.name || "م").charAt(0))}</div>
+      <div class="sup-t">
+        <div class="sup-name">${esc(s.name)}</div>
+        <div class="sup-meta">${esc(s.category || "")}${s.distance_km != null ? ` · ${s.distance_km} كم` : ""}${
+          s.rating ? ` · ★ ${s.rating} (${s.reviews ?? 0})` : ""}</div>
+        <div class="sup-badges"><span class="vb maps">${esc(T("suppliers.maps_label", "نشاط على قوقل ماب — غير موثّق"))}</span></div>
+      </div>
+    </div>
+    ${s.address || s.website ? `<div class="sup-body">${s.address ? esc(s.address) : ""}
+      ${s.website ? `<div><a href="${esc(s.website)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|website">الموقع الإلكتروني ↗</a></div>` : ""}</div>` : ""}
+    ${acts.length ? `<div class="sup-acts">${acts.join("")}</div>` : ""}
+    <a class="sup-claim" href="supplier.html?claim=${esc(s.id)}" target="_blank" rel="noopener">
+      ${icon("building", 15)}${esc(T("suppliers.claim", "هل هذا نشاطك؟ وثّقه واظهر في المقدمة"))}</a>
+    <button class="sup-more" data-report="${esc(s.id)}">إبلاغ عن بيانات غير صحيحة</button>
+  </div>`;
+}
+
+function wireSuppliers() {
+  const body = $("supBody");
+  const q = $("supQ");
+  if (q) {
+    let t = null;
+    q.oninput = () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        supState.q = q.value;
+        renderSuppliers();
+        const n = $("supQ"); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+      }, 300);
+    };
+    $("supCity").onchange = () => { supState.city = $("supCity").value; renderSuppliers(); };
+  }
+  body.querySelectorAll("[data-track]").forEach((a) => a.addEventListener("click", () => {
+    const [id, kind] = a.dataset.track.split("|");
+    sb.rpc("supplier_track", { p_supplier: id, p_kind: kind }).catch(() => {});
+  }));
+  body.querySelectorAll("[data-detail]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.detail;
+    if (supOpen.has(id)) { supOpen.delete(id); return renderSuppliers(); }
+    busy(b, true, "جارٍ الفتح");
+    const s = (supCache.registered || []).find((x) => x.id === id);
+    try {
+      const { data } = await sb.rpc("supplier_profile", { p_supplier: id });
+      if (s && data && !data.error && !data.locked) s.details = data;
+    } catch { /* */ }
+    supOpen.add(id);
+    renderSuppliers();
+  });
+  body.querySelectorAll("[data-report]").forEach((b) => b.onclick = async () => {
+    const reason = prompt("ما المشكلة في هذا المورد؟ (مثل: رقم غير صحيح، أو مغلق نهائياً)");
+    if (!reason) return;
+    busy(b, true, "جارٍ الإرسال");
+    try {
+      const { data } = await sb.rpc("report_supplier", { p_supplier: b.dataset.report, p_reason: reason });
+      busy(b, false, "إبلاغ عن بيانات غير صحيحة");
+      b.textContent = data?.message || "وصلنا بلاغك";
+    } catch { busy(b, false, "إبلاغ عن بيانات غير صحيحة"); }
+  });
+}
+
+/* شاشة الاشتراك — للباقة المجانية */
+const PLAN_FEATURES = {
+  basic: ["موردون موثّقون وموردون في منطقتك", "فحص الترتيب وتدقيق الملف", "خطة رفع الظهور"],
+  growth: ["كل ما في الأساسية", "فلترة الموردين بالمدينة والبحث فيهم", "تحليل المنافسين ومراقبة نطاقك"],
+  pro: ["كل ما في النمو", "حصص أعلى لكل التحاليل", "أولوية في الدعم"],
+};
+
+async function renderSupLock() {
+  const d = supCache, body = $("supBody");
+  const n = (d.counts?.registered || 0) + (d.counts?.maps || 0);
+  let plans = [];
+  try {
+    const { data } = await sb.from("plans").select("code, name, price_sar, sort_order")
+      .eq("is_active", true).gt("price_sar", 0).order("sort_order");
+    plans = data || [];
+  } catch { /* */ }
+
+  body.innerHTML = `
+    <div class="lock">
+      <h2>${esc(T("suppliers.locked_title", "موردون لنشاطك في منطقتك"))}</h2>
+      <p>${esc(T("suppliers.locked_body", "اشترك في إحدى الباقات ليظهر لك الموردون المتوافقون مع نشاطك في منطقتك."))}</p>
+      ${n ? `<div class="lock-count">${icon("shopping-cart", 16)}${n} مورداً جاهزاً لقطاع ${esc(d.sector_name || "نشاطك")}${d.city ? ` في ${esc(d.city)}` : ""}</div>` : ""}
+      <div class="blur">
+        ${[0, 1].map(() => `<div class="sup" style="margin-bottom:8px"><div class="sup-top">
+          <div class="sup-logo">م</div>
+          <div class="sup-t"><div class="sup-name">مؤسسة التوريد الحديثة</div>
+            <div class="sup-meta">${esc(d.city || "مدينتك")} · يوصل لكل المملكة</div></div></div></div>`).join("")}
+      </div>
+      <div class="plan-cards">
+        ${plans.map((p) => `
+          <div class="plan-c ${p.code === "growth" ? "best" : ""}">
+            <h4>${esc(p.name)}</h4>
+            <div class="pr"><b class="num">${p.price_sar}</b> ريال شهرياً</div>
+            <ul>${(PLAN_FEATURES[p.code] || []).map((f) => `<li>${icon("check-circle", 15)}<span>${esc(f)}</span></li>`).join("")}</ul>
+            <button class="btn block ${p.code === "growth" ? "" : "ghost"}" data-sub="${esc(p.code)}">اشترك في ${esc(p.name)}</button>
+          </div>`).join("")}
+      </div>
+      <div id="supPay"></div>
+    </div>`;
+
+  body.querySelectorAll("[data-sub]").forEach((b) => b.onclick = async () => {
+    busy(b, true, "جارٍ التجهيز");
+    try {
+      const { data, error } = await sb.rpc("request_subscription", { p_plan_code: b.dataset.sub });
+      if (error) throw error;
+      const url = data?.payment_link;
+      $("supPay").innerHTML = `<div class="card sp-t" style="text-align:start">
+        <b>${esc(data?.plan || "")} — ${esc(data?.amount_sar ?? "")} ريال</b>
+        <div class="hint" style="margin:6px 0 0">${esc(data?.message || "")}</div>
+        ${url ? `<a class="btn block sp-t" href="${esc(url)}" target="_blank" rel="noopener" data-pay="${esc(data.subscription_id)}">ادفع الآن</a>` : ""}</div>`;
+      window.falakAccount?.refreshBadge?.();
+      $("supPay").scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch {
+      msg2($("supPay"), "error", T("msg.error", "تعذّر إكمال العملية الآن — حاول بعد قليل."));
+    }
+    busy(b, false, `اشترك في ${b.dataset.sub}`);
+  });
+}
+
 /* ---------------- الإقلاع ---------------- */
 async function boot() {
+  await loadTexts();
   initChrome();
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { $("authScreen").className = "auth-wrap"; return; }
