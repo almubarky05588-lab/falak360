@@ -1,0 +1,18 @@
+          <div id="spread" class="spread hidden"></div>
+          <div id="mapLegend" class="legend">
+            <span><i style="background:var(--ok)"></i>‏1–3</span>
+            <span><i style="background:var(--warn)"></i>‏4–10</span>
+            <span><i style="background:#C4762A"></i>‏11–20</span>
+            <span><i style="background:#C4837D"></i>غير ظاهر</span>
+            <span><i style="background:var(--brand)"></i>محلك</span>
+          </div>
+          <div id="map" class="map"></div>
+          <div id="diagnose" class="diagnose hidden"></div>
+
+          <div id="zonesBox" class="hidden">
+            <div class="section-head"><h2>أين تقوى وأين تضعف</h2>
+              <span class="note">حسب اتجاه النقطة من محلك</span></div>
+            <div id="zonesList"></div>
+            <div id="zonesNote"></div>
+            <div id="zonesRivals"></div>
+          </div>
