@@ -30,7 +30,7 @@ const CSS = `
   display:flex;align-items:center;justify-content:center;font-family:var(--font-num);font-size:13px;font-weight:600}
 .alt-hd{flex:1;min-width:0}
 .alt-vd{font-family:var(--font-display);font-size:15px;font-weight:600}
-.alt-meta{font-size:12px;color:var(--ink-3);margin-top:2px}
+.alt-meta{font-size:12px;color:var(--ink-3);margin-top:2px;line-height:1.6}
 .alt-score{text-align:center;flex:0 0 auto}
 .alt-score b{display:block;font-family:var(--font-num);font-size:22px;font-weight:600;line-height:1}
 .alt-score small{font-size:10px;color:var(--ink-3)}
@@ -45,11 +45,28 @@ const CSS = `
 .alt-why .ok svg{color:var(--ok)}
 .alt-why .no svg{color:var(--warn)}
 .alt-acts{display:flex;gap:8px;margin-top:12px}
-.alt-acts .btn{flex:1;justify-content:center}
+.alt-acts .btn{flex:1;justify-content:center;font-size:12.5px}
 .alt-base{background:var(--surface-2);border-radius:var(--r);padding:11px 13px;font-size:12.5px;
   color:var(--ink-2);line-height:1.7;margin-bottom:10px}
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
+
+/* إحداثيات نقطة الانطلاق — من دائرة النطاق التي يرسمها app.js على الخريطة */
+function pickedPoint() {
+  const m = String($("locCoords")?.value || "").match(/(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
+  if (m) return { lat: +m[1], lng: +m[2] };
+
+  // نقرأها من طبقة الخريطة مباشرة
+  try {
+    const el = $("locMap");
+    const inst = el?._leaflet_id ? window.L?.DomUtil?.get?.(el) : null;
+    if (window.__falakLocPick) return window.__falakLocPick;
+    // آخر محاولة: مركز الخريطة الظاهرة
+    const maps = Object.values(window).find((v) => v && v._leaflet_id && v.getCenter);
+    if (maps?.getCenter) { const c = maps.getCenter(); return { lat: c.lat, lng: c.lng }; }
+  } catch { /* */ }
+  return null;
+}
 
 function mount() {
   const host = $("locResult");
@@ -59,7 +76,7 @@ function mount() {
     <div id="altBox">
       <div class="alt-hero">
         <h3>${icon("compass", 19)}مواقع بديلة مرشّحة</h3>
-        <p>نمسح المنطقة حولك ونرشّح أفضل المواقع لنشاطك — بناءً على كثافة السكن
+        <p>نمسح المنطقة ونرشّح أفضل المواقع لنشاطك — بناءً على كثافة السكن
            وشبكة الطرق وعدد المنافسين الفعليين في كل موقع.</p>
         <div class="alt-opts">
           <div class="field" style="margin:0">
@@ -67,7 +84,7 @@ function mount() {
             <select id="altRadius" class="select">
               <option value="3">3 كم — الحي وما حوله</option>
               <option value="6" selected>6 كم — نطاق واسع</option>
-              <option value="12">12 كم — المدينة</option>
+              <option value="12">12 كم — جزء من المدينة</option>
               <option value="20">20 كم — المدينة كاملة</option>
             </select>
           </div>
@@ -101,7 +118,7 @@ function render(d) {
   const b = d.baseline || {};
 
   const baseTxt = b.per_km2
-    ? `موقعك الحالي: ${nf(b.per_km2)} مبنى لكل كم²${b.road_score != null ? ` · تعرّض مروري ${b.road_score}/100` : ""} — قارنه بالمرشحات أدناه.`
+    ? `نقطتك الحالية: ${nf(b.per_km2)} مبنى لكل كم²${b.road_score != null ? ` · تعرّض مروري ${b.road_score}/100` : ""} — قارنها بالمرشحات أدناه.`
     : "";
 
   const sites = (d.sites || []).map((s, i) => `
@@ -136,24 +153,23 @@ function render(d) {
         <a class="btn ghost sm" target="_blank" rel="noopener"
            href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}">
            ${icon("map-pin", 15)}افتح في الخرائط</a>
-        <button class="btn sm" data-pick="${s.lat},${s.lng}">${icon("telescope", 15)}حلّل هذا الموقع</button>
+        <button class="btn sm" data-pick="${s.lat},${s.lng}">${icon("telescope", 15)}حلّله بعمق</button>
       </div>
     </div>`).join("");
 
   box.innerHTML = `
-    <div class="section-head sp-t"><h2>أفضل ${(d.sites || []).length} مواقع لنشاطك</h2>
+    <div class="section-head sp-t"><h2>أفضل المواقع لنشاطك</h2>
       <span class="note">من ${d.scanned} منطقة مفحوصة</span></div>
     ${baseTxt ? `<div class="alt-base">${esc(baseTxt)}</div>` : ""}
     ${sites || `<div class="hint">لم نجد مرشحات مناسبة — وسّع نطاق البحث.</div>`}
     <div class="disclaimer">${esc(d.note || "")}</div>`;
 
   box.querySelectorAll("[data-pick]").forEach((btn) => btn.onclick = () => {
-    const [la, ln] = btn.dataset.pick.split(",").map(Number);
     const inp = $("locCoords");
     if (inp) {
-      inp.value = `${la}, ${ln}`;
+      inp.value = btn.dataset.pick.replace(",", ", ");
       $("coordBtn")?.click();
-      $("locAct")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => $("locBtn")?.scrollIntoView({ behavior: "smooth", block: "center" }), 400);
     }
   });
 
@@ -163,18 +179,16 @@ function render(d) {
 async function run() {
   const btn = $("altBtn");
   const act = $("locAct")?.value?.trim();
-  if (!act || act.length < 2) return msg("error", "اكتب نوع النشاط في الأعلى أولاً.");
+  if (!act || act.length < 2) {
+    msg("error", "اكتب نوع النشاط في الأعلى أولاً.");
+    $("locAct")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
 
-  // نقطة الانطلاق: الموقع المحدد على الخريطة، أو مركز المدينة المكتوبة
-  let lat = null, lng = null;
-  const m = String($("locCoords")?.value || "").match(/(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
-  if (m) { lat = +m[1]; lng = +m[2]; }
-  if (lat == null && window.__falakPick) { lat = window.__falakPick.lat; lng = window.__falakPick.lng; }
-
-  if (lat == null) {
-    // نستخرجها من الخريطة إن كان فيها علامة
-    const c = document.querySelector("#locMap .me-pin");
-    if (!c) return msg("error", "حدّد نقطة انطلاق على الخريطة أولاً — ابحث عن حيّك أو اضغط على الخريطة.");
+  const p = pickedPoint();
+  if (!p) {
+    msg("error", "حدّد نقطة انطلاق أولاً — ابحث عن حيّك أعلى الصفحة أو اضغط على الخريطة.");
+    return;
   }
 
   btn.disabled = true;
@@ -185,7 +199,7 @@ async function run() {
   try {
     const { data, error } = await sb.functions.invoke("alt-sites", {
       body: {
-        lat, lng, activity: act,
+        lat: p.lat, lng: p.lng, activity: act,
         radius_km: Number($("altRadius")?.value || 6),
         priority: $("altPriority")?.value || "balanced",
         city: $("locCity")?.value?.trim() || null,
@@ -195,6 +209,7 @@ async function run() {
     if (!data?.success) throw new Error(data?.error || "تعذّر الترشيح");
     render(data);
     $("altMsg").className = "msg";
+    $("altResult")?.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) {
     msg("error", String(e?.message || e).slice(0, 160));
   } finally {
@@ -203,22 +218,5 @@ async function run() {
   }
 }
 
-/* نلتقط الموقع المحدد على الخريطة من app.js */
-function trackPick() {
-  const map = $("locMap");
-  if (!map) return;
-  new MutationObserver(() => {
-    const btn = $("locBtn");
-    if (btn && !btn.disabled) {
-      // app.js يفعّل الزر عند اختيار نقطة — نقرأ الإحداثيات من رابط الخرائط إن وُجد
-    }
-  }).observe(map, { childList: true, subtree: true });
-}
-
-function start() {
-  mount();
-  trackPick();
-}
-
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(start, 1100));
-else setTimeout(start, 1100);
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(mount, 1100));
+else setTimeout(mount, 1100);
