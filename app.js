@@ -1276,8 +1276,8 @@ function fillPoints(boxId, listId, arr, cls) {
   $(listId).innerHTML = arr.map((x) => `<div class="point ${cls}">${esc(x)}</div>`).join("");
   $(boxId).className = "";
 }
-   
-   /* ---------------- محل معروض للبيع ---------------- */
+
+/* ---------------- محل معروض للبيع ---------------- */
 $("buySearchBtn").onclick = async () => {
   const q = $("buyQ").value.trim();
   if (q.length < 2) return msg($("buySearchMsg"), "error", "اكتب اسم المحل.");
@@ -1366,7 +1366,6 @@ function renderBuy(d) {
 
   $("buySummary").textContent = d.summary || "—";
 
-  // النبض
   if (v.last_90d != null) {
     const dir = v.last_90d < v.prev_90d ? "down" : v.last_90d > v.prev_90d ? "up" : "";
     let note = "";
@@ -2277,5 +2276,3 @@ async function boot() {
   }
 }
 boot();
-
-
