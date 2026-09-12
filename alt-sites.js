@@ -51,26 +51,21 @@ const CSS = `
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
 
-/* إحداثيات نقطة الانطلاق — من دائرة النطاق التي يرسمها app.js على الخريطة */
+/* نقطة الانطلاق */
 function pickedPoint() {
   const m = String($("locCoords")?.value || "").match(/(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
   if (m) return { lat: +m[1], lng: +m[2] };
-
-  // نقرأها من طبقة الخريطة مباشرة
   try {
-    const el = $("locMap");
-    const inst = el?._leaflet_id ? window.L?.DomUtil?.get?.(el) : null;
-    if (window.__falakLocPick) return window.__falakLocPick;
-    // آخر محاولة: مركز الخريطة الظاهرة
-    const maps = Object.values(window).find((v) => v && v._leaflet_id && v.getCenter);
-    if (maps?.getCenter) { const c = maps.getCenter(); return { lat: c.lat, lng: c.lng }; }
+    const maps = Object.values(window).find((v) => v && v._leaflet_id && typeof v.getCenter === "function");
+    if (maps) { const c = maps.getCenter(); return { lat: c.lat, lng: c.lng }; }
   } catch { /* */ }
   return null;
 }
 
 function mount() {
-  const host = $("locResult");
-  if (!host || $("altBox")) return;
+  if ($("altBox")) return true;
+  const host = $("locResult") || $("locMsg")?.parentElement;
+  if (!host) return false;
 
   host.insertAdjacentHTML("beforebegin", `
     <div id="altBox">
@@ -104,10 +99,17 @@ function mount() {
     </div>`);
 
   $("altBtn").onclick = run;
+  return true;
+}
+
+function tryMount(n = 0) {
+  if (mount() || n > 25) return;
+  setTimeout(() => tryMount(n + 1), 700);
 }
 
 function msg(kind, text) {
   const el = $("altMsg");
+  if (!el) return;
   const ic = kind === "error" ? "alert-triangle" : kind === "done" ? "check-circle" : "info";
   el.className = `msg show ${kind}`;
   el.innerHTML = `${icon(ic, 17)}<span>${esc(text)}</span>`;
@@ -218,5 +220,10 @@ async function run() {
   }
 }
 
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(mount, 1100));
-else setTimeout(mount, 1100);
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => tryMount());
+else tryMount();
+
+/* وعند فتح شاشة موقع المشروع */
+document.addEventListener("click", (e) => {
+  if (e.target.closest?.('[data-screen="site"], [data-group="studies"]')) setTimeout(() => tryMount(), 400);
+}, true);
