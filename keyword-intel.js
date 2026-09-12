@@ -1,6 +1,5 @@
 /* =========================================================
    فلك ٣٦٠ — حجم البحث وموسمية الطلب
-   يُضاف إلى تبويب الترتيب (الكلمات) وتحليل موقع مشروع
    ========================================================= */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -29,18 +28,19 @@ const CSS = `
 .kwi-v{text-align:start;white-space:nowrap}
 .kwi-v b{font-family:var(--font-num);font-size:14px;font-weight:600;display:block;line-height:1.2}
 .kwi-v small{color:var(--ink-3);font-size:10.5px}
-.kwi-comp{display:inline-block;width:7px;height:7px;border-radius:50%;margin-inline-end:5px}
+.kwi-comp{display:inline-block;width:7px;height:7px;border-radius:50%;margin-inline-end:5px;flex:0 0 auto}
 .kwi-comp.LOW{background:var(--ok)}.kwi-comp.MEDIUM{background:var(--warn)}.kwi-comp.HIGH{background:var(--bad)}
+.kwi-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-3);margin-top:10px;
+  padding-top:10px;border-top:1px solid var(--line)}
+.kwi-legend span{display:flex;align-items:center;gap:5px}
 .seas{display:flex;align-items:flex-end;gap:3px;height:96px;margin:14px 0 6px}
-.seas i{flex:1;background:var(--brand-tint);border-radius:4px 4px 0 0;position:relative;min-height:4px}
+.seas i{flex:1;background:var(--brand-tint);border-radius:4px 4px 0 0;min-height:4px}
 .seas i.hi{background:var(--brand)}
 .seas i.lo{background:var(--line-2)}
 .seas-axis{display:flex;gap:3px;font-size:9.5px;color:var(--ink-3);text-align:center}
 .seas-axis span{flex:1}
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
-
-let lastData = null;
 
 function mount() {
   const host = $("kwList");
@@ -65,8 +65,10 @@ function msg(kind, text) {
   el.innerHTML = `${icon(ic, 17)}<span>${esc(text)}</span>`;
 }
 
+const volWord = (n) => n === 1 ? "بحث واحد شهرياً"
+  : n === 2 ? "بحثان شهرياً" : "بحث شهرياً";
+
 function render(d) {
-  lastData = d;
   const box = $("kwiResult");
   const kws = d.keywords || [];
 
@@ -77,16 +79,16 @@ function render(d) {
         <span>${esc(k.term)}</span>
         ${k.mine ? `<span class="kwi-tag">تتابعها</span>` : ""}
       </div>
-      <div class="kwi-v"><b>${nf(k.volume)}</b><small>بحثة شهرياً</small></div>
+      <div class="kwi-v"><b>${nf(k.volume)}</b><small>${volWord(k.volume)}</small></div>
     </div>`).join("");
 
   const s = d.seasonality;
   let seasHtml = "";
   if (s?.index?.length === 12) {
-    const max = Math.max(...s.index) || 1;
+    const mx = Math.max(...s.index), mn = Math.min(...s.index);
     const bars = s.index.map((v, i) => {
-      const cls = v === Math.max(...s.index) ? "hi" : v === Math.min(...s.index) ? "lo" : "";
-      return `<i class="${cls}" style="height:${Math.max(6, (v / max) * 100)}%" title="${esc(s.months[i])}: ${v}%"></i>`;
+      const cls = v === mx ? "hi" : v === mn ? "lo" : "";
+      return `<i class="${cls}" style="height:${Math.max(6, (v / (mx || 1)) * 100)}%" title="${esc(s.months[i])}"></i>`;
     }).join("");
     seasHtml = `
       <div class="section-head"><h2>موسمية الطلب</h2><span class="note">${esc(s.level)}</span></div>
@@ -105,9 +107,15 @@ function render(d) {
       ${(d.insights || []).map((x) => `<div class="ind-means">${esc(x)}</div>`).join("")}
     </div>
 
-    <div class="section-head"><h2>الكلمات مرتبة بحجم بحثها</h2>
-      <span class="note">النقطة تدل على شدة المنافسة</span></div>
-    <div class="card">${rows || `<div class="hint">لا بيانات كافية لهذا النشاط.</div>`}</div>
+    <div class="section-head"><h2>الكلمات مرتبة بحجم البحث</h2></div>
+    <div class="card">
+      ${rows || `<div class="hint">لا بيانات كافية لهذا النشاط.</div>`}
+      <div class="kwi-legend">
+        <span><i class="kwi-comp LOW"></i>منافسة منخفضة</span>
+        <span><i class="kwi-comp MEDIUM"></i>متوسطة</span>
+        <span><i class="kwi-comp HIGH"></i>مرتفعة</span>
+      </div>
+    </div>
 
     ${seasHtml}
 
