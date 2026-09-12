@@ -1275,12 +1275,1005 @@ function fillPoints(boxId, listId, arr, cls) {
   if (!(arr || []).length) { $(boxId).className = "hidden"; return; }
   $(listId).innerHTML = arr.map((x) => `<div class="point ${cls}">${esc(x)}</div>`).join("");
   $(boxId).className = "";
-}
-
-/* ---------------- محل معروض للبيع ---------------- */
+   /* ---------------- محل معروض للبيع ---------------- */
 $("buySearchBtn").onclick = async () => {
   const q = $("buyQ").value.trim();
   if (q.length < 2) return msg($("buySearchMsg"), "error", "اكتب اسم المحل.");
   const btn = $("buySearchBtn");
   busy(btn, true, "بحث");
-  msg($("buySearchMsg"
+  msg($("buySearchMsg"), "info", T("msg.search", "نبحث عن المحل…"));
+  $("buyResults").innerHTML = "";
+
+  try {
+    const { data, error } = await sb.functions.invoke("search-business", {
+      body: { query: q, lat: userLoc?.lat, lng: userLoc?.lng },
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    if (!data.results.length) return msg($("buySearchMsg"), "error", "لا نتائج. اكتب الاسم مع المدينة.");
+
+    clearMsg($("buySearchMsg"));
+    $("buyResults").innerHTML = data.results.map((r, i) => `
+      <div class="result" data-i="${i}">
+        <div class="n">${esc(r.name)}</div>
+        <div class="a">${esc(r.address || "")}</div>
+        <div class="m">
+          <span class="num">${r.rating ? "★ " + r.rating : "بلا تقييم"}</span>
+          <span>${r.reviews ?? 0} مراجعة</span>
+          ${r.category ? `<span>${esc(r.category)}</span>` : ""}
+        </div>
+      </div>`).join("");
+
+    $("buyResults").querySelectorAll(".result").forEach((el) =>
+      el.onclick = () => {
+        buyTarget = data.results[+el.dataset.i];
+        $("buyResults").innerHTML = "";
+        $("buyPickedName").textContent = buyTarget.name;
+        $("buyPicked").className = "";
+        $("buyResult").className = "hidden";
+      });
+  } catch (e) {
+    msg($("buySearchMsg"), "error", friendly(e));
+  } finally { busy(btn, false, "بحث"); }
+};
+$("buyQ").addEventListener("keydown", (e) => { if (e.key === "Enter") $("buySearchBtn").click(); });
+
+$("buyChange").onclick = () => {
+  buyTarget = null;
+  $("buyPicked").className = "hidden";
+  $("buyResult").className = "hidden";
+  $("buyQ").focus();
+};
+
+function vdClass(text, kind) {
+  const t = String(text || "");
+  if (kind === "activity") {
+    if (t.includes("متوقفة")) return "bad";
+    if (t.includes("متراجعة")) return "warn";
+    if (t.includes("متنامية")) return "good";
+    return "";
+  }
+  if (kind === "location") {
+    if (t.includes("قوي")) return "good";
+    if (t.includes("ضعيف")) return "bad";
+    return "warn";
+  }
+  if (t.includes("بنيوية")) return "bad";
+  if (t.includes("تشغيلية")) return "good";
+  return "warn";
+}
+
+function renderBuy(d) {
+  const v = d.vitals || {};
+
+  $("buyRing").innerHTML = orbitRing(d.score, 100, scoreColor(d.score), 116, "المؤشر");
+  $("buyVerdict").textContent = d.verdict;
+  $("buyVerdict").style.color = scoreColor(d.score);
+  $("buyMeta").textContent = [d.target?.category, d.target?.address].filter(Boolean).join(" · ") || "—";
+
+  $("buyVerdicts").innerHTML = `
+    <div class="vd ${vdClass(d.activity_status, "activity")}">
+      <div class="lb">حالة المحل</div><div class="vl">${esc(d.activity_status || "—")}</div>
+    </div>
+    <div class="vd ${vdClass(d.location_grade, "location")}">
+      <div class="lb">الموقع نفسه</div><div class="vl">${esc(d.location_grade || "—")}</div>
+    </div>
+    <div class="vd ${vdClass(d.fixability, "fix")}">
+      <div class="lb">قابلية الإصلاح</div><div class="vl">${esc(d.fixability || "—")}</div>
+    </div>`;
+
+  $("buySummary").textContent = d.summary || "—";
+
+  // النبض
+  if (v.last_90d != null) {
+    const dir = v.last_90d < v.prev_90d ? "down" : v.last_90d > v.prev_90d ? "up" : "";
+    let note = "";
+    if (v.momentum === "متوقف") {
+      note = `آخر مراجعة وصلته قبل ${v.days_since_last} يوماً. حركة العملاء متوقفة أو شبه متوقفة.`;
+    } else if (v.momentum === "متراجع") {
+      note = `عدد مراجعاته انخفض إلى نحو النصف مقارنة بالفترة السابقة — تراجع واضح في حركة العملاء.`;
+    } else if (v.momentum === "متسارع") {
+      note = `حركته تتزايد. اسأل البائع لماذا يبيع محلاً ينمو.`;
+    } else {
+      note = `حركته ثابتة تقريباً بين الفترتين.`;
+    }
+    if (v.quality_trend === "يتراجع") note += " ومتوسط تقييم مراجعاته الأخيرة أقل من السابق — الجودة تنزل.";
+    else if (v.quality_trend === "يتحسّن") note += " ومتوسط تقييم مراجعاته الأخيرة أعلى من السابق.";
+
+    $("buyPulse").innerHTML = `
+      <div class="pulse ${dir}">
+        <div class="p-side"><b>${v.prev_90d ?? 0}</b><small>الـ90 يوماً السابقة</small></div>
+        <div class="p-arrow">←</div>
+        <div class="p-side"><b>${v.last_90d}</b><small>آخر 90 يوماً</small></div>
+      </div>
+      <div class="pulse-note">${esc(note)}</div>`;
+  } else {
+    $("buyPulse").innerHTML = `<div class="point warn">لا تتوفر مراجعات مؤرّخة كافية لقياس حركته — وهذا بحد ذاته إشارة تستحق السؤال.</div>`;
+  }
+
+  $("buyStats").innerHTML = `
+    <div class="stat"><div class="stat-val num">${v.rating ?? "—"}</div><div class="stat-lbl">تقييمه</div></div>
+    <div class="stat"><div class="stat-val num">${v.reviews_total ?? 0}</div><div class="stat-lbl">مراجعاته</div></div>
+    <div class="stat"><div class="stat-val num">${v.vs_area_pct != null ? v.vs_area_pct + "%" : "—"}</div><div class="stat-lbl">مقابل متوسط المنطقة</div></div>
+    <div class="stat"><div class="stat-val num">${v.rivals_count ?? "—"}</div><div class="stat-lbl">منافس حوله</div></div>`;
+
+  if (d.reading) {
+    $("buyReading").textContent = d.reading;
+    $("buyReadingBox").className = "";
+  } else $("buyReadingBox").className = "hidden";
+
+  fillPoints("buyRedBox", "buyRed", d.red_flags, "bad");
+  fillPoints("buyGreenBox", "buyGreen", d.green_flags, "ok");
+
+  const cmp = d.complaints || [];
+  if (cmp.length) {
+    $("buyCmp").innerHTML = cmp.map((c) => {
+      const fixable = String(c.fixable || "").includes("نعم");
+      return `<div class="cmp-row">
+        <div>
+          <div class="t">${esc(c.topic)}${c.percent ? ` — ${c.percent}%` : ""}</div>
+          ${c.note ? `<div class="n">${esc(c.note)}</div>` : ""}
+        </div>
+        <span class="fx ${fixable ? "y" : "n"}">${fixable ? "قابلة للإصلاح" : "يصعب إصلاحها"}</span>
+      </div>`;
+    }).join("");
+    $("buyCmpBox").className = "";
+  } else $("buyCmpBox").className = "hidden";
+
+  const ask = d.ask_seller || [];
+  if (ask.length) {
+    $("buyAsk").innerHTML = ask.map((a, i) => `
+      <div class="ask">
+        <div class="n">${i + 1}</div>
+        <div>
+          <div class="q">${esc(a.q)}</div>
+          ${a.why ? `<div class="why">${esc(a.why)}</div>` : ""}
+        </div>
+      </div>`).join("");
+    $("buyAskBox").className = "";
+  } else $("buyAskBox").className = "hidden";
+
+  const ver = d.verify_yourself || [];
+  if (ver.length) {
+    $("buyVerify").innerHTML = ver.map((x) => `
+      <div class="icon-row">
+        <div class="ico">${icon("clipboard-check", 17)}</div>
+        <div class="body">
+          <div class="t">${esc(x.item)}</div>
+          ${x.why ? `<div class="d">${esc(x.why)}</div>` : ""}
+        </div>
+      </div>`).join("");
+    $("buyVerifyBox").className = "";
+  } else $("buyVerifyBox").className = "hidden";
+
+  fillPoints("buyNegBox", "buyNeg", d.negotiation, "warn");
+
+  const rv = d.rivals || [];
+  if (rv.length) {
+    $("buyRivals").innerHTML = rv.map((r) => `
+      <div class="list-row"><span>${esc(r.name)}
+        ${r.busy_now != null && r.busy_now >= 60 ? `<span class="pill-busy">مزدحم الآن</span>` : ""}
+      </span>
+      <span class="meta num">★${r.rating ?? "—"} · ${r.reviews ?? 0} · ${r.distance_m}م</span></div>`).join("");
+    $("buyRivalsBox").className = "";
+  } else $("buyRivalsBox").className = "hidden";
+
+  $("buyScope").innerHTML = `<div class="scope">${icon("info", 16)}<span>${esc(d.scope_note || "")}</span></div>`;
+
+  $("buyResult").className = "";
+}
+
+$("buyBtn").onclick = async () => {
+  if (!buyTarget) return msg($("buyMsg"), "error", "اختر المحل من نتائج البحث.");
+  const btn = $("buyBtn");
+  busy(btn, true, "جارٍ التحليل");
+  msg($("buyMsg"), "info", T("msg.buy", "نقيس حركته ونقرأ مراجعاته ونفحص موقعه ومنافسيه. قد يستغرق دقيقتين."));
+
+  try {
+    const { data, error } = await sb.functions.invoke("analyze-acquisition", {
+      body: {
+        name: buyTarget.name,
+        place_id: buyTarget.place_id ?? null,
+        cid: buyTarget.cid ?? null,
+        lat: buyTarget.lat, lng: buyTarget.lng,
+        category: buyTarget.category ?? null,
+        address: buyTarget.address ?? null,
+        radius_m: 1500,
+      },
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    renderBuy(data);
+    savedNote("buy", null);
+    clearMsg($("buyMsg"));
+    refreshHistory("buy");
+  } catch (e) {
+    msg($("buyMsg"), "error", friendly(e));
+  } finally { busy(btn, false, btnLabel("buy")); }
+};
+
+/* ---------------- تحديد موقع المشروع ---------------- */
+$("geoBtn").onclick = async () => {
+  const city = $("locCity").value.trim();
+  const district = $("locDistrict").value.trim();
+  const street = $("locStreet").value.trim();
+
+  if (city.length < 2) return msg($("geoMsg"), "error", "اكتب اسم المدينة.");
+  if (district.length < 2) return msg($("geoMsg"), "error", "اكتب اسم الحي.");
+
+  const btn = $("geoBtn");
+  busy(btn, true, "جارٍ البحث");
+  msg($("geoMsg"), "info", "نبحث عن الموقع…");
+
+  try {
+    const { data, error } = await sb.functions.invoke("geocode", {
+      body: { city, district, street: street || null },
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+
+    initLocMap();
+    setPick(data.lat, data.lng, true, data.approximate ? 13 : street ? 17 : 15);
+    setTimeout(() => locMap && locMap.invalidateSize(), 100);
+
+    if (data.approximate) msg($("geoMsg"), "info", data.note);
+    else msg($("geoMsg"), "done",
+      `وُجد: ${data.label}${data.address ? " — " + data.address : ""}. اضغط على الخريطة لضبط الموقع بدقة.`);
+  } catch (e) {
+    msg($("geoMsg"), "error", friendly(e));
+  } finally { busy(btn, false, "ابحث عن الموقع"); }
+};
+
+["locCity", "locDistrict", "locStreet"].forEach((id) =>
+  $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") $("geoBtn").click(); }));
+
+$("coordBtn").onclick = () => {
+  const raw = $("locCoords").value.trim();
+  if (!raw) return msg($("geoMsg"), "error", "الصق الإحداثيات أو رابط الخريطة.");
+
+  let lat = null, lng = null;
+  let m = raw.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (m) { lat = +m[1]; lng = +m[2]; }
+  if (lat == null) {
+    m = raw.match(/[?&]q=(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+    if (m) { lat = +m[1]; lng = +m[2]; }
+  }
+  if (lat == null) {
+    m = raw.match(/(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
+    if (m) { lat = +m[1]; lng = +m[2]; }
+  }
+
+  if (lat == null || isNaN(lat) || isNaN(lng)) {
+    return msg($("geoMsg"), "error", "لم نتعرّف على الإحداثيات. الصيغة المتوقعة: 24.7136, 46.6753");
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return msg($("geoMsg"), "error", "الإحداثيات خارج النطاق الصحيح.");
+  }
+
+  initLocMap();
+  setPick(lat, lng, true, 17);
+  setTimeout(() => locMap && locMap.invalidateSize(), 100);
+  msg($("geoMsg"), "done", `انتقلنا إلى ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+};
+
+$("locCoords").addEventListener("keydown", (e) => { if (e.key === "Enter") $("coordBtn").click(); });
+
+/* ---------------- تحليل موقع مشروع ---------------- */
+const ANCHOR_ICONS = {
+  "مدارس": "graduation-cap", "مساجد": "mosque",
+  "مستشفيات ومراكز طبية": "heart-pulse", "بنوك": "building",
+  "جهات حكومية": "landmark", "مراكز تسوق": "shopping-bag",
+  "محطات وقود": "fuel", "أسواق ومتاجر كبرى": "shopping-cart",
+};
+const COMPLEMENT_ICONS = {
+  "صالة رياضية": "dumbbell", "مكاتب إدارية": "briefcase",
+  "عيادة": "stethoscope", "صالون حلاقة": "scissors",
+};
+const IND_ICONS = {
+  concentration: "pie-chart", purchasing_power: "banknote", price_gap: "tag",
+  rising: "trending-up", demand: "bar-chart", maturity: "layers",
+  complements: "route", rent: "building2", peak: "clock",
+};
+
+$("locBtn").onclick = async () => {
+  const act = $("locAct").value.trim();
+  if (act.length < 2) return msg($("locMsg"), "error", "اكتب نوع النشاط.");
+  if (!locPick) return msg($("locMsg"), "error", "ابحث عن الموقع أو اضغط على الخريطة لتحديده.");
+
+  const btn = $("locBtn");
+  busy(btn, true, "جارٍ التحليل");
+  msg($("locMsg"), "info", T("msg.site", "نمسح المنطقة ونقرأ المنافسين والمحيط. قد يستغرق دقيقتين."));
+
+  const areaLabel = [$("locDistrict").value.trim(), $("locCity").value.trim()]
+    .filter(Boolean).join("، ") || null;
+
+  try {
+    const { data, error } = await sb.functions.invoke("analyze-location", {
+      body: {
+        activity: act, lat: locPick.lat, lng: locPick.lng,
+        area_label: areaLabel,
+        radius_m: +$("locRadius").value,
+      },
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+
+    renderLocation(data);
+    savedNote("loc", null);
+    clearMsg($("locMsg"));
+    refreshHistory("loc");
+  } catch (e) {
+    msg($("locMsg"), "error", friendly(e));
+  } finally { busy(btn, false, btnLabel("loc")); }
+};
+
+function renderLocation(data) {
+    const m = data.market_signals || {};
+    $("locRing").innerHTML = orbitRing(data.score, 100, scoreColor(data.score), 116, "جاذبية");
+    $("locVerdict").textContent = data.verdict;
+    $("locVerdict").style.color = scoreColor(data.score);
+    $("locNote").textContent =
+      `أقرب منافس: ${m.nearest_name ?? "—"} على بعد ${m.nearest_distance_m ?? "—"} متر · ${m.vitality_label ?? ""}`;
+
+    $("lcComp").textContent = data.competitors_count ?? "—";
+    $("lcRating").textContent = m.avg_rating ?? "—";
+    $("lcWeak").textContent = m.weak_competitors ?? "—";
+    $("lcVital").textContent = (m.vitality_score ?? "—") + "%";
+    $("locSummary").textContent = data.summary || "—";
+
+    if (data.area_character) {
+      $("areaChar").textContent = data.area_character;
+      $("areaChar").className = "summary";
+    } else $("areaChar").className = "summary hidden";
+
+    const inds = data.indicators || m.indicators || [];
+    if (inds.length) {
+      $("indList").innerHTML = inds.map((x) => {
+        let extra = "";
+        if (x.key === "rising" && (x.items || []).length) {
+          extra = x.items.map((r) => `<div class="list-row" style="margin-top:8px">
+            <span>${esc(r.name)}</span>
+            <span class="meta num">★${r.rating} · ${r.reviews} · ${r.distance_m}م</span></div>`).join("");
+        }
+        if (x.key === "complements" && (x.items || []).length) {
+          extra = `<div style="margin-top:9px">` + x.items.map((c) =>
+            `<span class="chip">${icon(COMPLEMENT_ICONS[c.type] || "map-pin", 13)}${esc(c.type)}: ${c.count} · ${c.nearest_distance_m}م</span>`
+          ).join("") + `</div>`;
+        }
+        return `<div class="indicator ${x.status || "neutral"}">
+          <div class="ind-head">
+            <div class="ind-title">${icon(IND_ICONS[x.key] || "info", 17)}${esc(x.title)}</div>
+            <div class="ind-val">${esc(x.value)}</div>
+          </div>
+          <div class="ind-what">${esc(x.what)}</div>
+          <div class="ind-means">${esc(x.means)}</div>
+          ${extra}
+        </div>`;
+      }).join("");
+      $("indBox").className = "";
+    } else $("indBox").className = "hidden";
+
+    const an = (m.anchors || []).slice().sort((a, b) => a.nearest_distance_m - b.nearest_distance_m);
+    if (an.length) {
+      $("anchList").innerHTML = an.map((a) => `
+        <div class="icon-row">
+          <div class="ico">${icon(ANCHOR_ICONS[a.type] || "map-pin", 17)}</div>
+          <div class="body">
+            <div class="t">${esc(a.type)} · ${a.count}</div>
+            <div class="d">أقربها: ${esc(a.nearest)}</div>
+          </div>
+          <div class="val">${a.nearest_distance_m}م</div>
+        </div>`).join("");
+      $("anchBox").className = "";
+    } else $("anchBox").className = "hidden";
+
+    const br = m.brands || [];
+    if (br.length) {
+      $("brandList").innerHTML = br.map((b) =>
+        `<span class="chip">${icon("star", 13)}${esc(b.name)} · ${b.distance_m}م</span>`).join("");
+      $("brandBox").className = "";
+    } else $("brandBox").className = "hidden";
+
+    const mg = m.magnets || [];
+    if (mg.length) {
+      $("magList").innerHTML = mg.map((x) =>
+        `<div class="list-row"><span>${esc(x.name)}</span>
+         <span class="meta num">${x.reviews} مراجعة · ${x.distance_m}م</span></div>`).join("");
+      $("magBox").className = "";
+    } else $("magBox").className = "hidden";
+
+    const ph = data.peak_hours || {};
+    if ((ph.hourly || []).length) {
+      const byHour = {}; ph.hourly.forEach((h) => byHour[h.hour] = h.value);
+      const max = Math.max(...ph.hourly.map((h) => h.value), 1);
+      let html = "";
+      for (let h = 0; h < 24; h++) {
+        const val = byHour[h] ?? 0;
+        const pk = (ph.top || []).includes(h) ? " class='peak'" : "";
+        html += `<i${pk} style="height:${Math.max(3, (val / max) * 100)}%" title="${fmtH(h)}"></i>`;
+      }
+      $("hoursBar").innerHTML = html;
+      $("peakTxt").textContent = (ph.top || []).length
+        ? `أنشط الساعات: ${ph.top.map(fmtH).join("، ")} — مبني على ${ph.sources} محل.` : "";
+      $("hoursBox").className = "";
+    } else $("hoursBox").className = "hidden";
+
+    fillPoints("gapBox", "gapList", data.market_gaps, "warn");
+    fillPoints("lOppBox", "lOppList", data.opportunities, "ok");
+    fillPoints("lRiskBox", "lRiskList", data.risks, "bad");
+    fillPoints("succBox", "succList", data.success_factors, "plain");
+
+    const cs = data.competitors || [];
+    if (cs.length) {
+      $("lcCompList").innerHTML = cs.map((c) =>
+        `<div class="list-row"><span>${esc(c.name)}</span>
+         <span class="meta num">★${c.rating ?? "—"} · ${c.reviews ?? 0} · ${c.distance_m}م</span></div>`).join("");
+      $("lcCompBox").className = "";
+      if (locLayer) cs.forEach((c) => {
+        if (c.lat == null || c.lng == null) return;
+        L.circleMarker([c.lat, c.lng], {
+          radius: 7, color: "#fff", weight: 1.5,
+          fillColor: (c.rating ?? 5) < 4 ? "#A8271F" : "#A96A12", fillOpacity: .95,
+        }).bindPopup(`<div class="pop"><h4>${esc(c.name)}</h4>
+          <div class="r"><span>★ ${c.rating ?? "—"}</span><span>${c.reviews ?? 0} مراجعة</span></div></div>`)
+          .addTo(locLayer);
+      });
+    } else $("lcCompBox").className = "hidden";
+
+    $("locDisc").textContent = data.disclaimer || "التحليل مبني على بيانات سوقية محدّثة، ولا يغني عن دراسة جدوى شاملة.";
+    $("locResult").className = "";
+}
+
+/* ---------------- النتائج المحفوظة ---------------- */
+const fmtDay = (iso) => iso
+  ? new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso))
+  : "";
+const fmtDayTime = (iso) => iso
+  ? new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso))
+  : "";
+
+const HIST = {
+  plan: {
+    table: "growth_plans", cols: "id, created_at, visibility_pct", btn: "planBtn", result: "planResult", msgEl: "planMsg",
+    get first() { return T("plan.btn", "أنشئ خطتي"); },
+    get again() { return T("plan.btn_again", "أنشئ خطة جديدة"); },
+    get view() { return T("plan.view", "اعرض خطتي السابقة"); },
+    tag: (r) => r.visibility_pct != null ? `ظهور ${r.visibility_pct}%` : "",
+    show: async (row) => renderPlan(row),
+  },
+  audit: {
+    table: "profile_audits", cols: "id, created_at, score", btn: "auditBtn", result: "auditResult", msgEl: "auditMsg",
+    get first() { return T("profile.audit_btn", "افحص ملفي"); }, again: "افحص ملفي من جديد", view: "اعرض آخر فحص",
+    tag: (r) => r.score != null ? `${r.score}/100` : "",
+    show: async (row) => renderAudit({
+      score: row.score ?? 0, checks: row.checks || [], competitors: row.competitors || [],
+      my_stats: {
+        name: currentBizData?.name ?? "محلك",
+        rating: currentBizData?.google_rating ?? null,
+        reviews: currentBizData?.google_reviews_count ?? 0,
+      },
+    }),
+  },
+  rev: {
+    table: "review_analyses", cols: "id, created_at, total_reviews, avg_rating", btn: "revBtn", result: "revResult", msgEl: "revMsg",
+    first: "حلّل المراجعات", again: "حلّل المراجعات من جديد", view: "اعرض آخر تحليل",
+    tag: (r) => r.total_reviews != null ? `${r.total_reviews} مراجعة` : "",
+    show: async (row) => {
+      const [neg, noRep] = await Promise.all([
+        sb.from("reviews").select("author, rating, text, owner_replied")
+          .eq("business_id", row.business_id).lte("rating", 2)
+          .order("review_date", { ascending: false }).limit(5),
+        sb.from("reviews").select("id", { count: "exact", head: true })
+          .eq("business_id", row.business_id).lte("rating", 2).eq("owner_replied", false),
+      ]);
+      renderReviews({
+        total_reviews: row.total_reviews ?? 0,
+        positive: row.positive_count ?? 0,
+        negative: row.negative_count ?? 0,
+        negative_without_reply: noRep.count ?? "—",
+        summary: row.summary,
+        strengths: row.strengths || [], weaknesses: row.weaknesses || [],
+        recommendations: row.recommendations || [],
+        negative_samples: (neg.data || []).map((r) => ({ author: r.author, rating: r.rating, text: r.text, replied: r.owner_replied })),
+      });
+    },
+  },
+  loc: {
+    table: "location_reports", cols: "id, created_at, score, area_label, activity", byOwner: true,
+    btn: "locBtn", result: "locResult", msgEl: "locMsg",
+    get first() { return T("site.btn", "حلّل الموقع"); }, again: "حلّل موقعاً آخر", view: "اعرض آخر تحليل موقع",
+    tag: (r) => [r.activity, r.area_label].filter(Boolean).join(" · ") || (r.score != null ? `${r.score}/100` : ""),
+    show: async (row) => renderLocation({
+      ...row,
+      indicators: row.market_signals?.indicators ?? [],
+      area_character: row.market_signals?.area_character ?? "",
+      market_gaps: row.market_signals?.market_gaps ?? [],
+      success_factors: row.market_signals?.success_factors ?? [],
+    }),
+  },
+  buy: {
+    table: "acquisition_reports", cols: "id, created_at, score, target_name", byOwner: true,
+    btn: "buyBtn", result: "buyResult", msgEl: "buyMsg",
+    get first() { return T("buy.btn", "حلّل هذا المحل"); }, again: "حلّل محلاً آخر", view: "اعرض آخر تحليل",
+    tag: (r) => r.target_name || (r.score != null ? `${r.score}/100` : ""),
+    show: async (row) => renderBuy({
+      ...row,
+      target: { name: row.target_name, category: row.category, address: row.address,
+        rating: row.vitals?.rating ?? null, reviews: row.vitals?.reviews_total ?? 0 },
+      scope_note: row.scope_note ?? "نحلّل السوق ولا نطّلع على دفاتر المحل — لذلك جهّزنا لك ما تسأل عنه وتتحقق منه قبل الشراء.",
+    }),
+  },
+  comp: {
+    table: "competitor_analyses", cols: "id, created_at", btn: "compBtn", result: "compResult", msgEl: "compMsg",
+    first: "حلّل المنافسين بعمق", again: "حلّل المنافسين من جديد", view: "اعرض آخر تحليل",
+    tag: () => "",
+    show: async (row) => {
+      const x = row.extra || {};
+      renderComp({
+        positioning: row.positioning, battle_plan: row.battle_plan || [], competitors: row.competitors || [],
+        top_rival: x.top_rival ?? null, my_stats: x.my_stats ?? {},
+        opportunities: x.opportunities ?? [], threats: x.threats ?? [],
+      });
+    },
+  },
+};
+Object.values(HIST).forEach((h) => { h.rows = []; });
+
+const btnLabel = (k) => (HIST[k].rows.length ? HIST[k].again : HIST[k].first);
+
+function histInit() {
+  Object.entries(HIST).forEach(([k, h]) => {
+    const btn = $(h.btn);
+    if (!btn || $(`${k}Hist`)) return;
+    btn.insertAdjacentHTML("afterend", `<div id="${k}Hist" class="hist hidden"></div>`);
+    $(h.result).insertAdjacentHTML("afterbegin", `<div id="${k}Saved" class="saved-note hidden"></div>`);
+  });
+  $("planResult").insertAdjacentHTML("afterbegin", `
+    <div class="plan-tools">
+      <button class="btn ghost" id="planPdf">${icon("file-text", 16)}تنزيل PDF</button>
+    </div>`);
+  $("planPdf").onclick = printPlan;
+}
+
+function renderHistBar(k) {
+  const h = HIST[k];
+  const box = $(`${k}Hist`);
+  const btn = $(h.btn);
+  if (btn && !btn.disabled && !btn.dataset.label) btn.textContent = btnLabel(k);
+  if (!box) return;
+  if (!h.rows.length) { box.className = "hist hidden"; box.innerHTML = ""; return; }
+  const r0 = h.rows[0];
+  box.className = "hist";
+  box.innerHTML = `
+    <button class="btn ghost block" data-open="${esc(r0.id)}">${icon("clock", 16)}${h.view}
+      <span class="hist-date">${fmtDay(r0.created_at)}</span></button>
+    ${h.rows.length > 1 ? `
+      <select class="select hist-sel" aria-label="النتائج السابقة">
+        <option value="">النتائج السابقة (${h.rows.length})</option>
+        ${h.rows.map((r) => `<option value="${esc(r.id)}">${fmtDayTime(r.created_at)}${h.tag(r) ? ` · ${esc(h.tag(r))}` : ""}</option>`).join("")}
+      </select>` : ""}`;
+  box.querySelector("[data-open]").onclick = (e) => openHist(k, r0.id, e.currentTarget);
+  const sel = box.querySelector(".hist-sel");
+  if (sel) sel.onchange = () => { if (sel.value) openHist(k, sel.value, null); sel.value = ""; };
+}
+
+async function refreshHistory(k) {
+  const h = HIST[k];
+  if (h.byOwner) {
+    const { data } = await sb.from(h.table).select(h.cols)
+      .eq("status", "completed").order("created_at", { ascending: false }).limit(30);
+    h.rows = data || [];
+    renderHistBar(k);
+    return;
+  }
+  if (!currentBiz) { h.rows = []; renderHistBar(k); return; }
+  const biz = currentBiz;
+  const { data } = await sb.from(h.table).select(h.cols)
+    .eq("business_id", biz).order("created_at", { ascending: false }).limit(30);
+  if (biz !== currentBiz) return;
+  h.rows = data || [];
+  renderHistBar(k);
+}
+
+async function loadHistory() {
+  await Promise.all(Object.keys(HIST).map((k) => refreshHistory(k).catch(() => {})));
+}
+
+function savedNote(k, iso) {
+  const el = $(`${k}Saved`);
+  if (!el) return;
+  if (!iso) { el.className = "saved-note hidden"; el.innerHTML = ""; return; }
+  el.className = "saved-note";
+  el.innerHTML = `${icon("clock", 15)}<span>نتيجة محفوظة من ${fmtDayTime(iso)}</span>`;
+}
+
+async function openHist(k, id, btn) {
+  const h = HIST[k];
+  if (btn) busy(btn, true, "جارٍ الفتح");
+  try {
+    const { data, error } = await sb.from(h.table).select("*").eq("id", id).single();
+    if (error) throw error;
+    await h.show(data);
+    savedNote(k, data.created_at);
+    clearMsg($(h.msgEl));
+    $(h.result).scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (e) {
+    msg($(h.msgEl), "error", friendly(e));
+  } finally {
+    if (btn) { busy(btn, false, ""); renderHistBar(k); }
+  }
+}
+
+/* ---------------- تنزيل الخطة PDF ---------------- */
+function planPrintHtml(d) {
+  const b = currentBizData || {};
+  const li = (arr) => (arr || []).filter(Boolean).map((x) => `<li>${esc(x)}</li>`).join("");
+  const t = d.review_target || {};
+  const block = (key) => {
+    if ((key === "primary_category" || key === "extra_categories") && (d.primary_category || (d.extra_categories || []).length)) {
+      return `<div class="pp-box"><b>التصنيف الرئيسي:</b> ${esc(d.primary_category || "—")}
+        ${(d.extra_categories || []).length ? `<br><b>التصنيفات الفرعية:</b> ${esc(d.extra_categories.join("، "))}` : ""}</div>`;
+    }
+    if (key === "description" && d.description_text) return `<div class="pp-box pp-copy">${esc(d.description_text)}</div>`;
+    if (key === "services" && (d.services || []).length) return `<div class="pp-box"><ul>${li(d.services)}</ul></div>`;
+    if (key === "photos" && d.photo_plan?.breakdown?.length) {
+      return `<div class="pp-box"><ul>${d.photo_plan.breakdown.map((p) =>
+        `<li><b>${esc(p.count)} × ${esc(p.type)}</b>${p.tip ? ` — ${esc(p.tip)}` : ""}</li>`).join("")}</ul></div>`;
+    }
+    if (key === "reviews") {
+      return `<div class="pp-box">
+        ${t.target ? `<b>الهدف:</b> ${esc(t.target)} مراجعة خلال ${esc(t.weeks ?? "—")} أسبوعاً (${esc(t.per_week ?? "—")} أسبوعياً)<br>` : ""}
+        ${t.how ? `${esc(t.how)}<br>` : ""}
+        ${t.ask_text ? `<div class="pp-copy" style="margin-top:6px">${esc(t.ask_text)}</div>` : ""}
+        <div style="margin-top:6px">ملصق التقييم في آخر صفحة.</div></div>`;
+    }
+    if (key === "posts" && (d.posts || []).length) {
+      return d.posts.map((p, i) => `<div class="pp-box"><b>${esc(p.title || `المنشور ${i + 1}`)}</b><div class="pp-copy">${esc(p.text)}</div></div>`).join("");
+    }
+    if (key === "keywords" && (d.keyword_ideas || []).length) {
+      return `<div class="pp-box"><ul>${d.keyword_ideas.map((k) => `<li><b>${esc(k.term)}</b>${k.why ? ` — ${esc(k.why)}` : ""}</li>`).join("")}</ul></div>`;
+    }
+    return "";
+  };
+  const sticker = stickerHtml();
+  return `<div class="pp">
+    <div class="pp-head">
+      <div class="pp-brand">${logoMark(34)}<span>فلك ٣٦٠</span></div>
+      <div class="pp-meta">${fmtDay(d.created_at || new Date().toISOString())}</div>
+    </div>
+    <h1>خطة رفع ظهور ${esc(b.name || "متجرك")}</h1>
+    ${b.address ? `<div class="pp-sub">${esc(b.address)}</div>` : ""}
+    ${d.visibility_pct != null || d.realistic_range_m ? `<div class="pp-stats">
+      ${d.visibility_pct != null ? `<div><b>${esc(d.visibility_pct)}%</b><span>ظهورك الحالي</span></div>` : ""}
+      ${d.realistic_range_m ? `<div><b>${esc(d.realistic_range_m)} م</b><span>نطاقك الواقعي</span></div>` : ""}
+      <div><b>${(d.steps || []).length}</b><span>خطوات</span></div></div>` : ""}
+    ${d.summary ? `<h2>الخلاصة</h2><p>${esc(d.summary)}</p>` : ""}
+    ${(d.blockers || []).length ? `<h2>ما يعيق ظهورك</h2><ol>${d.blockers.map((x) =>
+      `<li><b>${esc(x.issue)}</b>${x.why ? ` — ${esc(x.why)}` : ""}</li>`).join("")}</ol>` : ""}
+    <h2>الخطوات بالترتيب</h2>
+    ${(d.steps || []).map((s) => `<div class="pp-step">
+      <div class="pp-step-h"><span class="pp-n">${esc(s.order)}</span><b>${esc(s.title)}</b>
+        <small>أثر ${esc(s.impact || "—")}${s.timeframe ? ` · ${esc(s.timeframe)}` : ""}</small></div>
+      ${s.detail ? `<p>${esc(s.detail)}</p>` : ""}
+      ${s.where ? `<div class="pp-where">أين: ${esc(s.where)}</div>` : ""}
+      ${block(s.content_key)}
+    </div>`).join("")}
+    <div class="pp-foot">falak360.net · التحليلات إرشادية ولا تضمن ترتيباً معيناً</div>
+    ${sticker ? `<div class="pp-page">${sticker}</div>` : ""}
+  </div>`;
+}
+
+function printPlan() {
+  if (!lastPlan) return;
+  $("printArea").innerHTML = planPrintHtml(lastPlan);
+  document.body.classList.add("printing-plan");
+  const done = () => { document.body.classList.remove("printing-plan"); window.removeEventListener("afterprint", done); };
+  window.addEventListener("afterprint", done);
+  setTimeout(() => window.print(), 50);
+}
+
+const HIST_CSS = `
+.hist{display:grid;gap:8px;margin-top:10px}
+.hist .btn{justify-content:center}
+.hist-date{font-size:12px;color:var(--ink-3);font-weight:400;margin-inline-start:6px}
+.hist-sel{height:40px;font-size:13.5px}
+.saved-note{display:flex;align-items:center;gap:8px;padding:9px 12px;margin-bottom:12px;border-radius:var(--r);
+  background:var(--info-tint,#eef3fb);color:var(--info,#2f5d9b);font-size:13px}
+.saved-note svg{width:15px;height:15px;flex:0 0 auto}
+.plan-tools{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}
+#printArea .pp{display:none}
+@media print{
+  body.printing-plan #printArea{position:static!important;display:block!important;inset:auto;background:#fff}
+  body.printing-plan #printArea .pp{display:block}
+  @page{size:A4;margin:14mm}
+  .pp{font-family:inherit;color:#101820;direction:rtl;font-size:12.5px;line-height:1.75;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pp-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #263A63;padding-bottom:8px;margin-bottom:14px}
+  .pp-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:#263A63}
+  .pp-meta{color:#666;font-size:12px}
+  .pp h1{font-size:20px;margin:0 0 4px;color:#101820}
+  .pp-sub{color:#666;font-size:12px;margin-bottom:10px}
+  .pp h2{font-size:15px;color:#263A63;margin:16px 0 6px;border-bottom:1px solid #e3e6ec;padding-bottom:4px}
+  .pp p{margin:4px 0}
+  .pp ol,.pp ul{margin:4px 0;padding-inline-start:20px}
+  .pp-stats{display:flex;gap:10px;margin:10px 0}
+  .pp-stats div{flex:1;border:1px solid #e3e6ec;border-radius:8px;padding:8px;text-align:center}
+  .pp-stats b{display:block;font-size:17px;color:#263A63}
+  .pp-stats span{font-size:11px;color:#666}
+  .pp-step{border:1px solid #e3e6ec;border-radius:8px;padding:10px 12px;margin:8px 0;break-inside:avoid}
+  .pp-step-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pp-step-h small{color:#666;font-size:11px}
+  .pp-n{width:22px;height:22px;border-radius:50%;background:#263A63;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+  .pp-where{font-size:11.5px;color:#555;margin-top:4px}
+  .pp-box{background:#f5f6f8;border-radius:6px;padding:8px 10px;margin-top:6px}
+  .pp-copy{white-space:pre-line}
+  .pp-foot{margin-top:16px;font-size:10.5px;color:#888;text-align:center}
+  .pp-page{break-before:page;display:flex;justify-content:center;padding-top:30mm}
+  .pp-page .sticker{box-shadow:none}
+}`;
+(() => { const st = document.createElement("style"); st.textContent = HIST_CSS; document.head.appendChild(st); })();
+histInit();
+
+/* =========================================================
+   موردون لنشاطك
+   ========================================================= */
+let supCache = null, supState = { q: "", city: "" }, supOpen = new Set();
+
+async function loadSuppliers(force) {
+  const gate = $("supGate"), body = $("supBody");
+  if (!currentBiz) {
+    body.innerHTML = "";
+    return emptyState(gate, "shopping-cart", "اختر محلك أولاً",
+      "نحتاج معرفة نشاط محلك لنعرض لك الموردين المناسبين.", "اذهب إلى نظرة عامة", "overview");
+  }
+  gate.innerHTML = "";
+  if (supCache && !force) return renderSuppliers();
+  body.innerHTML = `<div class="card" style="display:flex;align-items:center;gap:10px">
+    <span class="spinner" style="border-color:var(--line-2);border-top-color:var(--brand)"></span>نبحث عن موردين لنشاطك…</div>`;
+  try {
+    const { data, error } = await sb.rpc("suppliers_for_business", { p_business: currentBiz });
+    if (error) throw error;
+    supCache = data;
+    renderSuppliers();
+  } catch {
+    body.innerHTML = "";
+    msg2(body, "error", T("msg.error", "تعذّر إكمال العملية الآن — حاول بعد قليل."));
+  }
+}
+
+function msg2(box, kind, text) {
+  const d = document.createElement("div");
+  d.className = "msg";
+  box.appendChild(d);
+  msg(d, kind, text);
+}
+
+function renderSuppliers() {
+  const d = supCache, body = $("supBody");
+  if (!d) return;
+  if (d.error) { body.innerHTML = `<div class="hint">${esc(d.error)}</div>`; return; }
+  if (d.no_sector) {
+    body.innerHTML = "";
+    return emptyState(body, "shopping-cart", "نشاط محلك غير محدد بعد",
+      "أعد إضافة محلك من شاشة «نظرة عامة» عبر البحث ليُحدَّد نشاطه، فنعرض لك الموردين المناسبين.", "اذهب إلى نظرة عامة", "overview");
+  }
+  if (d.locked) return renderSupLock();
+
+  const reg = d.registered || [], maps = d.maps || [];
+  const q = supState.q.trim();
+  const match = (s) => (!q || (s.name || "").includes(q) || (s.category || "").includes(q))
+    && (!supState.city || s.city === supState.city);
+  const regF = reg.filter(match), mapsF = maps.filter(match);
+  const cities = [...new Set(maps.map((m) => m.city).filter(Boolean))];
+
+  body.innerHTML = `
+    <div class="sup-head">
+      <div class="sup-count">${esc(d.sector_name || "")}${d.city ? ` · ${esc(d.city)}` : ""} —
+        ${reg.length ? `${reg.length} مورد موثّق و` : ""}${maps.length} نشاط قريب</div>
+    </div>
+    ${d.tools ? `<div class="sup-tools">
+      <input id="supQ" class="input" type="search" placeholder="ابحث باسم المورد أو تخصصه" value="${esc(supState.q)}">
+      <select id="supCity" class="select">
+        <option value="">كل المدن</option>
+        ${cities.map((c) => `<option ${c === supState.city ? "selected" : ""}>${esc(c)}</option>`).join("")}
+      </select>
+    </div>` : ""}
+
+    ${regF.length ? `<div class="section-head" style="margin-top:0"><h2>${esc(T("suppliers.registered_head", "موردون موثّقون"))}</h2></div>
+      ${regF.map(supCard).join("")}
+      <div class="sup-note">${esc(T("suppliers.verified_note", "التوثيق يعني أننا تحققنا من السجل التجاري للمنشأة، ولا يعني ضمان جودة منتجاتها."))}</div>` : ""}
+
+    ${mapsF.length ? `<div class="section-head"><h2>${esc(T("suppliers.maps_head", "موردون آخرون في منطقتك"))}</h2>
+        ${d.maps_city && d.maps_city !== d.city ? `<span class="note">أقرب مدينة متوفرة: ${esc(d.maps_city)}</span>` : ""}</div>
+      ${mapsF.map(mapsCard).join("")}` : ""}
+
+    ${!regF.length && !mapsF.length ? `<div class="hint">${esc(q || supState.city
+      ? "لا نتائج مطابقة — جرّب كلمة أخرى."
+      : T("suppliers.empty", "لم نجد موردين لنشاطك في منطقتك بعد — نضيف موردين جدداً باستمرار."))}</div>` : ""}`;
+
+  wireSuppliers();
+}
+
+function supCard(s) {
+  const acts = [];
+  if (s.whatsapp) acts.push(`<a href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|whatsapp">${icon("message-square", 15)}واتساب</a>`);
+  if (s.phone) acts.push(`<a href="tel:+${esc(s.phone)}" data-track="${esc(s.id)}|call">${icon("phone", 15)}اتصال</a>`);
+  if (s.maps_url) acts.push(`<a href="${esc(s.maps_url)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|map">${icon("map-pin", 15)}قوقل ماب</a>`);
+  const open = supOpen.has(s.id);
+  const det = open ? (s.details || null) : null;
+
+  return `<div class="sup verified">
+    <div class="sup-top">
+      <div class="sup-logo">${s.logo_url ? `<img src="${esc(s.logo_url)}" alt="">` : esc(String(s.name || "م").charAt(0))}</div>
+      <div class="sup-t">
+        <div class="sup-name">${esc(s.name)}</div>
+        <div class="sup-meta">${esc(s.city || "")}${s.covers_all_ksa ? " · يوصل لكل المملكة"
+          : (s.coverage_cities || []).length ? ` · يوصل إلى ${esc(s.coverage_cities.slice(0, 3).join("، "))}` : ""}</div>
+        <div class="sup-badges">
+          <span class="vb">${icon("check-circle", 13)}${esc(T("suppliers.verified_badge", "سجل تجاري موثّق"))}</span>
+          ${s.featured ? `<span class="vb star">${icon("star", 13)}مميز</span>` : ""}
+        </div>
+      </div>
+    </div>
+    ${s.bio || s.min_order || s.website ? `<div class="sup-body">
+      ${s.bio ? `<div class="bio">${esc(open ? s.bio : String(s.bio).slice(0, 160) + (s.bio.length > 160 ? "…" : ""))}</div>` : ""}
+      ${s.min_order ? `<div>الحد الأدنى للطلب: ${esc(s.min_order)}</div>` : ""}
+      ${s.website ? `<div><a href="${esc(s.website)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|website">الموقع الإلكتروني ↗</a></div>` : ""}
+    </div>` : ""}
+    ${det?.products?.length ? `<div class="sup-prods">${det.products.map((p) => `
+      <div class="sup-prod"><b>${esc(p.name)}</b>
+        ${p.description ? `<div>${esc(p.description)}</div>` : ""}
+        ${p.price_text ? `<div class="p">${esc(p.price_text)}</div>` : ""}</div>`).join("")}</div>` : ""}
+    ${acts.length ? `<div class="sup-acts">${acts.join("")}</div>` : ""}
+    ${s.products_count || s.bio ? `<button class="sup-more" data-detail="${esc(s.id)}">${open ? "إخفاء التفاصيل" : `التفاصيل${s.products_count ? ` و${s.products_count} منتجاً` : ""}`}</button>` : ""}
+  </div>`;
+}
+
+function mapsCard(s) {
+  const acts = [];
+  if (s.phone) acts.push(`<a href="tel:${esc(s.phone)}" data-track="${esc(s.id)}|call">${icon("phone", 15)}اتصال</a>`);
+  if (s.maps_url) acts.push(`<a href="${esc(s.maps_url)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|map">${icon("map-pin", 15)}قوقل ماب</a>`);
+  return `<div class="sup">
+    <div class="sup-top">
+      <div class="sup-logo">${esc(String(s.name || "م").charAt(0))}</div>
+      <div class="sup-t">
+        <div class="sup-name">${esc(s.name)}</div>
+        <div class="sup-meta">${esc(s.category || "")}${s.distance_km != null ? ` · ${s.distance_km} كم` : ""}${
+          s.rating ? ` · ★ ${s.rating} (${s.reviews ?? 0})` : ""}</div>
+        <div class="sup-badges"><span class="vb maps">${esc(T("suppliers.maps_label", "نشاط على قوقل ماب — غير موثّق"))}</span></div>
+      </div>
+    </div>
+    ${s.address || s.website ? `<div class="sup-body">${s.address ? esc(s.address) : ""}
+      ${s.website ? `<div><a href="${esc(s.website)}" target="_blank" rel="noopener" data-track="${esc(s.id)}|website">الموقع الإلكتروني ↗</a></div>` : ""}</div>` : ""}
+    ${acts.length ? `<div class="sup-acts">${acts.join("")}</div>` : ""}
+    ${s.claimable ? `<a class="sup-claim" href="supplier.html?claim=${esc(s.id)}" target="_blank" rel="noopener">
+      ${icon("building", 15)}${esc(T("suppliers.claim", "هل هذا نشاطك؟ وثّقه واظهر في المقدمة"))}</a>` : ""}
+    <button class="sup-more" data-report="${esc(s.id)}">إبلاغ عن بيانات غير صحيحة</button>
+  </div>`;
+}
+
+function wireSuppliers() {
+  const body = $("supBody");
+  const q = $("supQ");
+  if (q) {
+    let t = null;
+    q.oninput = () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        supState.q = q.value;
+        renderSuppliers();
+        const n = $("supQ"); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+      }, 300);
+    };
+    $("supCity").onchange = () => { supState.city = $("supCity").value; renderSuppliers(); };
+  }
+  body.querySelectorAll("[data-track]").forEach((a) => a.addEventListener("click", () => {
+    const [id, kind] = a.dataset.track.split("|");
+    sb.rpc("supplier_track", { p_supplier: id, p_kind: kind }).catch(() => {});
+  }));
+  body.querySelectorAll("[data-detail]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.detail;
+    if (supOpen.has(id)) { supOpen.delete(id); return renderSuppliers(); }
+    busy(b, true, "جارٍ الفتح");
+    const s = (supCache.registered || []).find((x) => x.id === id);
+    try {
+      const { data } = await sb.rpc("supplier_profile", { p_supplier: id });
+      if (s && data && !data.error && !data.locked) s.details = data;
+    } catch { /* */ }
+    supOpen.add(id);
+    renderSuppliers();
+  });
+  body.querySelectorAll("[data-report]").forEach((b) => b.onclick = async () => {
+    const reason = prompt("ما المشكلة في هذا المورد؟ (مثل: رقم غير صحيح، أو مغلق نهائياً)");
+    if (!reason) return;
+    busy(b, true, "جارٍ الإرسال");
+    try {
+      const { data } = await sb.rpc("report_supplier", { p_supplier: b.dataset.report, p_reason: reason });
+      busy(b, false, "إبلاغ عن بيانات غير صحيحة");
+      b.textContent = data?.message || "وصلنا بلاغك";
+    } catch { busy(b, false, "إبلاغ عن بيانات غير صحيحة"); }
+  });
+}
+
+/* شاشة الاشتراك — للباقة المجانية */
+const PLAN_FEATURES = {
+  basic: ["موردون موثّقون وموردون في منطقتك", "فحص الترتيب وتدقيق الملف", "خطة رفع الظهور"],
+  growth: ["كل ما في الأساسية", "فلترة الموردين بالمدينة والبحث فيهم", "تحليل المنافسين ومراقبة نطاقك"],
+  pro: ["كل ما في النمو", "حصص أعلى لكل التحاليل", "أولوية في الدعم"],
+};
+
+async function renderSupLock() {
+  const d = supCache, body = $("supBody");
+  const n = (d.counts?.registered || 0) + (d.counts?.maps || 0);
+  let plans = [];
+  try {
+    const { data } = await sb.from("plans").select("code, name, price_sar, sort_order")
+      .eq("is_active", true).gt("price_sar", 0).order("sort_order");
+    plans = data || [];
+  } catch { /* */ }
+
+  body.innerHTML = `
+    <div class="lock">
+      <h2>${esc(T("suppliers.locked_title", "موردون لنشاطك في منطقتك"))}</h2>
+      <p>${esc(T("suppliers.locked_body", "اشترك في إحدى الباقات ليظهر لك الموردون المتوافقون مع نشاطك في منطقتك."))}</p>
+      ${n ? `<div class="lock-count">${icon("shopping-cart", 16)}${n} مورداً جاهزاً لقطاع ${esc(d.sector_name || "نشاطك")}${d.city ? ` في ${esc(d.city)}` : ""}</div>` : ""}
+      <div class="blur">
+        ${[0, 1].map(() => `<div class="sup" style="margin-bottom:8px"><div class="sup-top">
+          <div class="sup-logo">م</div>
+          <div class="sup-t"><div class="sup-name">مؤسسة التوريد الحديثة</div>
+            <div class="sup-meta">${esc(d.city || "مدينتك")} · يوصل لكل المملكة</div></div></div></div>`).join("")}
+      </div>
+      <div class="plan-cards">
+        ${plans.map((p) => `
+          <div class="plan-c ${p.code === "growth" ? "best" : ""}">
+            <h4>${esc(p.name)}</h4>
+            <div class="pr"><b class="num">${p.price_sar}</b> ريال شهرياً</div>
+            <ul>${(PLAN_FEATURES[p.code] || []).map((f) => `<li>${icon("check-circle", 15)}<span>${esc(f)}</span></li>`).join("")}</ul>
+            <button class="btn block ${p.code === "growth" ? "" : "ghost"}" data-sub="${esc(p.code)}">اشترك في ${esc(p.name)}</button>
+          </div>`).join("")}
+      </div>
+      <div id="supPay"></div>
+    </div>`;
+
+  body.querySelectorAll("[data-sub]").forEach((b) => b.onclick = async () => {
+    busy(b, true, "جارٍ التجهيز");
+    try {
+      const { data, error } = await sb.rpc("request_subscription", { p_plan_code: b.dataset.sub });
+      if (error) throw error;
+      const url = data?.payment_link;
+      $("supPay").innerHTML = `<div class="card sp-t" style="text-align:start">
+        <b>${esc(data?.plan || "")} — ${esc(data?.amount_sar ?? "")} ريال</b>
+        <div class="hint" style="margin:6px 0 0">${esc(data?.message || "")}</div>
+        ${url ? `<a class="btn block sp-t" href="${esc(url)}" target="_blank" rel="noopener" data-pay="${esc(data.subscription_id)}">ادفع الآن</a>` : ""}</div>`;
+      window.falakAccount?.refreshBadge?.();
+      $("supPay").scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (e) {
+      msg2($("supPay"), "error", friendly(e));
+    }
+    busy(b, false, "");
+  });
+}
+
+/* ---------------- الإقلاع ---------------- */
+async function boot() {
+  await loadTexts();
+  initChrome();
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $("authScreen").className = "auth-wrap"; return; }
+
+  $("authScreen").className = "auth-wrap hidden";
+  $("app").className = "";
+  locateUser();
+
+  const list = await loadBusinesses();
+  refreshGates();
+  refreshHistory("loc").catch(() => {});
+  refreshHistory("buy").catch(() => {});
+  if (list.length === 1) {
+    $("bizSelect").value = list[0].id;
+    $("bizSelect").dispatchEvent(new Event("change"));
+  }
+}
+boot();
+}
+
