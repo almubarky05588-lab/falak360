@@ -1,6 +1,6 @@
 /* =========================================================
-   فلك ٣٦٠ — إضافات الواجهة (الدفعة الأولى)
-   تعمل فوق app.js بلا تعديله:
+   فلك ٣٦٠ — إضافات الواجهة
+   تعمل فوق app.js بلا تعديله، وتنشئ حاوياتها بنفسها:
    • تنبيه على مفتاح ألوان الخريطة
    • تحليل الجهات: أين تقوى وأين تضعف ومن يسبقك
    • بيانات رسمية عن موقع «محل معروض للبيع»
@@ -42,6 +42,33 @@ const CSS = `
 .plan-c ul li.off svg{color:var(--line-2)}
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
+
+/* ---------------- إنشاء الحاويات إن لم تكن في الصفحة ---------------- */
+function ensureBoxes() {
+  const legend = document.querySelector("#screen-rank .legend");
+  if (legend && !legend.id) legend.id = "mapLegend";
+
+  const map = $("map");
+  if (legend && map && legend.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_PRECEDING) {
+    map.parentNode.insertBefore(legend, map);   // المفتاح فوق الخريطة
+  }
+
+  if (!$("zonesBox")) {
+    const after = $("diagnose") || map;
+    after?.insertAdjacentHTML("afterend", `
+      <div id="zonesBox" class="hidden">
+        <div class="section-head"><h2>أين تقوى وأين تضعف</h2>
+          <span class="note">حسب اتجاه النقطة من محلك</span></div>
+        <div id="zonesList"></div>
+        <div id="zonesNote"></div>
+        <div id="zonesRivals"></div>
+      </div>`);
+  }
+
+  if (!$("buyCtx")) {
+    $("buyScope")?.insertAdjacentHTML("beforebegin", `<div id="buyCtx"></div>`);
+  }
+}
 
 /* ---------------- أدوات ---------------- */
 const dirOf = (dLat, dLng) => {
@@ -190,9 +217,9 @@ function renderZones(pts, biz) {
 }
 
 async function loadZones() {
+  ensureBoxes();
   legendTip();
-  const sel = $("bizSelect");
-  const bizId = sel?.value;
+  const bizId = $("bizSelect")?.value;
   if (!bizId) return;
   try {
     const [{ data: biz }, { data: scan }] = await Promise.all([
@@ -210,10 +237,10 @@ async function loadZones() {
 /* ---------------- ٣) بيانات رسمية لمحل معروض للبيع ---------------- */
 let lastBuyKey = "";
 async function loadBuyCtx() {
+  ensureBoxes();
   const box = $("buyCtx");
-  const nameEl = $("buyPickedName");
   if (!box) return;
-  const key = (nameEl?.textContent || "") + ($("buyMeta")?.textContent || "");
+  const key = ($("buyPickedName")?.textContent || "") + ($("buyMeta")?.textContent || "");
   if (!key.trim() || key === lastBuyKey) return;
   lastBuyKey = key;
   box.innerHTML = "";
@@ -251,18 +278,16 @@ const ALL_FEATURES = [
 ];
 
 function strikePlans() {
-  document.querySelectorAll(".plan-c[data-fk-done='1']").forEach(() => {});
-  document.querySelectorAll(".plan-c").forEach((cardEl) => {
-    if (cardEl.dataset.fkDone === "1") return;
-    const btn = cardEl.querySelector("[data-sub]");
-    const code = btn?.dataset.sub;
-    const ul = cardEl.querySelector("ul");
+  document.querySelectorAll(".plan-c").forEach((el) => {
+    if (el.dataset.fkDone === "1") return;
+    const code = el.querySelector("[data-sub]")?.dataset.sub;
+    const ul = el.querySelector("ul");
     if (!code || !ul) return;
     ul.innerHTML = ALL_FEATURES.map((f) => {
       const on = f.in.includes(code);
       return `<li class="${on ? "" : "off"}">${icon(on ? "check-circle" : "x-circle", 15)}<span>${esc(f.t)}</span></li>`;
     }).join("");
-    cardEl.dataset.fkDone = "1";
+    el.dataset.fkDone = "1";
   });
 }
 
@@ -271,11 +296,12 @@ function watch(id, fn) {
   const el = $(id);
   if (!el) return;
   new MutationObserver(() => {
-    if (!el.classList.contains("hidden")) setTimeout(fn, 250);
+    if (!el.classList.contains("hidden")) setTimeout(fn, 300);
   }).observe(el, { attributes: true, attributeFilter: ["class"] });
 }
 
 function start() {
+  ensureBoxes();
   watch("scanResult", loadZones);
   watch("buyResult", loadBuyCtx);
 
@@ -285,11 +311,10 @@ function start() {
   const acc = document.querySelector("#screen-account");
   if (acc) new MutationObserver(strikePlans).observe(acc, { childList: true, subtree: true });
 
-  // لو كانت النتيجة ظاهرة أصلاً عند التحميل
   if ($("scanResult") && !$("scanResult").classList.contains("hidden")) loadZones();
 }
 
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
-else setTimeout(start, 600);
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(start, 800));
+else setTimeout(start, 800);
 
-window.falakZones = { render: renderZones, legendTip, strikePlans };
+window.falakZones = { render: renderZones, legendTip, strikePlans, ensureBoxes };
