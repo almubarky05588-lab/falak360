@@ -1574,6 +1574,7 @@ const IND_ICONS = {
   concentration: "pie-chart", purchasing_power: "banknote", price_gap: "tag",
   rising: "trending-up", demand: "bar-chart", maturity: "layers",
   complements: "route", rent: "building2", peak: "clock",
+  rent_actual: "banknote", density: "building", roads: "route",
 };
 
 $("locBtn").onclick = async () => {
@@ -1599,7 +1600,7 @@ $("locBtn").onclick = async () => {
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
 
-    renderLocation(data);
+    renderLocation({ ...data, lat: locPick.lat, lng: locPick.lng });
     savedNote("loc", null);
     clearMsg($("locMsg"));
     refreshHistory("loc");
@@ -1607,6 +1608,103 @@ $("locBtn").onclick = async () => {
     msg($("locMsg"), "error", friendly(e));
   } finally { busy(btn, false, btnLabel("loc")); }
 };
+
+/* بطاقات البيانات الرسمية: الإيجار والكثافة والطرق */
+const nfEn = (n) => Number(n).toLocaleString("en");
+
+function ctxCards(c) {
+  const out = [];
+  const rent = c?.rent?.found ? c.rent : null;
+  const den = c?.density?.found ? c.density : null;
+  const road = c?.roads?.found ? c.roads : null;
+
+  if (rent) {
+    const m = Number(rent.meter_price);
+    const lvl = rent.level === "district" ? `حي ${rent.district}`
+      : rent.level === "city" ? `مدينة ${rent.city}` : `متوسط أحياء ${rent.city}`;
+    out.push({
+      key: "rent_actual", title: `متوسط إيجار ال${rent.unit_type} في نطاقك`,
+      value: `${nfEn(Math.round(m))} ريال للمتر سنوياً`, status: "neutral",
+      what: `متوسط قيمة الإيجار في ${lvl} — ${rent.period}${rent.deals ? ` · مبني على ${nfEn(rent.deals)} عقد موثّق` : ""}.`,
+      means: `محل ١٠٠ متر يكلّفك نحو ${nfEn(Math.round(m * 100))} ريال سنوياً، و٢٠٠ متر نحو ${nfEn(Math.round(m * 200))} ريال. `
+        + `اجعله نقطة انطلاق في حساباتك وورقة تفاوض أمام المالك.`,
+      source: rent.source,
+    });
+  }
+
+  if (den) {
+    const per = den.buildings && c.rivals ? Math.round(den.buildings / c.rivals) : null;
+    out.push({
+      key: "density", title: "كثافة السكن حول موقعك",
+      value: `${nfEn(den.per_km2)} مبنى لكل كم²`,
+      status: den.percentile >= 60 ? "ok" : den.percentile >= 30 ? "neutral" : "warn",
+      what: `${den.label} — أعلى من ${den.percentile}% من النطاقات المحيطة، وإجمالي ${nfEn(den.buildings)} مبنى ضمن كيلومتر حولك.`,
+      means: (den.percentile >= 60
+        ? "قاعدة سكانية كثيفة تكفي لبناء عملاء متكررين من الحي نفسه دون الاعتماد على العابرين."
+        : den.percentile >= 30
+        ? "كثافة متوسطة — قاعدة الحي وحدها قد لا تكفي، فاعتمد كذلك على من يمر بموقعك."
+        : "السكن حولك قليل — لا تبنِ توقعاتك على سكان الحي بل على من يقصد المنطقة من خارجها.")
+        + (per ? ` ويقابل كل منافس نحو ${nfEn(per)} مبنى في نطاقك.` : ""),
+      source: den.source,
+    });
+  }
+
+  if (road) {
+    out.push({
+      key: "roads", title: "تعرّض الموقع للحركة",
+      value: `${road.label} · ${road.score}/100`,
+      status: road.score >= 60 ? "ok" : road.score >= 30 ? "neutral" : "warn",
+      what: `ضمن كيلومتر حولك: ${road.major_roads} طريقاً رئيسياً`
+        + (road.motorway ? ` (منها ${road.motorway} سريع)` : "")
+        + `، و${(road.secondary || 0) + (road.tertiary || 0)} طريقاً فرعياً`
+        + (road.max_lanes ? `، وأعرضها ${road.max_lanes} مسارات` : "") + ".",
+      means: road.means, source: road.source,
+    });
+  }
+  return out;
+}
+
+async function loadSiteContext(data) {
+  const lat = data.lat ?? locPick?.lat, lng = data.lng ?? locPick?.lng;
+  if (lat == null || lng == null) return;
+  try {
+    const { data: c } = await sb.rpc("site_context_auto", {
+      p_lat: lat, p_lng: lng, p_area: data.area_label ?? null, p_unit_type: "محل",
+    });
+    if (!c) return;
+    const cards = ctxCards({ ...c, rivals: data.competitors_count ?? 0 });
+    if (!cards.length) return;
+    const box = $("indList");
+    if (!box) return;
+    box.insertAdjacentHTML("afterbegin", cards.map(indCard).join(""));
+    $("indBox").className = "";
+    if (!c.roads?.found) sb.functions.invoke("road-exposure", { body: { lat, lng } }).catch(() => {});
+  } catch { /* التقرير يبقى كاملاً بدونها */ }
+}
+
+function indCard(x) {
+  let extra = "";
+  if (x.key === "rising" && (x.items || []).length) {
+    extra = x.items.map((r) => `<div class="list-row" style="margin-top:8px">
+      <span>${esc(r.name)}</span>
+      <span class="meta num">★${r.rating} · ${r.reviews} · ${r.distance_m}م</span></div>`).join("");
+  }
+  if (x.key === "complements" && (x.items || []).length) {
+    extra = `<div style="margin-top:9px">` + x.items.map((c) =>
+      `<span class="chip">${icon(COMPLEMENT_ICONS[c.type] || "map-pin", 13)}${esc(c.type)}: ${c.count} · ${c.nearest_distance_m}م</span>`
+    ).join("") + `</div>`;
+  }
+  return `<div class="indicator ${x.status || "neutral"}">
+    <div class="ind-head">
+      <div class="ind-title">${icon(IND_ICONS[x.key] || "info", 17)}${esc(x.title)}</div>
+      <div class="ind-val">${esc(x.value)}</div>
+    </div>
+    <div class="ind-what">${esc(x.what)}</div>
+    <div class="ind-means">${esc(x.means)}</div>
+    ${x.source ? `<div class="ind-src">${icon("info", 13)}المصدر: ${esc(x.source)}</div>` : ""}
+    ${extra}
+  </div>`;
+}
 
 function renderLocation(data) {
     const m = data.market_signals || {};
@@ -1629,30 +1727,10 @@ function renderLocation(data) {
 
     const inds = data.indicators || m.indicators || [];
     if (inds.length) {
-      $("indList").innerHTML = inds.map((x) => {
-        let extra = "";
-        if (x.key === "rising" && (x.items || []).length) {
-          extra = x.items.map((r) => `<div class="list-row" style="margin-top:8px">
-            <span>${esc(r.name)}</span>
-            <span class="meta num">★${r.rating} · ${r.reviews} · ${r.distance_m}م</span></div>`).join("");
-        }
-        if (x.key === "complements" && (x.items || []).length) {
-          extra = `<div style="margin-top:9px">` + x.items.map((c) =>
-            `<span class="chip">${icon(COMPLEMENT_ICONS[c.type] || "map-pin", 13)}${esc(c.type)}: ${c.count} · ${c.nearest_distance_m}م</span>`
-          ).join("") + `</div>`;
-        }
-        return `<div class="indicator ${x.status || "neutral"}">
-          <div class="ind-head">
-            <div class="ind-title">${icon(IND_ICONS[x.key] || "info", 17)}${esc(x.title)}</div>
-            <div class="ind-val">${esc(x.value)}</div>
-          </div>
-          <div class="ind-what">${esc(x.what)}</div>
-          <div class="ind-means">${esc(x.means)}</div>
-          ${extra}
-        </div>`;
-      }).join("");
+      $("indList").innerHTML = inds.map(indCard).join("");
       $("indBox").className = "";
-    } else $("indBox").className = "hidden";
+    } else { $("indList").innerHTML = ""; $("indBox").className = "hidden"; }
+    loadSiteContext(data);
 
     const an = (m.anchors || []).slice().sort((a, b) => a.nearest_distance_m - b.nearest_distance_m);
     if (an.length) {
@@ -1981,6 +2059,9 @@ const HIST_CSS = `
 .saved-note{display:flex;align-items:center;gap:8px;padding:9px 12px;margin-bottom:12px;border-radius:var(--r);
   background:var(--info-tint,#eef3fb);color:var(--info,#2f5d9b);font-size:13px}
 .saved-note svg{width:15px;height:15px;flex:0 0 auto}
+.ind-src{display:flex;align-items:center;gap:6px;margin-top:9px;padding-top:8px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--ink-3)}
+.ind-src svg{width:13px;height:13px;flex:0 0 auto}
 .plan-tools{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}
 #printArea .pp{display:none}
 @media print{
