@@ -1275,6 +1275,8 @@ function fillPoints(boxId, listId, arr, cls) {
   if (!(arr || []).length) { $(boxId).className = "hidden"; return; }
   $(listId).innerHTML = arr.map((x) => `<div class="point ${cls}">${esc(x)}</div>`).join("");
   $(boxId).className = "";
+}
+   
    /* ---------------- محل معروض للبيع ---------------- */
 $("buySearchBtn").onclick = async () => {
   const q = $("buyQ").value.trim();
@@ -2275,5 +2277,5 @@ async function boot() {
   }
 }
 boot();
-}
+
 
