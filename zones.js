@@ -7,6 +7,7 @@ const MODULES = [
   "./ai-visibility.js",
   "./keyword-intel.js",
   "./alt-sites.js",
+  "./profile-qa.js",
 ];
 
 MODULES.forEach((m) => {
