@@ -6,6 +6,7 @@
 const MODULES = [
   "./zones-core.js",
   "./ai-visibility.js",
+  "./keyword-intel.js",
 ];
 
 MODULES.forEach((m) => {
