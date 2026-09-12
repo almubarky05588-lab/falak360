@@ -1,6 +1,5 @@
 /* =========================================================
    فلك ٣٦٠ — مواقع بديلة مرشّحة
-   تُضاف في شاشة «موقع مشروع»
    ========================================================= */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -51,14 +50,25 @@ const CSS = `
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
 
-/* نقطة الانطلاق */
-function pickedPoint() {
+/* نقطة الانطلاق — عدة مصادر بالترتيب */
+async function pickedPoint() {
   const m = String($("locCoords")?.value || "").match(/(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
   if (m) return { lat: +m[1], lng: +m[2] };
+
+  // آخر تحليل موقع أجراه العميل
+  try {
+    const { data } = await sb.from("location_reports")
+      .select("lat,lng").eq("status", "completed")
+      .order("created_at", { ascending: false }).limit(1);
+    if (data?.[0]?.lat != null) return { lat: data[0].lat, lng: data[0].lng, from: "last" };
+  } catch { /* */ }
+
+  // مركز الخريطة الظاهرة
   try {
     const maps = Object.values(window).find((v) => v && v._leaflet_id && typeof v.getCenter === "function");
-    if (maps) { const c = maps.getCenter(); return { lat: c.lat, lng: c.lng }; }
+    if (maps) { const c = maps.getCenter(); return { lat: c.lat, lng: c.lng, from: "map" }; }
   } catch { /* */ }
+
   return null;
 }
 
@@ -187,16 +197,18 @@ async function run() {
     return;
   }
 
-  const p = pickedPoint();
+  const p = await pickedPoint();
   if (!p) {
-    msg("error", "حدّد نقطة انطلاق أولاً — ابحث عن حيّك أعلى الصفحة أو اضغط على الخريطة.");
+    msg("error", "حدّد نقطة انطلاق أولاً — ابحث عن حيّك أعلى الصفحة، أو الصق إحداثيات.");
     return;
   }
 
   btn.disabled = true;
   const old = btn.textContent;
   btn.innerHTML = `<span class="spinner"></span>نمسح المنطقة`;
-  msg("info", "نفحص عشرات المناطق ونقارن كثافتها وطرقها ومنافسيها — قد يستغرق دقيقة.");
+  msg("info", p.from === "last"
+    ? "نستخدم موقع آخر تحليل أجريته كنقطة انطلاق — نفحص المنطقة الآن."
+    : "نفحص عشرات المناطق ونقارن كثافتها وطرقها ومنافسيها — قد يستغرق دقيقة.");
 
   try {
     const { data, error } = await sb.functions.invoke("alt-sites", {
@@ -223,7 +235,6 @@ async function run() {
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => tryMount());
 else tryMount();
 
-/* وعند فتح شاشة موقع المشروع */
 document.addEventListener("click", (e) => {
   if (e.target.closest?.('[data-screen="site"], [data-group="studies"]')) setTimeout(() => tryMount(), 400);
 }, true);
