@@ -23,17 +23,23 @@ const nf = (n) => Number(n).toLocaleString("en");
 const CSS = `
 .legend .lg-tip{color:var(--ink-3);display:inline-flex;align-items:center;gap:5px}
 .legend .lg-tip svg{width:13px;height:13px;flex:0 0 auto}
-.zone{display:grid;grid-template-columns:88px 1fr auto;gap:10px;align-items:center;padding:8px 0;
+
+.zone{display:grid;grid-template-columns:80px 1fr 74px;gap:10px;align-items:center;padding:9px 0;
   border-bottom:1px solid var(--line);font-size:13px}
 .zone:last-child{border-bottom:0}
-.zone .zn{color:var(--ink-2)}
+.zone .zn{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .zone .zb{height:7px;border-radius:99px;background:var(--line);overflow:hidden}
 .zone .zb i{display:block;height:100%;background:var(--warn);border-radius:99px}
 .zone.good .zb i{background:var(--ok)}
 .zone.warn .zb i{background:#C4762A}
 .zone.bad .zb i{background:var(--bad)}
-.zone .zv{font-family:var(--font-num);font-size:12.5px;white-space:nowrap;text-align:end}
-.zone .zv small{display:block;font-family:inherit;color:var(--ink-3);font-size:11px}
+.zone .zv{text-align:start;line-height:1.35}
+.zone .zv b{font-family:var(--font-num);font-size:14px;font-weight:600;display:block}
+.zone.good .zv b{color:var(--ok)}
+.zone.warn .zv b{color:#C4762A}
+.zone.bad .zv b{color:var(--bad);font-size:12px;font-family:inherit;font-weight:500}
+.zone .zv small{display:block;color:var(--ink-3);font-size:10.5px;white-space:nowrap}
+
 .ind-src{display:flex;align-items:center;gap:6px;margin-top:9px;padding-top:8px;border-top:1px solid var(--line);
   font-size:11.5px;color:var(--ink-3)}
 .ind-src svg{width:13px;height:13px;flex:0 0 auto}
@@ -50,7 +56,7 @@ function ensureBoxes() {
 
   const map = $("map");
   if (legend && map && legend.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_PRECEDING) {
-    map.parentNode.insertBefore(legend, map);   // المفتاح فوق الخريطة
+    map.parentNode.insertBefore(legend, map);
   }
 
   if (!$("zonesBox")) {
@@ -75,8 +81,8 @@ const dirOf = (dLat, dLng) => {
   if (Math.abs(dLat) < 1e-9 && Math.abs(dLng) < 1e-9) return "المركز";
   const ang = Math.atan2(dLat, dLng) * 180 / Math.PI;
   const i = Math.round(((ang + 360) % 360) / 45) % 8;
-  return ["الشرق", "الشمال الشرقي", "الشمال", "الشمال الغربي",
-          "الغرب", "الجنوب الغربي", "الجنوب", "الجنوب الشرقي"][i];
+  return ["الشرق", "شمال شرق", "الشمال", "شمال غرب",
+          "الغرب", "جنوب غرب", "الجنوب", "جنوب شرق"][i];
 };
 
 function card(x) {
@@ -171,7 +177,7 @@ function renderZones(pts, biz) {
     const seen = arr.filter((p) => p.rank != null);
     const avg = seen.length ? seen.reduce((s, p) => s + p.rank, 0) / seen.length : null;
     return { dir, n: arr.length, seen: seen.length, avg, pct: Math.round((seen.length / arr.length) * 100) };
-  }).sort((a, b) => (a.avg ?? 99) - (b.avg ?? 99));
+  }).sort((a, b) => (a.avg ?? 999) - (b.avg ?? 999));
 
   const best = rows[0], worst = rows[rows.length - 1];
 
@@ -193,18 +199,21 @@ function renderZones(pts, biz) {
   box.className = "";
   $("zonesList").innerHTML = rows.map((r) => {
     const cls = r.avg == null ? "bad" : r.avg <= 3 ? "good" : r.avg <= 10 ? "" : "warn";
+    const val = r.avg == null ? "لا تظهر"
+      : Number.isInteger(r.avg) ? String(r.avg) : r.avg.toFixed(1);
     return `<div class="zone ${cls}">
       <div class="zn">${esc(r.dir)}</div>
       <div class="zb"><i style="width:${r.pct}%"></i></div>
-      <div class="zv">${r.avg == null ? "لا تظهر" : `متوسط ${r.avg.toFixed(1)}`}
-        <small>${r.seen} من ${r.n}</small></div>
+      <div class="zv"><b>${val}</b><small>${r.seen} من ${r.n} نقطة</small></div>
     </div>`;
   }).join("");
 
+  const fmt = (n) => Number.isInteger(n) ? String(n) : n.toFixed(1);
   $("zonesNote").innerHTML = best && worst && best.dir !== worst.dir
-    ? `<div class="ind-means">أقوى جهاتك ${esc(best.dir)}${best.avg != null ? ` (متوسط ${best.avg.toFixed(1)})` : ""}، `
-      + `وأضعفها ${esc(worst.dir)}${worst.avg == null ? " حيث لا تظهر إطلاقاً" : ` (متوسط ${worst.avg.toFixed(1)})`}. `
-      + `وجّه إعلاناتك ولوحاتك نحو الجهة الضعيفة، لأن القوية تصلك مجاناً.</div>`
+    ? `<div class="ind-means">أقوى جهاتك ${esc(best.dir)}${best.avg != null ? ` بمتوسط ترتيب ${fmt(best.avg)}` : ""}، `
+      + `وأضعفها ${esc(worst.dir)}${worst.avg == null ? " حيث لا تظهر إطلاقاً" : ` بمتوسط ${fmt(worst.avg)}`}. `
+      + `وجّه إعلاناتك ولوحاتك نحو الجهة الضعيفة، لأن القوية تصلك مجاناً. `
+      + `والرقم الأصغر أفضل — يعني ترتيبك أعلى في نتائج البحث.</div>`
     : "";
 
   $("zonesRivals").innerHTML = rivals.length
