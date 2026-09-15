@@ -1,5 +1,5 @@
 /* =========================================================
-   فلك ٣٦٠ — الصفحة التعريفية: الشعار + مزايا الباقات + الفوتر
+   فلك ٣٦٠ — الصفحة التعريفية: الشعار + زر المورّد + الباقات + الفوتر
    ========================================================= */
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
@@ -26,6 +26,15 @@ const CSS = `
 .fk-bar a{color:var(--ink-3);text-decoration:none}
 .fk-bar a:hover{color:var(--brand)}
 .fk-sources{font-size:12.5px;color:var(--ink-3);line-height:1.9;margin-top:10px}
+
+.fk-sup{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px;
+  border:1px solid var(--line-2);border-radius:var(--r-full);background:var(--surface);
+  color:var(--ink-2);font-size:13.5px;font-weight:500;text-decoration:none;white-space:nowrap;
+  transition:border-color .15s,color .15s}
+.fk-sup:hover{border-color:var(--brand);color:var(--brand)}
+.fk-sup svg{width:16px;height:16px;flex:0 0 auto}
+@media(max-width:620px){.fk-sup span{display:none}.fk-sup{padding:0 11px}}
+header .nav{gap:10px}
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
 
@@ -40,10 +49,10 @@ const logoMark = (size) => `<svg width="${size || 30}" height="${size || 30}" vi
     fill="var(--brand)" text-anchor="middle">360&#176;</text>
 </svg>`;
 
-/* استبدال أي شعار قديم في الصفحة */
 function fixLogos() {
   document.querySelectorAll(".logo > svg, .fk-brand > svg").forEach((svg) => {
     if (svg.dataset.fkLogo === "1") return;
+    if (svg.getAttribute("viewBox") === "0 0 48 48") { svg.dataset.fkLogo = "1"; return; }
     const size = svg.getAttribute("width") || 30;
     const holder = document.createElement("span");
     holder.innerHTML = logoMark(size);
@@ -51,6 +60,23 @@ function fixLogos() {
     fresh.dataset.fkLogo = "1";
     svg.replaceWith(fresh);
   });
+}
+
+/* ---------------- زر المورّد في الهيدر ---------------- */
+const SUP_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 9h18M5 9V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/>
+  <path d="M9 13h6"/></svg>`;
+
+function addSupplierBtn() {
+  const nav = document.querySelector("header .nav");
+  if (!nav || nav.querySelector(".fk-sup")) return;
+  const cta = nav.querySelector('a.btn[href="app.html"], a.btn.sm');
+  const link = document.createElement("a");
+  link.className = "fk-sup";
+  link.href = "supplier.html";
+  link.innerHTML = `${SUP_ICON}<span>انضم كمورّد</span>`;
+  if (cta) cta.before(link); else nav.appendChild(link);
 }
 
 /* ---------------- مزايا الباقات ---------------- */
@@ -156,6 +182,7 @@ function buildFooter() {
 /* ---------------- التشغيل ---------------- */
 function tick(n = 0) {
   fixLogos();
+  addSupplierBtn();
   buildFooter();
   fixLogos();
   if (paintPlans() || n > 40) return;
