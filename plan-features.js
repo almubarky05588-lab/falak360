@@ -1,5 +1,6 @@
 /* =========================================================
-   فلك ٣٦٠ — الصفحة التعريفية: الشعار + زر المورّد + الباقات + الفوتر
+   فلك ٣٦٠ — الصفحة التعريفية
+   الشعار · زر المورّد · قسم الموردين · الباقات · الفوتر
    ========================================================= */
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
@@ -18,8 +19,7 @@ const CSS = `
 .fk-brand span{color:var(--ink-3);font-weight:400}
 .fk-about{font-size:14px;color:var(--ink-2);line-height:1.85;margin-top:14px;max-width:320px}
 .fk-col h4{font-family:var(--f-d);font-size:14.5px;font-weight:600;margin-bottom:14px;color:var(--ink)}
-.fk-col a,.fk-col div.it{display:block;font-size:14px;color:var(--ink-2);text-decoration:none;
-  margin-bottom:11px;line-height:1.6}
+.fk-col a{display:block;font-size:14px;color:var(--ink-2);text-decoration:none;margin-bottom:11px;line-height:1.6}
 .fk-col a:hover{color:var(--brand)}
 .fk-bar{border-top:1px solid var(--line);margin-top:34px;padding-top:22px;display:flex;
   justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink-3)}
@@ -35,6 +35,33 @@ const CSS = `
 .fk-sup svg{width:16px;height:16px;flex:0 0 auto}
 @media(max-width:620px){.fk-sup span{display:none}.fk-sup{padding:0 11px}}
 header .nav{gap:10px}
+
+.fk-sup-sec{padding:60px 0;background:var(--surface);border-block:1px solid var(--line);margin-top:20px}
+.fk-sup-in{max-width:1040px;margin:0 auto;padding:0 20px}
+.fk-sup-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:46px;align-items:center}
+@media(max-width:860px){.fk-sup-grid{grid-template-columns:1fr;gap:32px}}
+.fk-sup-eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;
+  color:var(--brand);background:var(--brand-tint);padding:6px 14px;border-radius:var(--r-full);margin-bottom:18px}
+.fk-sup-eyebrow svg{width:15px;height:15px}
+.fk-sup-sec h2{font-family:var(--f-d);font-size:clamp(23px,3.5vw,31px);font-weight:600;
+  letter-spacing:-.025em;line-height:1.35}
+.fk-sup-sec .lede{font-size:16.5px;color:var(--ink-2);margin-top:14px;line-height:1.9}
+.fk-sup-pts{display:grid;gap:14px;margin-top:24px}
+.fk-sup-pt{display:grid;grid-template-columns:auto 1fr;gap:13px;align-items:flex-start}
+.fk-sup-pt .ic{width:34px;height:34px;flex:0 0 auto;border-radius:10px;background:var(--brand-tint);
+  color:var(--brand);display:flex;align-items:center;justify-content:center}
+.fk-sup-pt .ic svg{width:17px;height:17px}
+.fk-sup-pt b{display:block;font-size:15px;font-weight:600;margin-bottom:2px}
+.fk-sup-pt p{font-size:14px;color:var(--ink-2);line-height:1.75}
+.fk-sup-card{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:26px}
+.fk-sup-card h3{font-family:var(--f-d);font-size:17px;font-weight:600;margin-bottom:6px}
+.fk-sup-card .sub{font-size:13.5px;color:var(--ink-3);margin-bottom:18px}
+.fk-sup-steps{display:grid;gap:13px;margin-bottom:20px}
+.fk-sup-step{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:flex-start}
+.fk-sup-step .n{width:25px;height:25px;flex:0 0 auto;border-radius:50%;background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600}
+.fk-sup-step div{font-size:14px;color:var(--ink-2);line-height:1.7}
+.fk-sup-note{font-size:12.5px;color:var(--ink-3);margin-top:13px;line-height:1.75;text-align:center}
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
 
@@ -62,12 +89,20 @@ function fixLogos() {
   });
 }
 
-/* ---------------- زر المورّد في الهيدر ---------------- */
+/* ---------------- الأيقونات ---------------- */
 const SUP_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round">
   <path d="M3 9h18M5 9V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/>
   <path d="M9 13h6"/></svg>`;
 
+const I = {
+  users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>`,
+  shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>`,
+  free: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+};
+
+/* ---------------- زر المورّد في الهيدر ---------------- */
 function addSupplierBtn() {
   const nav = document.querySelector("header .nav");
   if (!nav || nav.querySelector(".fk-sup")) return;
@@ -77,6 +112,70 @@ function addSupplierBtn() {
   link.href = "supplier.html";
   link.innerHTML = `${SUP_ICON}<span>انضم كمورّد</span>`;
   if (cta) cta.before(link); else nav.appendChild(link);
+}
+
+/* ---------------- قسم الموردين ---------------- */
+function buildSupplierSection() {
+  if (document.getElementById("fkSupSec")) return;
+  const anchor = document.getElementById("reports") || document.getElementById("faq");
+  if (!anchor) return;
+
+  anchor.insertAdjacentHTML("afterend", `
+    <section class="fk-sup-sec" id="fkSupSec">
+      <div class="fk-sup-in">
+        <div class="fk-sup-grid">
+          <div>
+            <div class="fk-sup-eyebrow">${SUP_ICON}للموردين وتجار الجملة</div>
+            <h2>عملاؤك هم أصحاب المحلات — وهم عندنا</h2>
+            <p class="lede">
+              كل صاحب محل يستخدم فلك ٣٦٠ يحتاج موردين لنشاطه.
+              نعرض منشأتك أمامه في الوقت الذي يبحث فيه فعلاً، مصنّفةً بقطاعه ومنطقته —
+              لا إعلاناً عابراً يمر عليه.
+            </p>
+
+            <div class="fk-sup-pts">
+              <div class="fk-sup-pt">
+                <div class="ic">${I.target}</div>
+                <div><b>وصول مستهدف لا عشوائي</b>
+                  <p>تظهر لأصحاب المحلات في قطاعك ومنطقتك فقط — من يحتاج ما تبيعه فعلاً.</p></div>
+              </div>
+              <div class="fk-sup-pt">
+                <div class="ic">${I.shield}</div>
+                <div><b>توثيق يبني الثقة</b>
+                  <p>نتحقق من سجلك التجاري، فتظهر بشارة «موثّق» فوق الأنشطة غير الموثّقة.</p></div>
+              </div>
+              <div class="fk-sup-pt">
+                <div class="ic">${I.users}</div>
+                <div><b>تواصل مباشر</b>
+                  <p>يصلك العميل على واتساب أو هاتفك مباشرة — بلا وسيط وبلا عمولة على صفقاتك.</p></div>
+              </div>
+              <div class="fk-sup-pt">
+                <div class="ic">${I.free}</div>
+                <div><b>ابدأ بلا تكلفة</b>
+                  <p>سجّل منشأتك ومنتجاتك مجاناً، وادفع فقط إن أردت الظهور في المقدمة.</p></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fk-sup-card">
+            <h3>كيف تنضم؟</h3>
+            <div class="sub">ثلاث خطوات، ولا تحتاج خبرة تقنية.</div>
+            <div class="fk-sup-steps">
+              <div class="fk-sup-step"><div class="n">1</div>
+                <div>سجّل منشأتك وارفع سجلك التجاري.</div></div>
+              <div class="fk-sup-step"><div class="n">2</div>
+                <div>حدّد قطاعك والمدن التي توصّل إليها، وأضف منتجاتك.</div></div>
+              <div class="fk-sup-step"><div class="n">3</div>
+                <div>نراجع طلبك، وتظهر لأصحاب المحلات في نطاقك.</div></div>
+            </div>
+            <a class="btn block" href="supplier.html">سجّل منشأتك كمورّد</a>
+            <div class="fk-sup-note">
+              التوثيق يعني أننا تحققنا من السجل التجاري للمنشأة،<br>ولا يعني ضماناً لجودة منتجاتها.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>`);
 }
 
 /* ---------------- مزايا الباقات ---------------- */
@@ -183,6 +282,7 @@ function buildFooter() {
 function tick(n = 0) {
   fixLogos();
   addSupplierBtn();
+  buildSupplierSection();
   buildFooter();
   fixLogos();
   if (paintPlans() || n > 40) return;
