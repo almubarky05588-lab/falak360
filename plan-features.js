@@ -62,24 +62,22 @@ header .nav{gap:10px}
 .fk-sup-step div{font-size:14px;color:var(--ink-2);line-height:1.7}
 .fk-sup-note{font-size:12.5px;color:var(--ink-3);margin-top:13px;line-height:1.75;text-align:center}
 
-.fk-src-sec{padding:56px 0;background:var(--canvas)}
+.fk-src-sec{padding:52px 0;background:var(--canvas)}
 .fk-src-in{max-width:1040px;margin:0 auto;padding:0 20px}
-.fk-src-head{text-align:center;max-width:620px;margin:0 auto 32px}
+.fk-src-head{text-align:center;margin:0 auto 28px}
 .fk-src-head h2{font-family:var(--f-d);font-size:clamp(21px,3vw,28px);font-weight:600;letter-spacing:-.02em}
-.fk-src-head p{color:var(--ink-2);margin-top:11px;font-size:15.5px;line-height:1.85}
 .fk-src-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
 @media(max-width:900px){.fk-src-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:460px){.fk-src-grid{grid-template-columns:1fr}}
 .fk-src{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
   padding:22px 16px;text-align:center;transition:border-color .15s,transform .15s}
 .fk-src:hover{border-color:var(--line-2);transform:translateY(-2px)}
-.fk-src .mark{height:46px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.fk-src .mark{height:44px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
 .fk-src .mark svg{width:34px;height:34px;color:var(--brand)}
 .fk-src .tag{display:inline-block;font-size:10.5px;color:var(--brand);background:var(--brand-tint);
   padding:2px 9px;border-radius:var(--r-full);margin-bottom:9px}
 .fk-src b{display:block;font-size:13.5px;font-weight:600;line-height:1.5;margin-bottom:6px}
 .fk-src small{display:block;font-size:11.5px;color:var(--ink-3);line-height:1.7}
-.fk-src-foot{text-align:center;font-size:12.5px;color:var(--ink-3);margin-top:26px;line-height:1.8}
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
 
@@ -249,11 +247,7 @@ function buildSourcesSection() {
   anchor.insertAdjacentHTML("afterend", `
     <section class="fk-src-sec" id="fkSrcSec">
       <div class="fk-src-in">
-        <div class="fk-src-head">
-          <h2>من أين تأتي أرقامنا</h2>
-          <p>لا نخمّن ولا نبني على انطباعات. كل رقم في تقاريرك له مصدر معلن،
-             ونذكره معه داخل التقرير نفسه.</p>
-        </div>
+        <div class="fk-src-head"><h2>مصادر البيانات</h2></div>
         <div class="fk-src-grid">
           ${SOURCES.map((s) => `
             <div class="fk-src">
@@ -262,9 +256,6 @@ function buildSourcesSection() {
               <b>${esc(s.name)}</b>
               <small>${esc(s.what)}</small>
             </div>`).join("")}
-        </div>
-        <div class="fk-src-foot">
-          الأسماء المذكورة علامات تجارية تخص أصحابها، ونذكرها بوصفها مصادر بيانات فقط.
         </div>
       </div>
     </section>`);
