@@ -1,17 +1,17 @@
 /* =========================================================
    فلك ٣٦٠ — مزايا الباقات في الصفحة التعريفية
-   تعرض كل المزايا في كل باقة، وتشطب ما لا تشمله
+   تعرض كل المزايا في كل باقة، وتشطب ما لا تشمله الباقة
    ========================================================= */
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 const TICK = `<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-  stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>`;
 const DASH = `<svg class="dash" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-  stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>`;
+  stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg>`;
 
-/* كل المزايا مرتبة — ولكل باقة ما تشمله */
+/* كل المزايا، ولكل باقة ما تشمله */
 const FEATURES = [
   { t: "فحص ترتيبك على خريطة قوقل", in: ["basic", "growth", "pro"] },
   { t: "تدقيق ملفك التجاري", in: ["basic", "growth", "pro"] },
@@ -24,20 +24,17 @@ const FEATURES = [
   { t: "أسئلة عملائك على قوقل ماب", in: ["growth", "pro"] },
   { t: "تنبيهات عند دخول منافس أو تراجع ترتيبك", in: ["growth", "pro"] },
   { t: "سجل أدائك عبر الزمن", in: ["growth", "pro"] },
-  { t: "البحث في الموردين وفلترتهم", in: ["growth", "pro"] },
+  { t: "البحث في الموردين وفلترتهم بالمدينة", in: ["growth", "pro"] },
   { t: "عدة محلات أو فروع في حساب واحد", in: ["pro"] },
   { t: "مقارنة أداء الفروع", in: ["pro"] },
   { t: "حصص أعلى وأولوية في الدعم", in: ["pro"] },
 ];
 
-function listFor(code) {
-  return FEATURES.map((f) => {
-    const on = f.in.includes(code);
-    return `<li class="${on ? "" : "off"}">${on ? TICK : DASH}<span>${esc(f.t)}</span></li>`;
-  }).join("");
-}
+const listFor = (code) => FEATURES.map((f) => {
+  const on = f.in.includes(code);
+  return `<li class="${on ? "" : "off"}">${on ? TICK : DASH}<span>${esc(f.t)}</span></li>`;
+}).join("");
 
-/* نستبدل قائمة كل بطاقة بالقائمة الكاملة المشطوبة */
 function paint() {
   const cards = document.querySelectorAll("#plansBox .plan");
   if (!cards.length) return false;
@@ -47,7 +44,6 @@ function paint() {
     const ul = card.querySelector(".feats");
     if (!ul) return;
 
-    // نستنتج رمز الباقة من اسمها
     const name = card.querySelector("h3")?.textContent?.trim() || "";
     const code = /احتراف/.test(name) ? "pro"
       : /نمو/.test(name) ? "growth"
@@ -61,14 +57,12 @@ function paint() {
 }
 
 function watch(n = 0) {
-  if (paint() || n > 30) return;
-  setTimeout(() => watch(n + 1), 500);
+  if (paint() || n > 40) return;
+  setTimeout(() => watch(n + 1), 400);
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => watch());
-} else watch();
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => watch());
+else watch();
 
-/* لو أُعيد بناء الباقات لاحقاً */
 const box = document.getElementById("plansBox");
-if (box) new MutationObserver(() => setTimeout(paint, 100)).observe(box, { childList: true });
+if (box) new MutationObserver(() => setTimeout(paint, 80)).observe(box, { childList: true });
