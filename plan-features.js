@@ -6,9 +6,16 @@
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-const TICK = `<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+const CSS = `
+.feats li.off{color:var(--ink-3)}
+.feats li.off span{text-decoration:line-through;text-decoration-color:var(--line-2);text-decoration-thickness:1.5px}
+.feats li.off svg,.plan .feats li.off svg{color:var(--line-2)}
+`;
+(() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
+
+const TICK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>`;
-const DASH = `<svg class="dash" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+const DASH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg>`;
 
 /* كل المزايا، ولكل باقة ما تشمله */
