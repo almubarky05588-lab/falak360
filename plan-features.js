@@ -142,7 +142,7 @@ function buildSupplierSection() {
               <div class="fk-sup-pt">
                 <div class="ic">${I.shield}</div>
                 <div><b>توثيق يبني الثقة</b>
-                  <p>نتحقق من سجلك التجاري، فتظهر بشارة «موثّق» فوق الأنشطة غير الموثّقة.</p></div>
+                  <p>بعد التحقق من سجلك التجاري تظهر بشارة «موثّق» على منشأتك — فوق الأنشطة غير الموثّقة.</p></div>
               </div>
               <div class="fk-sup-pt">
                 <div class="ic">${I.users}</div>
@@ -170,7 +170,7 @@ function buildSupplierSection() {
             </div>
             <a class="btn block" href="supplier.html">سجّل منشأتك كمورّد</a>
             <div class="fk-sup-note">
-              التوثيق يعني أننا تحققنا من السجل التجاري للمنشأة،<br>ولا يعني ضماناً لجودة منتجاتها.
+              المراجعة تستغرق يوم عمل واحد عادةً.
             </div>
           </div>
         </div>
