@@ -3,6 +3,7 @@
    ========================================================= */
 
 const MODULES = [
+  "./confirm-ui.js",
   "./zones-core.js",
   "./ai-visibility.js",
   "./keyword-intel.js",
