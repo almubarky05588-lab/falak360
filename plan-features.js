@@ -1,6 +1,6 @@
 /* =========================================================
    فلك ٣٦٠ — الصفحة التعريفية
-   الشعار · زر المورّد · قسم الموردين · الباقات · الفوتر
+   الشعار · زر المورّد · قسم الموردين · المصادر · الباقات · الفوتر
    ========================================================= */
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
@@ -25,7 +25,6 @@ const CSS = `
   justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink-3)}
 .fk-bar a{color:var(--ink-3);text-decoration:none}
 .fk-bar a:hover{color:var(--brand)}
-.fk-sources{font-size:12.5px;color:var(--ink-3);line-height:1.9;margin-top:10px}
 
 .fk-sup{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px;
   border:1px solid var(--line-2);border-radius:var(--r-full);background:var(--surface);
@@ -62,6 +61,25 @@ header .nav{gap:10px}
   display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600}
 .fk-sup-step div{font-size:14px;color:var(--ink-2);line-height:1.7}
 .fk-sup-note{font-size:12.5px;color:var(--ink-3);margin-top:13px;line-height:1.75;text-align:center}
+
+.fk-src-sec{padding:56px 0;background:var(--canvas)}
+.fk-src-in{max-width:1040px;margin:0 auto;padding:0 20px}
+.fk-src-head{text-align:center;max-width:620px;margin:0 auto 32px}
+.fk-src-head h2{font-family:var(--f-d);font-size:clamp(21px,3vw,28px);font-weight:600;letter-spacing:-.02em}
+.fk-src-head p{color:var(--ink-2);margin-top:11px;font-size:15.5px;line-height:1.85}
+.fk-src-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+@media(max-width:900px){.fk-src-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:460px){.fk-src-grid{grid-template-columns:1fr}}
+.fk-src{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:22px 16px;text-align:center;transition:border-color .15s,transform .15s}
+.fk-src:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.fk-src .mark{height:46px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.fk-src .mark svg{width:34px;height:34px;color:var(--brand)}
+.fk-src .tag{display:inline-block;font-size:10.5px;color:var(--brand);background:var(--brand-tint);
+  padding:2px 9px;border-radius:var(--r-full);margin-bottom:9px}
+.fk-src b{display:block;font-size:13.5px;font-weight:600;line-height:1.5;margin-bottom:6px}
+.fk-src small{display:block;font-size:11.5px;color:var(--ink-3);line-height:1.7}
+.fk-src-foot{text-align:center;font-size:12.5px;color:var(--ink-3);margin-top:26px;line-height:1.8}
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
 
@@ -178,6 +196,80 @@ function buildSupplierSection() {
     </section>`);
 }
 
+/* ---------------- مصادر البيانات ---------------- */
+const SOURCES = [
+  {
+    name: "الهيئة العامة للعقار",
+    tag: "جهة حكومية",
+    what: "أسعار إيجار المحال والمعارض والمكاتب على مستوى الحي",
+    ic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 21V10l8-6 8 6v11"/>
+      <path d="M9 21v-6h6v6"/></svg>`,
+  },
+  {
+    name: "منصة إيجار",
+    tag: "جهة حكومية",
+    what: "الإطار النظامي لعقود الإيجار التجارية",
+    ic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <path d="M14 2v6h6M9 13h6M9 17h4"/></svg>`,
+  },
+  {
+    name: "خرائط قوقل",
+    tag: "مزوّد بيانات",
+    what: "الترتيب والمراجعات وبيانات المنافسين وأوقات الذروة",
+    ic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+      <circle cx="12" cy="10" r="3"/></svg>`,
+  },
+  {
+    name: "مساعدات الذكاء الاصطناعي",
+    tag: "قياس مباشر",
+    what: "قياس ظهور محلك في إجابات ChatGPT وGemini وPerplexity",
+    ic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>
+      <path d="m5.6 5.6 2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>
+      <circle cx="12" cy="12" r="3.4"/></svg>`,
+  },
+  {
+    name: "مايكروسوفت",
+    tag: "بيانات مفتوحة",
+    what: "كثافة المباني في السعودية — أكثر من ٧ ملايين مبنى",
+    ic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+      stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="7" height="13" rx="1"/>
+      <rect x="14" y="3" width="7" height="18" rx="1"/><path d="M6 12h1M6 16h1M17 7h1M17 11h1M17 15h1"/></svg>`,
+  },
+];
+
+function buildSourcesSection() {
+  if (document.getElementById("fkSrcSec")) return;
+  const anchor = document.getElementById("fkSupSec") || document.getElementById("faq");
+  if (!anchor) return;
+
+  anchor.insertAdjacentHTML("afterend", `
+    <section class="fk-src-sec" id="fkSrcSec">
+      <div class="fk-src-in">
+        <div class="fk-src-head">
+          <h2>من أين تأتي أرقامنا</h2>
+          <p>لا نخمّن ولا نبني على انطباعات. كل رقم في تقاريرك له مصدر معلن،
+             ونذكره معه داخل التقرير نفسه.</p>
+        </div>
+        <div class="fk-src-grid">
+          ${SOURCES.map((s) => `
+            <div class="fk-src">
+              <div class="mark">${s.ic}</div>
+              <span class="tag">${esc(s.tag)}</span>
+              <b>${esc(s.name)}</b>
+              <small>${esc(s.what)}</small>
+            </div>`).join("")}
+        </div>
+        <div class="fk-src-foot">
+          الأسماء المذكورة علامات تجارية تخص أصحابها، ونذكرها بوصفها مصادر بيانات فقط.
+        </div>
+      </div>
+    </section>`);
+}
+
 /* ---------------- مزايا الباقات ---------------- */
 const TICK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>`;
@@ -269,12 +361,6 @@ function buildFooter() {
         <div>© ${year} فلك ٣٦٠ · جميع الحقوق محفوظة</div>
         <div>التحليلات إرشادية ولا تضمن ترتيباً معيّناً</div>
       </div>
-
-      <div class="fk-sources">
-        مصادر البيانات: مؤشرات الإيجار من الهيئة العامة للعقار ·
-        كثافة المباني من Microsoft Global Building Footprints ·
-        بيانات الطرق من OpenStreetMap
-      </div>
     </footer>`;
 }
 
@@ -283,6 +369,7 @@ function tick(n = 0) {
   fixLogos();
   addSupplierBtn();
   buildSupplierSection();
+  buildSourcesSection();
   buildFooter();
   fixLogos();
   if (paintPlans() || n > 40) return;
