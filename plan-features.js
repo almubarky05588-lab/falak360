@@ -1,5 +1,5 @@
 /* =========================================================
-   فلك ٣٦٠ — الصفحة التعريفية: مزايا الباقات + الفوتر
+   فلك ٣٦٠ — الصفحة التعريفية: الشعار + مزايا الباقات + الفوتر
    ========================================================= */
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
@@ -28,6 +28,30 @@ const CSS = `
 .fk-sources{font-size:12.5px;color:var(--ink-3);line-height:1.9;margin-top:10px}
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
+
+/* ---------------- الشعار المعتمد ---------------- */
+const logoMark = (size) => `<svg width="${size || 30}" height="${size || 30}" viewBox="0 0 48 48"
+  fill="none" aria-hidden="true">
+  <path d="M 10 34 A 18 18 0 1 1 38 34" stroke="var(--brand)" stroke-width="2.6"
+    stroke-linecap="round" fill="none"/>
+  <path d="M 19.5 30 V 13 H 30.5 M 19.5 21 H 28" stroke="var(--brand)" stroke-width="3.3"
+    stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="24" y="41.5" font-family="inherit" font-size="9.5" font-weight="700"
+    fill="var(--brand)" text-anchor="middle">360&#176;</text>
+</svg>`;
+
+/* استبدال أي شعار قديم في الصفحة */
+function fixLogos() {
+  document.querySelectorAll(".logo > svg, .fk-brand > svg").forEach((svg) => {
+    if (svg.dataset.fkLogo === "1") return;
+    const size = svg.getAttribute("width") || 30;
+    const holder = document.createElement("span");
+    holder.innerHTML = logoMark(size);
+    const fresh = holder.firstElementChild;
+    fresh.dataset.fkLogo = "1";
+    svg.replaceWith(fresh);
+  });
+}
 
 /* ---------------- مزايا الباقات ---------------- */
 const TICK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -77,25 +101,16 @@ function paintPlans() {
 }
 
 /* ---------------- الفوتر ---------------- */
-const LOGO = `<svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-  <circle cx="20" cy="20" r="17.25" stroke="#263A63" stroke-width="1.5" opacity=".28"/>
-  <circle cx="20" cy="20" r="11.25" stroke="#263A63" stroke-width="1.5" opacity=".55"/>
-  <circle cx="20" cy="20" r="5.5" stroke="#263A63" stroke-width="1.75"/>
-  <circle cx="20" cy="20" r="2.25" fill="#263A63"/>
-  <circle cx="31.3" cy="12.2" r="2.9" fill="#263A63"/>
-  <circle cx="8.2" cy="26.6" r="1.9" fill="#263A63" opacity=".45"/>
-  <circle cx="24.4" cy="33.2" r="1.6" fill="#263A63" opacity=".3"/></svg>`;
-
 function buildFooter() {
   const old = document.querySelector("footer");
   if (!old || old.dataset.fkFoot === "1") return;
-
   const year = new Date().getFullYear();
+
   old.outerHTML = `
     <footer class="fk-foot" data-fk-foot="1">
       <div class="fk-cols">
         <div>
-          <div class="fk-brand">${LOGO}فلك <span>٣٦٠</span></div>
+          <div class="fk-brand">${logoMark(28)}فلك <span>٣٦٠</span></div>
           <p class="fk-about">
             منصة سعودية تقيس ظهور محلك في خرائط قوقل والمساعدات الذكية،
             وتكشف لك أين تختفي ومن يأخذ مكانك — بقياس فعلي لا بتخمين.
@@ -140,7 +155,9 @@ function buildFooter() {
 
 /* ---------------- التشغيل ---------------- */
 function tick(n = 0) {
+  fixLogos();
   buildFooter();
+  fixLogos();
   if (paintPlans() || n > 40) return;
   setTimeout(() => tick(n + 1), 400);
 }
