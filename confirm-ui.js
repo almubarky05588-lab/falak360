@@ -29,7 +29,7 @@ const CSS = `
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
 
-/* نافذة التأكيد */
+/* ---------------- النافذة ---------------- */
 function askConfirm({ title, body, note, ok = "متابعة", cancel = "رجوع", ic = "banknote" }) {
   return new Promise((resolve) => {
     document.getElementById("fkConfirm")?.remove();
@@ -72,40 +72,52 @@ function askConfirm({ title, body, note, ok = "متابعة", cancel = "رجوع
   });
 }
 
-/* ------------------------------------------------------------------
-   اعتراض نوافذ المتصفح الخام
-   نستبدل window.confirm بنسخة تعرض واجهتنا.
-   ولأن الأصلية متزامنة، نتعامل مع الحالات المعروفة مسبقاً:
-   • رسالة خصم الرصيد → نافذتنا، ونعيد true مباشرة إن كان الرصيد وافراً
-   ------------------------------------------------------------------ */
-const CONFIRM_UNDER = 10;      // لا نزعج صاحب الرصيد الكبير
+/* ---------------- اعتراض نوافذ المتصفح ----------------
+   window.confirm متزامنة ونافذتنا غير متزامنة، فنحل ذلك هكذا:
+   ١) نسجّل آخر زر ضُغط.
+   ٢) عند الاعتراض نُلغي العملية ونعرض نافذتنا.
+   ٣) إن وافق العميل، نرفع علم القبول ونعيد الضغط على الزر نفسه،
+      فتمر المحاولة الثانية مباشرة.
+-------------------------------------------------------- */
+const CONFIRM_UNDER = 10;          // لا نزعج صاحب الرصيد الوافر
 const native = window.confirm.bind(window);
+
+let lastBtn = null;
+let approved = false;
+
+document.addEventListener("click", (e) => {
+  const b = e.target?.closest?.("button, a.btn, [role=button]");
+  if (b) lastBtn = b;
+}, true);
 
 window.confirm = function (msg) {
   const text = String(msg ?? "");
 
-  // خصم رصيد التقارير
-  const m = text.match(/لديك\s+(?:(\d+)\s*)?تقرير/);
-  if (/سيُخصم|سيخصم/.test(text)) {
-    const n = m && m[1] ? Number(m[1]) : null;
+  if (!/سيُخصم|سيخصم/.test(text)) return native(msg);
 
-    // رصيد وافر: نمرّ بلا إزعاج
-    if (n == null || n > CONFIRM_UNDER) return true;
+  // المحاولة الثانية بعد الموافقة
+  if (approved) { approved = false; return true; }
 
-    // رصيد قليل: نعرض نافذتنا ثم نعيد المحاولة
-    askConfirm({
-      title: "تأكيد استخدام رصيدك",
-      body: `سيُخصم <b>تقرير واحد</b> من رصيدك، ويتبقى لك <b>${n - 1}</b>.`,
-      note: "لن يُخصم شيء إذا تعذّر إكمال التحليل.",
-      ok: "نعم، حلّل الآن",
-    }).then((go) => {
-      if (go) window.__fkRetry?.();
-    });
-    return false;
-  }
+  const m = text.match(/لديك\s+(\d+)/);
+  const n = m ? Number(m[1]) : null;
 
-  // أي تأكيد آخر: السلوك الأصلي
-  return native(msg);
+  // رصيد وافر أو غير معروف: نمرّ بلا إزعاج
+  if (n == null || n > CONFIRM_UNDER) return true;
+
+  const btn = lastBtn;
+  askConfirm({
+    title: "تأكيد استخدام رصيدك",
+    body: `سيُخصم <b>تقرير واحد</b> من رصيدك، ويتبقى لك <b>${n - 1}</b>.`,
+    note: "لن يُخصم شيء إذا تعذّر إكمال التحليل.",
+    ok: "نعم، حلّل الآن",
+  }).then((go) => {
+    if (!go || !btn) return;
+    approved = true;
+    btn.click();
+    setTimeout(() => { approved = false; }, 4000);   // لا يبقى العلم مرفوعاً
+  });
+
+  return false;
 };
 
 window.falakConfirm = askConfirm;
