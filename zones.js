@@ -4,6 +4,7 @@
 
 const MODULES = [
   "./confirm-ui.js",
+  "./pay-step.js",
   "./zones-core.js",
   "./ai-visibility.js",
   "./keyword-intel.js",
