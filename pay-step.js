@@ -1,6 +1,6 @@
 /* =========================================================
-   فلك ٣٦٠ — حجز رابط السداد عند الطلب
-   الروابط تُفتح لمرة واحدة، فلا نحجزها إلا عند الجاهزية
+   فلك ٣٦٠ — حجز رابط السداد في مكان الزر نفسه
+   الروابط تُفتح لمرة واحدة، فلا تُحجز إلا بضغطة واعية
    ========================================================= */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -11,100 +11,90 @@ const sb = createClient(
   "sb_publishable_Krja6qX-HGdklghDfTJmjQ_XpmIgBPe",
 );
 
-const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 const CSS = `
-.pay-box{background:var(--surface,#fff);border:1px solid var(--line,#E3E5E0);
-  border-radius:var(--r-lg,18px);padding:20px;margin-top:var(--sp-4,14px)}
-.pay-box h4{font-family:var(--font-display,inherit);font-size:16px;font-weight:600;margin-bottom:4px}
-.pay-box .amt{font-family:var(--font-num,monospace);font-size:26px;font-weight:600;
-  color:var(--brand,#263A63);margin:8px 0 2px}
-.pay-box .sub{font-size:13px;color:var(--ink-3,#7C8794)}
-.pay-warn{display:flex;gap:8px;align-items:flex-start;margin:14px 0;padding:11px 13px;
-  border-radius:var(--r,12px);background:var(--warn-tint,#FDF3E3);color:var(--warn,#A96A12);
-  font-size:12.5px;line-height:1.7}
-.pay-warn svg{width:15px;height:15px;flex:0 0 auto;margin-top:2px}
-.pay-done{display:flex;gap:8px;align-items:flex-start;margin-top:12px;padding:11px 13px;
-  border-radius:var(--r,12px);background:var(--ok-tint,#E8F3EE);color:var(--ok,#1E7A55);
-  font-size:12.5px;line-height:1.7}
-.pay-done svg{width:15px;height:15px;flex:0 0 auto;margin-top:2px}
+.pay-hint{font-size:12px;color:var(--warn,#A96A12);line-height:1.7;margin-top:9px;
+  display:flex;gap:6px;align-items:flex-start}
+.pay-hint svg{width:13px;height:13px;flex:0 0 auto;margin-top:3px}
+.pay-ready{font-size:12.5px;color:var(--ok,#1E7A55);line-height:1.7;margin-top:9px;
+  display:flex;gap:6px;align-items:flex-start}
+.pay-ready svg{width:14px;height:14px;flex:0 0 auto;margin-top:2px}
+.btn.pay-go{background:var(--ok,#1E7A55)}
 `;
 (() => { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); })();
 
-/* نعترض نتيجة طلب الاشتراك ونعرض خطوة الحجز */
-function renderPayStep(host, res) {
-  if (!host) return;
-  const id = `pay_${Math.random().toString(36).slice(2, 8)}`;
+/* يحوّل الزر إلى رابط دفع في مكانه */
+async function bookLink(btn, planCode) {
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>نحجز رابطك`;
 
-  host.innerHTML = `
-    <div class="pay-box" id="${id}">
-      <h4>${esc(res.plan || "اشتراكك")}</h4>
-      <div class="amt">${esc(res.amount_sar ?? "")} <span style="font-size:14px">ريال</span></div>
-      <div class="sub">اشتراك شهري · يُفعّل تلقائياً بعد السداد</div>
+  try {
+    const { data, error } = await sb.rpc("request_subscription", {
+      p_plan_code: planCode, p_want_link: true,
+    });
+    if (error) throw error;
 
-      <div class="pay-warn">
-        ${icon("alert-triangle", 15)}
-        <span>رابط السداد يُفتح <b>لمرة واحدة</b> — لا تفتحه إلا وأنت جاهز للدفع الآن.
-        إن فتحته ولم تُكمل، انتظر ٤٥ دقيقة ليعود صالحاً.</span>
-      </div>
+    if (data?.payment_link) {
+      const link = document.createElement("a");
+      link.className = "btn block pay-go";
+      link.href = data.payment_link;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.innerHTML = `${icon("external-link", 17)}ادفع الآن · ${esc(data.amount_sar)} ر.س`;
 
-      <button class="btn block" data-book>${icon("banknote", 17)}احجز رابط السداد</button>
-      <div class="msg" data-msg></div>
-    </div>`;
+      const ready = document.createElement("div");
+      ready.className = "pay-ready";
+      ready.innerHTML = `${icon("check-circle", 14)}<span>رابطك جاهز — أكمل السداد ويُفعّل اشتراكك تلقائياً خلال دقيقة.</span>`;
 
-  const box = $(id);
-  const btn = box.querySelector("[data-book]");
-  const msg = box.querySelector("[data-msg]");
-
-  btn.onclick = async () => {
-    btn.disabled = true;
-    const old = btn.innerHTML;
-    btn.innerHTML = `<span class="spinner"></span>نحجز رابطك`;
-    try {
-      const { data, error } = await sb.rpc("request_subscription", {
-        p_plan_code: res.plan_code, p_want_link: true,
-      });
-      if (error) throw error;
-
-      if (data?.payment_link) {
-        box.querySelector(".pay-warn").outerHTML = `
-          <div class="pay-done">${icon("check-circle", 15)}
-            <span>رابطك جاهز. أكمل السداد، ويُفعّل اشتراكك تلقائياً خلال دقيقة.</span></div>`;
-        btn.outerHTML = `<a class="btn block" href="${esc(data.payment_link)}"
-          target="_blank" rel="noopener">${icon("external-link", 17)}ادفع الآن</a>`;
-      } else {
-        msg.className = "msg show info";
-        msg.innerHTML = `${icon("info", 17)}<span>${esc(data?.message || "سنرسل لك رابط السداد قريباً.")}</span>`;
-        btn.disabled = false;
-        btn.innerHTML = old;
-      }
-    } catch (e) {
-      msg.className = "msg show error";
-      msg.innerHTML = `${icon("alert-triangle", 17)}<span>تعذّر حجز الرابط — حاول بعد قليل.</span>`;
+      btn.replaceWith(link);
+      link.after(ready);
+      link.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
       btn.disabled = false;
-      btn.innerHTML = old;
+      btn.innerHTML = original;
+      const note = document.createElement("div");
+      note.className = "pay-hint";
+      note.innerHTML = `${icon("info", 13)}<span>${esc(data?.message || "سنرسل لك رابط السداد قريباً.")}</span>`;
+      btn.after(note);
     }
-  };
+  } catch {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
 }
 
-/* نلتقط ضغط أزرار الاشتراك في كل الشاشات */
-document.addEventListener("click", async (e) => {
-  const b = e.target?.closest?.("[data-sub]");
-  if (!b) return;
-  const code = b.dataset.sub;
-  if (!code) return;
+/* نعترض أزرار الاشتراك قبل أن يعالجها app.js */
+document.addEventListener("click", (e) => {
+  const btn = e.target?.closest?.("[data-sub]");
+  if (!btn || btn.dataset.payBound === "1") return;
 
-  // نترك السلوك الأصلي يعمل، ثم نستبدل النتيجة بخطوة الحجز
-  setTimeout(async () => {
-    const host = $("supPay") || $("accPay") || b.closest(".plan-c, .acc-pcard")?.parentElement;
-    if (!host) return;
-    try {
-      const { data } = await sb.rpc("request_subscription", { p_plan_code: code });
-      if (data?.ok) renderPayStep(host, { ...data, plan_code: code });
-    } catch { /* */ }
-  }, 400);
+  const code = btn.dataset.sub;
+  if (!code || code === "trial") return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+
+  btn.dataset.payBound = "1";
+  bookLink(btn, code);
 }, true);
 
-window.falakPay = { renderPayStep };
+/* تنبيه أسفل كل زر اشتراك: الرابط لمرة واحدة */
+function addHints() {
+  document.querySelectorAll("[data-sub]").forEach((b) => {
+    if (b.dataset.sub === "trial" || b.dataset.hinted === "1") return;
+    if (b.nextElementSibling?.classList?.contains("pay-hint")) return;
+    b.dataset.hinted = "1";
+    const h = document.createElement("div");
+    h.className = "pay-hint";
+    h.innerHTML = `${icon("alert-triangle", 13)}<span>رابط السداد يُفتح لمرة واحدة — اضغط وأنت جاهز للدفع.</span>`;
+    b.after(h);
+  });
+}
+
+new MutationObserver(() => setTimeout(addHints, 120))
+  .observe(document.body, { childList: true, subtree: true });
+setTimeout(addHints, 1200);
